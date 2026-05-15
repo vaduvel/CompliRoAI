@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server"
 
 import {
-  createSessionToken,
-  getUserByEmail,
-  verifyPassword,
   SESSION_COOKIE,
+  authenticateUser,
+  createSessionToken,
 } from "@/lib/server/auth"
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -32,28 +31,31 @@ export async function POST(request: Request) {
       )
     }
 
-    const user = await getUserByEmail(email)
-    if (!user || !verifyPassword(password, user.passwordHash, user.salt)) {
-      return NextResponse.json(
-        { error: "Email sau parola incorecta." },
-        { status: 401 }
-      )
+    let resolved
+    try {
+      resolved = await authenticateUser(email, password)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ""
+      if (msg === "AUTH_INVALID_CREDENTIALS") {
+        return NextResponse.json(
+          { error: "Email sau parola incorecta." },
+          { status: 401 }
+        )
+      }
+      throw err
     }
 
-    const orgId = user.orgId ?? `org-${user.id}`
-    const orgName = user.orgName ?? ""
-
     const token = createSessionToken({
-      userId: user.id,
-      orgId,
-      email: user.email,
-      orgName,
+      userId: resolved.userId,
+      orgId: resolved.orgId,
+      email: resolved.email,
+      orgName: resolved.orgName,
     })
 
     const response = NextResponse.json({
       ok: true,
-      orgId,
-      orgName,
+      orgId: resolved.orgId,
+      orgName: resolved.orgName,
       workspaceMode: "solo",
       destination: "/dashboard",
     })
