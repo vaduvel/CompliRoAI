@@ -19,8 +19,20 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "AI Act Compliance",
-  description: "Conformitate EU AI Act pentru IMM-uri din România",
+  title: {
+    default: "AI Act Compliance — Conformitate EU AI Act pentru IMM-uri din România",
+    template: "%s · AI Act Compliance",
+  },
+  description:
+    "Singura platformă în limba română pentru AI Inventory, Annex IV, EU Database registration și AI Literacy (Art. 4 EU AI Act). Construită pentru IMM-uri.",
+  keywords: ["EU AI Act", "conformitate AI", "AI Inventory", "Annex IV", "AI Literacy", "IMM România"],
+  openGraph: {
+    title: "AI Act Compliance — Conformitate EU AI Act pentru IMM-uri",
+    description:
+      "Inventory AI, Annex IV, EU Database registration și AI Literacy pentru firmele din România.",
+    locale: "ro_RO",
+    type: "website",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
