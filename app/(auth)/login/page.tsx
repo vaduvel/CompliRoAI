@@ -38,7 +38,11 @@ function LoginForm() {
         return
       }
 
-      router.push(nextPath)
+      if (mode === "register") {
+        router.push("/onboarding")
+      } else {
+        router.push(nextPath)
+      }
       router.refresh()
     } catch {
       setError("Eroare de rețea. Încearcă din nou.")

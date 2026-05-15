@@ -19,16 +19,37 @@ export type GeneratedDocumentRecord = {
   approvalStatus?: "pending" | "approved_as_evidence"
 }
 
+export type OnboardingState = {
+  completed: boolean
+  completedAtISO?: string
+  companyInfo?: {
+    cui?: string
+    sector?:
+      | "fintech"
+      | "saas"
+      | "consulting"
+      | "ecommerce"
+      | "industrial"
+      | "healthcare"
+      | "education"
+      | "altele"
+    employeeCount?: "<10" | "10-49" | "50-249" | "250+"
+  }
+  currentStep?: 1 | 2 | 3 | 4
+}
+
 export type AIActState = {
   aiSystems: AISystemRecord[]
   literacyRecords: LiteracyRecord[]
   generatedDocuments: GeneratedDocumentRecord[]
+  onboarding?: OnboardingState
 }
 
 const DEFAULT_STATE: AIActState = {
   aiSystems: [],
   literacyRecords: [],
   generatedDocuments: [],
+  onboarding: { completed: false, currentStep: 1 },
 }
 
 const stateCache = new Map<string, AIActState>()
@@ -42,6 +63,7 @@ function mergeWithDefault(partial: Partial<AIActState> | null | undefined): AIAc
     aiSystems: partial?.aiSystems ?? [],
     literacyRecords: partial?.literacyRecords ?? [],
     generatedDocuments: partial?.generatedDocuments ?? [],
+    onboarding: partial?.onboarding ?? { completed: false, currentStep: 1 },
   }
 }
 
