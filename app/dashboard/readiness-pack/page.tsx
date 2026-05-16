@@ -13,7 +13,18 @@ import {
   Archive,
   Clock,
   CheckCircle2,
+  Compass,
 } from "lucide-react"
+
+import { ROLE_LABELS_SHORT } from "@/lib/compliance/role-classifier"
+import type { AIActRole } from "@/lib/compliance/types"
+
+type RoleAssessmentSummary = {
+  id: string
+  primaryRole: AIActRole
+  answeredAtISO: string
+  answeredByEmail: string
+}
 
 type ClientRow = {
   orgId: string
@@ -57,6 +68,8 @@ export default function ReadinessPackPage() {
   const [registryLoading, setRegistryLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastPackId, setLastPackId] = useState<string | null>(null)
+  const [role, setRole] = useState<RoleAssessmentSummary | null>(null)
+  const [roleLoaded, setRoleLoaded] = useState(false)
 
   const loadRegistry = useCallback(async () => {
     setRegistryLoading(true)
@@ -105,6 +118,23 @@ export default function ReadinessPackPage() {
   useEffect(() => {
     loadRegistry()
   }, [loadRegistry])
+
+  useEffect(() => {
+    fetch("/api/role-assessment")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.assessment) {
+          setRole({
+            id: data.assessment.id,
+            primaryRole: data.assessment.primaryRole,
+            answeredAtISO: data.assessment.answeredAtISO,
+            answeredByEmail: data.assessment.answeredByEmail,
+          })
+        }
+      })
+      .catch(() => {})
+      .finally(() => setRoleLoaded(true))
+  }, [])
 
   async function handleGenerate() {
     setError(null)
@@ -254,6 +284,78 @@ export default function ReadinessPackPage() {
         </div>
       </div>
 
+      {/* Role Assessment gating */}
+      {roleLoaded && !role && (
+        <div
+          style={{
+            background: "rgba(245, 158, 11, 0.08)",
+            border: "1px solid rgba(245, 158, 11, 0.35)",
+            borderRadius: "10px",
+            padding: "16px 18px",
+            display: "flex",
+            gap: "14px",
+            alignItems: "flex-start",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(245, 158, 11, 0.18)",
+              color: "#f59e0b",
+              padding: "8px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Compass size={18} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--ink)",
+                marginBottom: "4px",
+              }}
+            >
+              Mai întâi completează evaluarea de rol
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "var(--ink-muted)",
+                lineHeight: 1.55,
+                marginBottom: "10px",
+              }}
+            >
+              Fără să știi dacă ești <strong>provider</strong>, <strong>deployer</strong>,{" "}
+              <strong>importer</strong> etc., Readiness Pack-ul ratează contextul juridic
+              fundamental. Răspunde la 8 întrebări (~5 min) și pack-ul va include un memo
+              dedicat ca primă secțiune.
+            </div>
+            <a
+              href="/dashboard/role-assessment"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "7px 12px",
+                background: "#f59e0b",
+                color: "#fff",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              <Compass size={12} />
+              Începe evaluarea (5 min)
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Generate panel */}
       <div
         style={{
@@ -269,9 +371,34 @@ export default function ReadinessPackPage() {
             fontWeight: 600,
             color: "var(--ink)",
             marginBottom: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            flexWrap: "wrap",
           }}
         >
-          Generează pack
+          <span>Generează pack</span>
+          {role && (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "4px 10px",
+                borderRadius: "999px",
+                background: "rgba(34, 197, 94, 0.15)",
+                color: "#22c55e",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.3px",
+              }}
+              title={`Evaluat la ${new Date(role.answeredAtISO).toLocaleString("ro-RO")} de ${role.answeredByEmail}`}
+            >
+              <CheckCircle2 size={11} />
+              Rol: {ROLE_LABELS_SHORT[role.primaryRole]}
+            </span>
+          )}
         </div>
 
         {workspaceMode === "cabinet" && clients.length > 0 && (

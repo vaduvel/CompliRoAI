@@ -45,6 +45,45 @@ export type AISystemRecord = {
   policyAttestedByEmail?: string
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+//   AI Act Role Assessment (Sprint 5.5)
+//   Determină rolul organizației conform Art. 2 + Art. 3 EU AI Act.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type AIActRole =
+  | "provider"
+  | "deployer"
+  | "importer"
+  | "distributor"
+  | "manufacturer"
+  | "mixed"
+  | "exempt"
+
+export type RoleAssessmentAnswer = "yes" | "no" | "unsure"
+
+export type RoleAssessmentAnswers = {
+  developsAI: RoleAssessmentAnswer
+  sellsToThirdParties: RoleAssessmentAnswer
+  usesAIInternally: RoleAssessmentAnswer
+  importsFromNonEU: RoleAssessmentAnswer
+  distributesThirdPartyAI: RoleAssessmentAnswer
+  embedsAIInPhysicalProducts: RoleAssessmentAnswer
+  personalNonCommercialUseOnly: RoleAssessmentAnswer
+  militaryOrResearchOnly: RoleAssessmentAnswer
+}
+
+export type RoleAssessment = {
+  id: string
+  primaryRole: AIActRole
+  secondaryRoles: AIActRole[]
+  reasoning: string
+  applicableArticles: string[]
+  scopeExceptions: string[]
+  answeredAtISO: string
+  answeredByEmail: string
+  answers: RoleAssessmentAnswers
+}
+
 export type LiteracyRecord = {
   id: string
   employeeName: string

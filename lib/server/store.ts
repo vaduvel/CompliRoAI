@@ -8,7 +8,11 @@ import {
   persistOrgStateToSupabase,
   shouldUseSupabaseOrgState,
 } from "./supabase-org-state"
-import type { AISystemRecord, LiteracyRecord } from "@/lib/compliance/types"
+import type {
+  AISystemRecord,
+  LiteracyRecord,
+  RoleAssessment,
+} from "@/lib/compliance/types"
 
 export type GeneratedDocumentRecord = {
   id: string
@@ -61,6 +65,11 @@ export type AIActState = {
   generatedDocuments: GeneratedDocumentRecord[]
   onboarding?: OnboardingState
   readinessPacks?: ReadinessPackRecord[]
+  /**
+   * AI Act Role Assessment (Sprint 5.5) — provider / deployer / importer etc.
+   * Opțional, dar recomandat ca prerequisite înainte de a genera Readiness Pack.
+   */
+  roleAssessment?: RoleAssessment
 }
 
 const DEFAULT_STATE: AIActState = {
@@ -83,6 +92,7 @@ function mergeWithDefault(partial: Partial<AIActState> | null | undefined): AIAc
     generatedDocuments: partial?.generatedDocuments ?? [],
     onboarding: partial?.onboarding ?? { completed: false, currentStep: 1 },
     readinessPacks: partial?.readinessPacks,
+    roleAssessment: partial?.roleAssessment,
   }
 }
 

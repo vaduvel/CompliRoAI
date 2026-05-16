@@ -10,7 +10,16 @@
 //     (post-Omnibus, mai 2026) — vezi docs/legal/eu-ai-act-full-text-romanian-2026-05.md.
 
 import { classifyAISystem, RISK_LEVEL_LABELS } from "@/lib/compliance/ai-act-classifier"
-import type { AISystemRecord, LiteracyRecord } from "@/lib/compliance/types"
+import {
+  getImmediateNextSteps,
+  ROLE_LABELS,
+  ROLE_LABELS_SHORT,
+} from "@/lib/compliance/role-classifier"
+import type {
+  AISystemRecord,
+  LiteracyRecord,
+  RoleAssessment,
+} from "@/lib/compliance/types"
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Tipuri partajate
@@ -864,3 +873,137 @@ export function clientFacingHtmlTemplate(input: {
 </html>
 `
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+//   9. AI Act Role Memo (Sprint 5.5) — prerequisite pentru toate obligațiile
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Generează memo-ul "Cine sunt eu în AI Act?" — răspuns la întrebarea juridică #1.
+ * Plasat ca PRIMA secțiune din Readiness Pack (înaintea Executive Summary).
+ */
+export function roleAssessmentTemplate(input: {
+  branding: ReadinessBranding
+  summary: ReadinessSummary
+  assessment: RoleAssessment
+}): string {
+  const { branding, summary, assessment } = input
+
+  const secondaryLabel = assessment.secondaryRoles.length
+    ? assessment.secondaryRoles.map((r) => ROLE_LABELS_SHORT[r]).join(", ")
+    : "—"
+
+  const articlesList = assessment.applicableArticles.length
+    ? assessment.applicableArticles.map((a) => `- ${a}`).join("\n")
+    : "_Niciun articol specific — verifică Art. 2 pentru excepții._"
+
+  const exceptionsBlock = assessment.scopeExceptions.length
+    ? assessment.scopeExceptions.map((e) => `- ${e}`).join("\n")
+    : "- _Nu sunt invocate excepții din Art. 2._"
+
+  // Top 3 acțiuni imediate bazate pe rolul primar.
+  const nextStepRole = assessment.primaryRole
+  const nextSteps = getImmediateNextSteps(nextStepRole)
+    .map((s, i) => `${i + 1}. ${s}`)
+    .join("\n")
+
+  return [
+    packHeader("AI Act Role Memo — Cine ești în AI Act?", branding, summary),
+    `> **Răspuns la întrebarea juridică #1: ce rol am eu în EU AI Act?**`,
+    `> Acest document determină ce obligații se aplică organizației conform Regulamentului (UE) 2024/1689.`,
+    `> Fără un rol clar definit, restul obligațiilor (Art. 4, Art. 5, Art. 26-27 etc.) sunt în ceață.`,
+    ``,
+    `**Rol principal:** **${ROLE_LABELS[assessment.primaryRole]}**  `,
+    `**Roluri secundare:** ${secondaryLabel}  `,
+    `**Evaluat la:** ${formatDateRO(assessment.answeredAtISO)}  `,
+    `**Evaluat de:** ${assessment.answeredByEmail || "—"}`,
+    ``,
+    `---`,
+    ``,
+    `## Justificare`,
+    ``,
+    assessment.reasoning,
+    ``,
+    `---`,
+    ``,
+    `## Obligații aplicabile`,
+    ``,
+    articlesList,
+    ``,
+    `---`,
+    ``,
+    `## Excepții invocate (Art. 2)`,
+    ``,
+    exceptionsBlock,
+    ``,
+    `---`,
+    ``,
+    `## Pași imediați`,
+    ``,
+    nextSteps,
+    ``,
+    `---`,
+    ``,
+    `## Cross-references juridice`,
+    ``,
+    `- **Art. 2** — domeniu de aplicare și excepții (uz personal, militar, cercetare, open-source).`,
+    `- **Art. 3** — definiții formale: provider, deployer, importer, distributor, manufacturer.`,
+    `- **Art. 22 GDPR** ↔ **Art. 14 AI Act** — decizii automatizate vs. supraveghere umană.`,
+    `- **Art. 25 AI Act** — reprezentant autorizat pentru providerii non-EU.`,
+    ``,
+    `---`,
+    ``,
+    `## Atenționare`,
+    ``,
+    `Rolul tău poate evolua dacă schimbi modelul de business — de exemplu:`,
+    ``,
+    `- Începi să vinzi terților un AI dezvoltat intern → devii **și provider**, nu doar deployer.`,
+    `- Externalizezi dezvoltarea, dar continui să-l pui pe piață sub propriul nume → rămâi **provider** (Art. 3(3)).`,
+    `- Importi un model de la un furnizor non-EU → devii **importer** (Art. 23).`,
+    ``,
+    `Re-evaluează acest memo **trimestrial** sau la orice schimbare de scope.`,
+    ``,
+    `---`,
+    ``,
+    `_Acest memo a fost generat automat de ${branding.brandName} pe baza răspunsurilor furnizate._`,
+    `_Pentru validare juridică în cazul auditurilor ANCOM sau B2B enterprise, consultă un avocat specializat AI/Tech._`,
+    ``,
+    legalDisclaimer(branding),
+  ].join("\n")
+}
+
+/**
+ * Folosit când lipsește Role Assessment — secțiune de avertisment înserată în Readiness Pack.
+ */
+export function roleAssessmentMissingNotice(input: {
+  branding: ReadinessBranding
+  summary: ReadinessSummary
+}): string {
+  const { branding, summary } = input
+  return [
+    packHeader("AI Act Role Memo — LIPSĂ", branding, summary),
+    `> **ATENȚIE: Evaluare de rol incompletă.**`,
+    ``,
+    `Organizația **${summary.orgName}** nu a completat încă **Role Assessment** —`,
+    `prerequisite-ul juridic #1 din EU AI Act.`,
+    ``,
+    `Fără a ști dacă ești **provider**, **deployer**, **importer**, **distributor** sau **manufacturer**,`,
+    `restul Readiness Pack-ului ratează contextul fundamental:`,
+    ``,
+    `- Nu putem determina dacă Art. 16-22 (provider) sau Art. 26-27 (deployer) se aplică prioritar.`,
+    `- Nu putem stabili dacă FRIA (Art. 27) este obligatorie sau opțională.`,
+    `- Nu putem ști dacă te încadrezi într-o excepție din Art. 2 (uz personal, militar, cercetare).`,
+    ``,
+    `## Acțiune necesară`,
+    ``,
+    `Înainte de a folosi acest pack pentru audit final, completează evaluarea de rol:`,
+    ``,
+    `**→ Accesează \`/dashboard/role-assessment\` (5 minute, 8 întrebări)**`,
+    ``,
+    `După completare, regenerează Readiness Pack-ul — secțiunea aceasta va fi înlocuită cu memo-ul`,
+    `complet care detaliază rolul tău și obligațiile specifice.`,
+    ``,
+    legalDisclaimer(branding),
+  ].join("\n")
+}
+

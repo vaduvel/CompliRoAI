@@ -33,6 +33,8 @@ import {
   inventoryReportTemplate,
   literacyEvidenceTemplate,
   prohibitedAuditTemplate,
+  roleAssessmentMissingNotice,
+  roleAssessmentTemplate,
   transparencyNoticesTemplate,
   type ReadinessBranding,
   type ReadinessSummary,
@@ -131,6 +133,15 @@ export async function buildReadinessPack(
     isCustom: branding.isCustom,
   }
 
+  // Role Memo — prima secțiune din pack (răspunde la "cine sunt eu în AI Act?")
+  const roleMemo = state.roleAssessment
+    ? roleAssessmentTemplate({
+        branding: readinessBranding,
+        summary,
+        assessment: state.roleAssessment,
+      })
+    : roleAssessmentMissingNotice({ branding: readinessBranding, summary })
+
   const executiveSummary = executiveSummaryTemplate({ branding: readinessBranding, summary })
   const inventoryReport = inventoryReportTemplate({
     branding: readinessBranding,
@@ -176,6 +187,7 @@ export async function buildReadinessPack(
   })
 
   const contents: { path: string; content: string }[] = [
+    { path: "00-ai-act-role-memo.md", content: roleMemo },
     { path: "01-executive-summary.md", content: executiveSummary },
     { path: "02-ai-systems-inventory.md", content: inventoryReport },
     { path: "03-art-4-literacy-evidence.md", content: literacyEvidence },
@@ -554,6 +566,7 @@ async function loadStateForOrg(
           literacyRecords: remote.literacyRecords ?? [],
           generatedDocuments: remote.generatedDocuments ?? [],
           onboarding: remote.onboarding ?? { completed: false, currentStep: 1 },
+          roleAssessment: remote.roleAssessment,
         }
       }
     }
@@ -569,6 +582,7 @@ async function loadStateForOrg(
       literacyRecords: parsed.literacyRecords ?? [],
       generatedDocuments: parsed.generatedDocuments ?? [],
       onboarding: parsed.onboarding ?? { completed: false, currentStep: 1 },
+      roleAssessment: parsed.roleAssessment,
     }
   } catch {
     return {
