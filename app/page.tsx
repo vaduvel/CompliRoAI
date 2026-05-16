@@ -90,7 +90,7 @@ export default function HomePage() {
               marginRight: "auto",
             }}
           >
-            Conformitate EU AI Act pentru IMM-urile din România
+            Compliance OS pentru cabinete și IMM-uri din România
           </h1>
           <p
             style={{
@@ -103,9 +103,9 @@ export default function HomePage() {
               marginRight: "auto",
             }}
           >
-            Singura platformă în limba română pentru AI Inventory, Annex IV, EU Database
-            registration și AI Literacy (Art. 4). Construită pentru companii cu 10–250
-            angajați.
+            GDPR + EU AI Act + NIS2 într-un singur cont, în limba română. Multi-client portfolio
+            pentru cabinete DPO/avocați/contabili. Audit pack criptografic semnat. Construit pentru
+            cabinete cu 5–100 clienți și IMM-uri cu 10–250 angajați.
           </p>
           <div
             style={{
@@ -445,20 +445,48 @@ export default function HomePage() {
                 highlighted: false,
               },
               {
-                name: "Standard",
-                price: "49 EUR",
+                name: "IMM Standard",
+                price: "99 EUR",
                 period: "/lună",
-                features: ["1 organizație", "Sisteme AI nelimitate", "Annex IV + EU DB", "AI Literacy tracker"],
+                features: [
+                  "1 organizație",
+                  "AI Inventory + Annex IV + EU DB",
+                  "AI Literacy (Art. 4) tracker",
+                  "GDPR DPIA bridge",
+                  "Audit pack criptografic",
+                ],
+                cta: "Începe trial",
+                href: "/login?mode=register",
+                highlighted: false,
+              },
+              {
+                name: "Cabinet Pro",
+                price: "399 EUR",
+                period: "/lună",
+                features: [
+                  "Până la 30 clienți gestionați",
+                  "Multi-client portfolio + white-label",
+                  "Magic links HMAC pentru aprobări",
+                  "Audit pack semnat per client",
+                  "Branding logo + culori cabinet",
+                  "Pentru DPO, avocați, contabili",
+                ],
                 cta: "Începe trial",
                 href: "/login?mode=register",
                 highlighted: true,
               },
               {
-                name: "Partner",
-                price: "199 EUR",
+                name: "Cabinet Enterprise",
+                price: "999 EUR",
                 period: "/lună",
-                features: ["Multi-client", "Pentru consultanți & contabili", "Branding personalizat", "Suport prioritar"],
-                cta: "Începe trial",
+                features: [
+                  "Clienți nelimitați",
+                  "Onboarding asistat",
+                  "SLA prioritar",
+                  "Integrare custom + API",
+                  "Pentru cabinete 50+ clienți",
+                ],
+                cta: "Contactează-ne",
                 href: "/login?mode=register",
                 highlighted: false,
               },
