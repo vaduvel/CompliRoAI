@@ -57,6 +57,7 @@ const KNOWN_CLASSIFICATIONS: Record<AISystemPurpose, {
   article: string
   reason: string
   requiredActions: string[]
+  deadlineOverride?: string  // ISO date — for prohibitions with specific enforcement dates
 }> = {
   "hr-screening": {
     riskLevel: "high_risk",
@@ -122,6 +123,18 @@ const KNOWN_CLASSIFICATIONS: Record<AISystemPurpose, {
     reason: "Asistent documente fără impact semnificativ — minimal risk, fără obligații specifice.",
     requiredActions: [],
   },
+  "image-manipulation-intimate": {
+    riskLevel: "prohibited",
+    article: "Art. 5 (Omnibus mai 2026)",
+    reason:
+      "Generare/manipulare conținut intim neconsimțit (nudifier apps, deepfake sexual, CSAM) — interzis prin pachetul Omnibus 7 mai 2026, executoriu de la 2 decembrie 2026. Furnizorii GPAI au obligația filtrelor tehnice obligatorii.",
+    requiredActions: [
+      "Oprire imediată dezvoltare/distribuție",
+      "Filtre tehnice obligatorii pentru providerii GPAI (Art. 5 + obligații GPAI)",
+      "Notificare ANCOM dacă sistemul a fost deja deployat",
+    ],
+    deadlineOverride: "2026-12-02",
+  },
   "other": {
     riskLevel: "limited_risk",
     article: "Art. 50 (implicit)",
@@ -135,12 +148,20 @@ const KNOWN_CLASSIFICATIONS: Record<AISystemPurpose, {
 
 export function classifyAISystem(purpose: AISystemPurpose): AIActClassification {
   const known = KNOWN_CLASSIFICATIONS[purpose]
+  // Deadlines per Omnibus Agreement 7 mai 2026:
+  //   - High-risk Annex III stand-alone: 2 dec 2027
+  //   - Nudifier/CSAM filters (GPAI providers): 2 dec 2026
+  //   - Watermarking obligations (Art. 50 generated content): 2 dec 2026
+  //   - Other prohibitions: active since 2 feb 2025
+  const deadline =
+    known.deadlineOverride ??
+    (known.riskLevel === "high_risk" ? "2027-12-02" : undefined)
+
   return {
     riskLevel: known.riskLevel,
     article: known.article,
     reason: known.reason,
-    // Deadline per Omnibus Agreement 7 mai 2026 — high-risk Annex III moved to 2027-12-02
-    deadline: known.riskLevel === "high_risk" ? "2027-12-02" : undefined,
+    deadline,
     requiredActions: known.requiredActions,
     autoDetected: true,
     confirmedByHuman: false,

@@ -278,8 +278,9 @@ export default function HomePage() {
                 Amenzi până la 7% din cifra de afaceri
               </h3>
               <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--ink-muted)", margin: 0 }}>
-                Sau 35M EUR, oricare e mai mare. Riscul nu mai e teoretic — autoritățile au
-                început deja inspecțiile pilot.
+                Sau 35M EUR, oricare e mai mare. În România supraveghează ANCOM (central), BNR
+                (bănci), ASF (asigurări), ANSPDCP (date), ADR (notificare), DNSC (cyber),
+                Inspecția Muncii (HR).
               </p>
             </div>
           </div>

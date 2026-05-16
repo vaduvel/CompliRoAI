@@ -8,6 +8,7 @@ export type AISystemPurpose =
   | "marketing-personalization"
   | "support-chatbot"
   | "document-assistant"
+  | "image-manipulation-intimate"
   | "other"
 
 export type AISystemRiskLevel = "minimal" | "limited" | "high"

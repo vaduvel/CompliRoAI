@@ -14,6 +14,7 @@ const PURPOSES = [
   { value: "marketing-personalization", label: "Personalizare marketing, recomandări", risc: "limited_risk" },
   { value: "support-chatbot", label: "Chatbot suport clienți", risc: "limited_risk" },
   { value: "document-assistant", label: "Asistent generare documente", risc: "minimal_risk" },
+  { value: "image-manipulation-intimate", label: "Generare/manipulare conținut intim (nudifier, deepfake sexual)", risc: "prohibited" },
   { value: "other", label: "Alt scop — necesită evaluare manuală", risc: "limited_risk" },
 ]
 

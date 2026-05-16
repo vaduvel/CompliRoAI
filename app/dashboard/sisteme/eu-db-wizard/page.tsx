@@ -24,6 +24,7 @@ const PURPOSE_LABELS: Record<AISystemPurpose, string> = {
   "marketing-personalization": "Personalizare marketing",
   "support-chatbot": "Chatbot suport",
   "document-assistant": "Asistent documente",
+  "image-manipulation-intimate": "Generare conținut intim (INTERZIS Omnibus 2026)",
   "other": "Altul",
 }
 
