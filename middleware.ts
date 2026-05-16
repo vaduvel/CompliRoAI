@@ -74,10 +74,17 @@ export async function middleware(request: NextRequest) {
   //   /api/share/[token]/submit     — submit form
   // Excluded from the "public" allowlist (still session-gated):
   //   /api/share/create, /api/share/review, /api/share/revoke/*
+  //
+  // Sprint 4 — audit pack verification is also public:
+  //   /verify-pack                  — public verification page (drag & drop ZIP)
+  //   /api/audit-pack/verify        — public verification endpoint
   if (
     pathname === "/share" ||
     pathname.startsWith("/share/") ||
-    /^\/api\/share\/(?!create$|review$|revoke(?:\/|$))[^/]+(?:\/submit)?$/.test(pathname)
+    /^\/api\/share\/(?!create$|review$|revoke(?:\/|$))[^/]+(?:\/submit)?$/.test(pathname) ||
+    pathname === "/verify-pack" ||
+    pathname.startsWith("/verify-pack/") ||
+    pathname === "/api/audit-pack/verify"
   ) {
     return NextResponse.next()
   }
