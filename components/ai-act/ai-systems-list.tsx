@@ -1,6 +1,7 @@
 "use client"
 
-import { Trash2 } from "lucide-react"
+import { useState } from "react"
+import { Send, Trash2 } from "lucide-react"
 import type { AISystemRecord, AISystemRiskLevel } from "@/lib/compliance/types"
 
 const RISK_LABELS: Record<AISystemRiskLevel, string> = {
@@ -41,9 +42,43 @@ const PURPOSE_LABELS: Record<string, string> = {
 interface AISystemsListProps {
   systems: AISystemRecord[]
   onDelete: (id: string) => void
+  /** When "cabinet", each row exposes a "Trimite spre aprobare" button. */
+  workspaceMode?: "solo" | "cabinet"
 }
 
-export function AISystemsList({ systems, onDelete }: AISystemsListProps) {
+export function AISystemsList({ systems, onDelete, workspaceMode = "solo" }: AISystemsListProps) {
+  const isCabinet = workspaceMode === "cabinet"
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [createdLink, setCreatedLink] = useState<{ url: string; systemName: string } | null>(null)
+
+  async function handleSendApproval(system: AISystemRecord) {
+    const email = window.prompt(`Email-ul clientului pentru aprobarea sistemului "${system.name}":`)
+    if (!email) return
+    setBusyId(system.id)
+    try {
+      const res = await fetch("/api/share/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetType: "approval",
+          targetId: system.id,
+          targetLabel: system.name,
+          recipientEmail: email,
+          expiresInDays: 7,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error ?? "Generare link eșuată.")
+        return
+      }
+      setCreatedLink({ url: data.url, systemName: system.name })
+    } catch {
+      alert("Eroare de rețea. Încearcă din nou.")
+    } finally {
+      setBusyId(null)
+    }
+  }
   if (systems.length === 0) {
     return (
       <div
@@ -63,6 +98,69 @@ export function AISystemsList({ systems, onDelete }: AISystemsListProps) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {createdLink && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "10px 14px",
+            background: "var(--cobalt-soft)",
+            border: "1px solid rgba(96,165,250,0.25)",
+            borderRadius: "8px",
+            fontSize: "12px",
+            color: "var(--ink)",
+          }}
+        >
+          <Send size={14} style={{ color: "var(--cobalt-400)" }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 500 }}>
+              Magic link trimis pentru &quot;{createdLink.systemName}&quot;
+            </div>
+            <code
+              style={{
+                fontSize: "11px",
+                color: "var(--ink-muted)",
+                display: "block",
+                overflowWrap: "anywhere",
+                marginTop: "2px",
+              }}
+            >
+              {createdLink.url}
+            </code>
+          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(createdLink.url).catch(() => {})
+            }}
+            style={{
+              padding: "4px 8px",
+              borderRadius: "4px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              color: "var(--ink-muted)",
+              cursor: "pointer",
+              fontSize: "11px",
+            }}
+          >
+            Copy
+          </button>
+          <button
+            onClick={() => setCreatedLink(null)}
+            style={{
+              padding: "4px 8px",
+              borderRadius: "4px",
+              background: "transparent",
+              border: "none",
+              color: "var(--ink-dim)",
+              cursor: "pointer",
+              fontSize: "11px",
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
       {systems.map((system) => {
         const badgeStyle = RISK_BADGE_STYLES[system.riskLevel] ?? RISK_BADGE_STYLES.minimal
         const riskLabel = RISK_LABELS[system.riskLevel] ?? system.riskLevel
@@ -170,6 +268,34 @@ export function AISystemsList({ systems, onDelete }: AISystemsListProps) {
                 </div>
               )}
             </div>
+
+            {/* Send for approval (cabinet only) */}
+            {isCabinet && (
+              <button
+                onClick={() => handleSendApproval(system)}
+                disabled={busyId === system.id}
+                aria-label={`Trimite spre aprobare ${system.name}`}
+                title="Trimite spre aprobare la client (magic link)"
+                style={{
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "0 10px",
+                  height: "30px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  background: "transparent",
+                  cursor: busyId === system.id ? "wait" : "pointer",
+                  color: "var(--cobalt-400)",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                }}
+              >
+                <Send size={12} />
+                {busyId === system.id ? "Se trimite…" : "Trimite aprobare"}
+              </button>
+            )}
 
             {/* Delete button */}
             <button

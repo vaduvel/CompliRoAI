@@ -9,6 +9,7 @@ import { AlertTriangle } from "lucide-react"
 export default function SistemePage() {
   const [systems, setSystems] = useState<AISystemRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [workspaceMode, setWorkspaceMode] = useState<"solo" | "cabinet">("solo")
 
   const load = useCallback(async () => {
     const res = await fetch("/api/ai-systems")
@@ -20,6 +21,15 @@ export default function SistemePage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user?.workspaceMode === "cabinet") setWorkspaceMode("cabinet")
+      })
+      .catch(() => {})
+  }, [])
 
   async function handleDelete(id: string) {
     await fetch(`/api/ai-systems?id=${id}`, { method: "DELETE" })
@@ -82,7 +92,7 @@ export default function SistemePage() {
         {loading ? (
           <div style={{ fontSize: "13px", color: "var(--ink-dim)", padding: "24px 0" }}>Se încarcă...</div>
         ) : (
-          <AISystemsList systems={systems} onDelete={handleDelete} />
+          <AISystemsList systems={systems} onDelete={handleDelete} workspaceMode={workspaceMode} />
         )}
       </div>
     </div>

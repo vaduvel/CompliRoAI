@@ -68,6 +68,20 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isApi = pathname.startsWith("/api/")
 
+  // Public magic-link routes — no session required.
+  //   /share/[token]                — landing page (public)
+  //   /api/share/[token]            — verify token
+  //   /api/share/[token]/submit     — submit form
+  // Excluded from the "public" allowlist (still session-gated):
+  //   /api/share/create, /api/share/review, /api/share/revoke/*
+  if (
+    pathname === "/share" ||
+    pathname.startsWith("/share/") ||
+    /^\/api\/share\/(?!create$|review$|revoke(?:\/|$))[^/]+(?:\/submit)?$/.test(pathname)
+  ) {
+    return NextResponse.next()
+  }
+
   const sessionCookie = request.cookies.get(SESSION_COOKIE)
   if (!sessionCookie?.value) {
     if (isApi) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

@@ -1,6 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation"
-import { Cpu, FileCheck, BookOpen, LogOut, Users } from "lucide-react"
+import { Cpu, FileCheck, BookOpen, LogOut, Users, Link2 } from "lucide-react"
 import { NavItem } from "./nav-item"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 
@@ -59,6 +59,9 @@ export function DashboardShell({ children, userEmail, orgName, workspaceMode = "
           <NavItem href="/dashboard/sisteme" label="Sisteme AI" icon={<Cpu size={15} />} />
           <NavItem href="/dashboard/conformitate" label="Conformitate" icon={<FileCheck size={15} />} />
           <NavItem href="/dashboard/literacy" label="AI Literacy" icon={<BookOpen size={15} />} />
+          {isCabinet && (
+            <NavItem href="/dashboard/magic-links" label="Magic Links" icon={<Link2 size={15} />} />
+          )}
         </nav>
 
         {/* User footer */}
