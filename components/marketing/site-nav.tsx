@@ -35,21 +35,37 @@ export function SiteNav() {
         >
           AI Act Compliance
         </Link>
-        <Link
-          href="/login"
-          style={{
-            fontSize: 14,
-            fontWeight: 500,
-            color: "var(--ink-muted)",
-            textDecoration: "none",
-            padding: "8px 14px",
-            border: "1px solid var(--border-strong)",
-            borderRadius: 8,
-            transition: "color 150ms, border-color 150ms",
-          }}
-        >
-          Conectează-te
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link
+            href="/docs"
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: "var(--ink-muted)",
+              textDecoration: "none",
+              padding: "8px 12px",
+              borderRadius: 8,
+              transition: "color 150ms",
+            }}
+          >
+            API
+          </Link>
+          <Link
+            href="/login"
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              color: "var(--ink-muted)",
+              textDecoration: "none",
+              padding: "8px 14px",
+              border: "1px solid var(--border-strong)",
+              borderRadius: 8,
+              transition: "color 150ms, border-color 150ms",
+            }}
+          >
+            Conectează-te
+          </Link>
+        </div>
       </div>
     </header>
   )

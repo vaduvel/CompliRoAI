@@ -86,6 +86,6 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/onboarding",
-    "/api/((?!auth).*)",
+    "/api/((?!auth|v1).*)",
   ],
 }
