@@ -9,6 +9,7 @@ import {
 } from "@/lib/server/supabase-rest"
 import { verifyShareToken } from "@/lib/server/share-token-store"
 import type { AIActState } from "@/lib/server/store"
+import { DEFAULT_BRANDING } from "@/lib/server/white-label"
 
 type OrgRow = {
   id: string
@@ -78,6 +79,35 @@ export async function GET(
 
   if (!cabinetName) cabinetName = orgName
 
+  // White-label branding snapshot (stored in token metadata when the link was
+  // issued). Falls back to CompliRoAI defaults if the cabinet didn't customize.
+  const rawBranding =
+    (record?.metadata?.branding as Record<string, unknown> | undefined) ?? null
+  const branding = {
+    isCustom: rawBranding?.isCustom === true,
+    brandName:
+      (typeof rawBranding?.brandName === "string" && rawBranding.brandName) ||
+      DEFAULT_BRANDING.brandName,
+    logoUrl:
+      typeof rawBranding?.logoUrl === "string" ? rawBranding.logoUrl : null,
+    primaryColor:
+      (typeof rawBranding?.primaryColor === "string" && /^#[0-9a-fA-F]{6}$/.test(rawBranding.primaryColor)
+        ? rawBranding.primaryColor
+        : DEFAULT_BRANDING.primaryColor),
+    secondaryColor:
+      (typeof rawBranding?.secondaryColor === "string" && /^#[0-9a-fA-F]{6}$/.test(rawBranding.secondaryColor)
+        ? rawBranding.secondaryColor
+        : DEFAULT_BRANDING.secondaryColor),
+    signerName:
+      typeof rawBranding?.signerName === "string" ? rawBranding.signerName : null,
+    signerTitle:
+      typeof rawBranding?.signerTitle === "string" ? rawBranding.signerTitle : null,
+    contactEmail:
+      typeof rawBranding?.contactEmail === "string" ? rawBranding.contactEmail : null,
+    website:
+      typeof rawBranding?.website === "string" ? rawBranding.website : null,
+  }
+
   return NextResponse.json({
     ok: true,
     targetType: payload.targetType,
@@ -90,5 +120,6 @@ export async function GET(
     status: record?.status ?? "active",
     metadata: record?.metadata ?? {},
     target: targetSummary,
+    branding,
   })
 }

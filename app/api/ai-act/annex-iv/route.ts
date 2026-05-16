@@ -6,6 +6,7 @@ import { NextResponse } from "next/server"
 
 import { buildAnnexIVDocument } from "@/lib/compliance/ai-conformity-assessment"
 import { readState, writeState, type GeneratedDocumentRecord } from "@/lib/server/store"
+import { getEffectiveBranding } from "@/lib/server/white-label"
 
 export async function POST(request: Request) {
   try {
@@ -19,12 +20,16 @@ export async function POST(request: Request) {
     const { headers } = await import("next/headers")
     const h = await headers()
     const orgName = h.get("x-aiact-org-name") ?? undefined
+    const orgId = h.get("x-aiact-org-id") ?? undefined
 
     const state = await readState()
     const system = state.aiSystems.find((s) => s.id === systemId)
     if (!system) {
       return NextResponse.json({ error: "Sistem AI negăsit." }, { status: 404 })
     }
+
+    // White-label branding (cabinet override) — falls back to CompliRoAI defaults.
+    const branding = orgId ? await getEffectiveBranding(orgId) : null
 
     const doc = buildAnnexIVDocument(
       {
@@ -42,7 +47,18 @@ export async function POST(request: Request) {
         createdAtISO: system.createdAtISO,
       },
       {}, // empty answers — template mode
-      orgName
+      orgName,
+      branding
+        ? {
+            brandName: branding.brandName,
+            logoUrl: branding.logoUrl,
+            signerName: branding.signerName,
+            signerTitle: branding.signerTitle,
+            contactEmail: branding.contactEmail,
+            website: branding.website,
+            isCustom: branding.isCustom,
+          }
+        : undefined
     )
 
     const generatedDocumentId = `generated-doc-${Math.random().toString(36).slice(2, 10)}`

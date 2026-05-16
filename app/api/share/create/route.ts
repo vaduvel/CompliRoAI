@@ -8,6 +8,7 @@ import {
   type ShareTargetType,
 } from "@/lib/server/share-token-store"
 import { getMembership } from "@/lib/server/tenancy"
+import { getEffectiveBranding } from "@/lib/server/white-label"
 
 function isValidTargetType(value: unknown): value is ShareTargetType {
   return value === "intake" || value === "approval" || value === "report"
@@ -99,6 +100,13 @@ export async function POST(request: Request) {
       targetOrgId = requestedClientOrgId
     }
 
+    // White-label branding belongs to the CABINET that issued the token
+    // (ctx.orgId), not necessarily the org the token is bound to (targetOrgId
+    // may be a client org). The public share page should display the cabinet's
+    // brand to the client.
+    const branding = await getEffectiveBranding(ctx.orgId)
+    const cabinetDisplayName = branding.isCustom ? branding.brandName : cabinetName
+
     const record = await createShareToken({
       orgId: targetOrgId,
       createdByUserId: ctx.userId,
@@ -111,7 +119,20 @@ export async function POST(request: Request) {
       metadata: {
         ...(note ? { note } : {}),
         ...(recipientName ? { recipientName } : {}),
-        ...(cabinetName ? { cabinetName } : {}),
+        ...(cabinetDisplayName ? { cabinetName: cabinetDisplayName } : {}),
+        // Snapshot the cabinet's branding into token metadata so the public
+        // share page can render it without needing to look up the cabinet org.
+        branding: {
+          isCustom: branding.isCustom,
+          brandName: branding.brandName,
+          logoUrl: branding.logoUrl,
+          primaryColor: branding.primaryColor,
+          secondaryColor: branding.secondaryColor,
+          signerName: branding.signerName,
+          signerTitle: branding.signerTitle,
+          contactEmail: branding.contactEmail,
+          website: branding.website,
+        },
       },
     })
 
@@ -131,12 +152,13 @@ export async function POST(request: Request) {
       emailStatus = await sendMagicLinkEmail({
         toEmail: recipientEmail,
         recipientName,
-        cabinetName,
+        cabinetName: cabinetDisplayName,
         targetType: body.targetType,
         targetLabel,
         shareUrl,
         expiresAtISO: record.expiresAtISO,
         note,
+        branding,
       })
     }
 

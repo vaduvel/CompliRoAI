@@ -5,6 +5,30 @@ import { AlertCircle, CheckCircle2, FileText, Loader2 } from "lucide-react"
 
 type TargetType = "intake" | "approval" | "report"
 
+type Branding = {
+  isCustom: boolean
+  brandName: string
+  logoUrl: string | null
+  primaryColor: string
+  secondaryColor: string
+  signerName: string | null
+  signerTitle: string | null
+  contactEmail: string | null
+  website: string | null
+}
+
+const DEFAULT_BRANDING: Branding = {
+  isCustom: false,
+  brandName: "CompliRoAI",
+  logoUrl: null,
+  primaryColor: "#3b5bdb",
+  secondaryColor: "#0ea5e9",
+  signerName: null,
+  signerTitle: null,
+  contactEmail: null,
+  website: null,
+}
+
 type Context = {
   targetType: TargetType
   targetId: string | null
@@ -15,6 +39,7 @@ type Context = {
   createdAtISO: string
   status: "active" | "used" | "revoked" | "expired"
   metadata: Record<string, unknown>
+  branding?: Branding
   target: {
     name?: string
     purpose?: string
@@ -68,18 +93,21 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
 }
 
-const primaryBtn: React.CSSProperties = {
+const primaryBtnBase: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 8,
   padding: "11px 20px",
   borderRadius: 6,
   border: "none",
-  background: "#3b5bdb",
   color: "#fff",
   fontSize: 14,
   fontWeight: 600,
   cursor: "pointer",
+}
+
+function primaryBtn(color: string): React.CSSProperties {
+  return { ...primaryBtnBase, background: color }
 }
 
 function formatDate(iso: string): string {
@@ -127,10 +155,12 @@ export function ShareTokenClient({ token }: { token: string }) {
     load()
   }, [load])
 
+  const branding = ctx?.branding ?? DEFAULT_BRANDING
+
   if (loading) {
     return (
       <div style={containerStyle}>
-        <Header />
+        <Header branding={DEFAULT_BRANDING} />
         <div style={{ ...cardStyle, textAlign: "center" }}>
           <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
           <p style={{ marginTop: 12, color: "#64748b", fontSize: 14 }}>
@@ -144,7 +174,7 @@ export function ShareTokenClient({ token }: { token: string }) {
   if (error || !ctx) {
     return (
       <div style={containerStyle}>
-        <Header />
+        <Header branding={DEFAULT_BRANDING} />
         <div style={cardStyle}>
           <div
             style={{
@@ -176,7 +206,7 @@ export function ShareTokenClient({ token }: { token: string }) {
   if (submitted) {
     return (
       <div style={containerStyle}>
-        <Header />
+        <Header branding={branding} />
         <div style={cardStyle}>
           <div
             style={{
@@ -203,6 +233,7 @@ export function ShareTokenClient({ token }: { token: string }) {
             Poți închide această pagină. Vom anunța cabinetul automat.
           </p>
         </div>
+        <Footer branding={branding} />
       </div>
     )
   }
@@ -210,36 +241,39 @@ export function ShareTokenClient({ token }: { token: string }) {
   if (ctx.status === "used") {
     return (
       <div style={containerStyle}>
-        <Header />
+        <Header branding={branding} />
         <div style={cardStyle}>
           <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>
             Acest link a fost deja folosit.
           </p>
         </div>
+        <Footer branding={branding} />
       </div>
     )
   }
   if (ctx.status === "revoked" || ctx.status === "expired") {
     return (
       <div style={containerStyle}>
-        <Header />
+        <Header branding={branding} />
         <div style={cardStyle}>
           <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>
             Acest link nu mai este activ. Cere cabinetului unul nou.
           </p>
         </div>
+        <Footer branding={branding} />
       </div>
     )
   }
 
   return (
     <div style={containerStyle}>
-      <Header />
+      <Header branding={branding} />
       <div style={cardStyle}>
-        <ContextHeader ctx={ctx} />
+        <ContextHeader ctx={ctx} branding={branding} />
         {ctx.targetType === "intake" && (
           <IntakeForm
             token={token}
+            branding={branding}
             onSubmitted={(submission) =>
               setSubmitted({
                 message: `Datele au fost salvate (referință ${submission.id}).`,
@@ -250,6 +284,7 @@ export function ShareTokenClient({ token }: { token: string }) {
         {ctx.targetType === "approval" && (
           <ApprovalForm
             token={token}
+            branding={branding}
             target={ctx.target}
             targetLabel={ctx.targetLabel}
             onSubmitted={(decision) =>
@@ -262,13 +297,17 @@ export function ShareTokenClient({ token }: { token: string }) {
             }
           />
         )}
-        {ctx.targetType === "report" && <ReportPlaceholder ctx={ctx} />}
+        {ctx.targetType === "report" && <ReportPlaceholder ctx={ctx} branding={branding} />}
       </div>
+      <Footer branding={branding} />
     </div>
   )
 }
 
-function Header() {
+function Header({ branding }: { branding: Branding }) {
+  const tagline = branding.isCustom
+    ? "Consultanță conformitate AI"
+    : "Conformitate AI Act + GDPR pentru România"
   return (
     <header
       style={{
@@ -279,33 +318,99 @@ function Header() {
         maxWidth: 640,
       }}
     >
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          background: "#3b5bdb",
-          color: "#fff",
-          display: "grid",
-          placeItems: "center",
-          fontWeight: 700,
-          fontSize: 13,
-        }}
-      >
-        Ro
-      </div>
-      <div>
-        <div style={{ fontSize: 15, fontWeight: 600 }}>CompliRoAI</div>
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>
-          Conformitate AI Act + GDPR pentru România
+      {branding.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={branding.logoUrl}
+          alt={branding.brandName}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 6,
+            objectFit: "contain",
+            background: "#fff",
+            padding: 2,
+            border: "1px solid #e2e8f0",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            background: branding.primaryColor,
+            color: "#fff",
+            display: "grid",
+            placeItems: "center",
+            fontWeight: 700,
+            fontSize: 13,
+          }}
+        >
+          {branding.brandName.charAt(0).toUpperCase()}
         </div>
+      )}
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 600 }}>{branding.brandName}</div>
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>{tagline}</div>
       </div>
     </header>
   )
 }
 
-function ContextHeader({ ctx }: { ctx: Context }) {
-  const cabinet = ctx.cabinetName ?? "Cabinetul tău de consultanță"
+function Footer({ branding }: { branding: Branding }) {
+  return (
+    <footer
+      style={{
+        width: "100%",
+        maxWidth: 640,
+        marginTop: 18,
+        padding: "12px 4px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        alignItems: "center",
+        textAlign: "center",
+      }}
+    >
+      <div style={{ fontSize: 11, color: "#64748b" }}>
+        Trimis de <strong style={{ color: "#0f172a" }}>{branding.brandName}</strong>
+        {branding.contactEmail ? (
+          <>
+            {" · "}
+            <a
+              href={`mailto:${branding.contactEmail}`}
+              style={{ color: branding.primaryColor, textDecoration: "none" }}
+            >
+              {branding.contactEmail}
+            </a>
+          </>
+        ) : null}
+        {branding.website ? (
+          <>
+            {" · "}
+            <a
+              href={branding.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: branding.primaryColor, textDecoration: "none" }}
+            >
+              {branding.website.replace(/^https?:\/\//, "")}
+            </a>
+          </>
+        ) : null}
+      </div>
+      {branding.isCustom && (
+        <div style={{ fontSize: 10, color: "#cbd5e1" }}>Powered by CompliRoAI</div>
+      )}
+    </footer>
+  )
+}
+
+function ContextHeader({ ctx, branding }: { ctx: Context; branding: Branding }) {
+  const cabinet =
+    (branding.isCustom ? branding.brandName : ctx.cabinetName) ??
+    "Cabinetul tău de consultanță"
   return (
     <div style={{ marginBottom: 24 }}>
       <p style={{ ...labelStyle, marginBottom: 6 }}>De la</p>
@@ -326,9 +431,11 @@ function ContextHeader({ ctx }: { ctx: Context }) {
 
 function IntakeForm({
   token,
+  branding,
   onSubmitted,
 }: {
   token: string
+  branding: Branding
   onSubmitted: (submission: { id: string }) => void
 }) {
   const [form, setForm] = useState({
@@ -459,7 +566,7 @@ function IntakeForm({
       <button
         type="submit"
         disabled={submitting}
-        style={{ ...primaryBtn, opacity: submitting ? 0.7 : 1 }}
+        style={{ ...primaryBtn(branding.primaryColor), opacity: submitting ? 0.7 : 1 }}
       >
         {submitting ? "Se trimite…" : "Trimite datele"}
       </button>
@@ -469,11 +576,13 @@ function IntakeForm({
 
 function ApprovalForm({
   token,
+  branding,
   target,
   targetLabel,
   onSubmitted,
 }: {
   token: string
+  branding: Branding
   target: Context["target"]
   targetLabel: string | null
   onSubmitted: (decision: "approved" | "rejected") => void
@@ -610,7 +719,7 @@ function ApprovalForm({
           type="button"
           disabled={submitting}
           onClick={() => submitDecision("approved")}
-          style={{ ...primaryBtn, background: "#10b981" }}
+          style={primaryBtn("#10b981")}
         >
           {submitting ? "Se trimite…" : "Aprobă sistemul AI"}
         </button>
@@ -619,8 +728,7 @@ function ApprovalForm({
           disabled={submitting}
           onClick={() => submitDecision("rejected")}
           style={{
-            ...primaryBtn,
-            background: "#ffffff",
+            ...primaryBtn("#ffffff"),
             color: "#b91c1c",
             border: "1px solid #fecaca",
           }}
@@ -632,7 +740,7 @@ function ApprovalForm({
   )
 }
 
-function ReportPlaceholder({ ctx }: { ctx: Context }) {
+function ReportPlaceholder({ ctx, branding }: { ctx: Context; branding: Branding }) {
   return (
     <div>
       <div
@@ -643,7 +751,7 @@ function ReportPlaceholder({ ctx }: { ctx: Context }) {
           marginBottom: 16,
         }}
       >
-        <FileText size={18} style={{ color: "#3b5bdb" }} />
+        <FileText size={18} style={{ color: branding.primaryColor }} />
         <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600 }}>
           {ctx.targetLabel ?? "Raport de conformitate"}
         </h2>
@@ -651,7 +759,7 @@ function ReportPlaceholder({ ctx }: { ctx: Context }) {
       <p style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, margin: 0 }}>
         Acesta este un link de tip raport. Cabinetul a partajat conținutul cu
         tine read-only. Conținutul detaliat va fi vizibil aici în versiunile
-        următoare ale CompliRoAI.
+        următoare.
       </p>
       <p
         style={{
@@ -663,7 +771,7 @@ function ReportPlaceholder({ ctx }: { ctx: Context }) {
           borderRadius: 6,
         }}
       >
-        Shared via CompliRoAI
+        Shared via {branding.brandName}
       </p>
     </div>
   )
