@@ -12,9 +12,16 @@ function getSessionSecret(): string {
   return "dev-secret-change-me"
 }
 
-async function verifyToken(
-  token: string
-): Promise<{ userId: string; orgId: string; email: string; orgName: string } | null> {
+type EdgeSessionPayload = {
+  userId: string
+  orgId: string
+  email: string
+  orgName: string
+  workspaceMode: "solo" | "cabinet"
+  exp: number
+}
+
+async function verifyToken(token: string): Promise<EdgeSessionPayload | null> {
   try {
     const secret = getSessionSecret()
     const dotIndex = token.lastIndexOf(".")
@@ -41,11 +48,17 @@ async function verifyToken(
     const fixed = pad
       ? encoded.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat(4 - pad)
       : encoded.replace(/-/g, "+").replace(/_/g, "/")
-    const payload = JSON.parse(atob(fixed)) as {
-      userId: string; orgId: string; email: string; orgName: string; exp: number
+    const payload = JSON.parse(atob(fixed)) as Partial<EdgeSessionPayload>
+    if (!payload.exp || payload.exp < Date.now()) return null
+    if (!payload.userId || !payload.orgId || !payload.email) return null
+    return {
+      userId: payload.userId,
+      orgId: payload.orgId,
+      email: payload.email,
+      orgName: payload.orgName ?? "",
+      workspaceMode: payload.workspaceMode === "cabinet" ? "cabinet" : "solo",
+      exp: payload.exp,
     }
-    if (payload.exp < Date.now()) return null
-    return { userId: payload.userId, orgId: payload.orgId, email: payload.email, orgName: payload.orgName }
   } catch {
     return null
   }
@@ -78,6 +91,7 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set("x-aiact-user-id", session.userId)
   requestHeaders.set("x-aiact-user-email", session.email)
   requestHeaders.set("x-aiact-org-name", session.orgName)
+  requestHeaders.set("x-aiact-workspace-mode", session.workspaceMode)
 
   return NextResponse.next({ request: { headers: requestHeaders } })
 }

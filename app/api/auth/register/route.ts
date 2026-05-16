@@ -3,20 +3,9 @@ import { NextResponse } from "next/server"
 import {
   createSessionToken,
   createUser,
+  getSessionCookieOptions,
   SESSION_COOKIE,
 } from "@/lib/server/auth"
-
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
-
-function getSessionCookieOptions() {
-  return {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    maxAge: SESSION_TTL_MS / 1000,
-    path: "/",
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -41,11 +30,14 @@ export async function POST(request: Request) {
 
     const { user, orgId } = await createUser(email, password, orgName)
 
+    // New users start as solo — workspaceMode is upgraded to "cabinet" after they
+    // pick role=cabinet in onboarding (which adds a partner_manager membership).
     const token = createSessionToken({
       userId: user.id,
       orgId,
       email: user.email,
       orgName: user.orgName ?? "",
+      workspaceMode: "solo",
     })
 
     const response = NextResponse.json({

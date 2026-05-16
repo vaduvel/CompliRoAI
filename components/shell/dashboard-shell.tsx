@@ -1,15 +1,17 @@
 "use client"
 import { useRouter } from "next/navigation"
-import { Cpu, FileCheck, BookOpen, LogOut } from "lucide-react"
+import { Cpu, FileCheck, BookOpen, LogOut, Users } from "lucide-react"
 import { NavItem } from "./nav-item"
+import { WorkspaceSwitcher } from "./workspace-switcher"
 
 interface Props {
   children: React.ReactNode
   userEmail?: string
   orgName?: string
+  workspaceMode?: "solo" | "cabinet"
 }
 
-export function DashboardShell({ children, userEmail, orgName }: Props) {
+export function DashboardShell({ children, userEmail, orgName, workspaceMode = "solo" }: Props) {
   const router = useRouter()
 
   async function handleLogout() {
@@ -17,8 +19,10 @@ export function DashboardShell({ children, userEmail, orgName }: Props) {
     router.push("/login")
   }
 
+  const isCabinet = workspaceMode === "cabinet"
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "232px 1fr", minHeight: "100vh", background: "var(--bg)" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: "var(--bg)" }}>
       {/* Sidebar */}
       <aside style={{
         background: "var(--bg-sidebar)",
@@ -33,15 +37,25 @@ export function DashboardShell({ children, userEmail, orgName }: Props) {
         overflowY: "auto",
       }}>
         {/* Logo */}
-        <div style={{ padding: "8px 12px 20px", borderBottom: "1px solid var(--border-soft)", marginBottom: "8px" }}>
+        <div style={{ padding: "8px 12px 14px", borderBottom: "1px solid var(--border-soft)", marginBottom: "8px" }}>
           <div style={{ fontFamily: "var(--font-display-v3)", fontSize: "15px", fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.02em" }}>
-            AI Act
+            CompliRoAI
           </div>
-          <div style={{ fontSize: "11px", color: "var(--ink-dim)", marginTop: "2px" }}>Conformitate EU · România</div>
+          <div style={{ fontSize: "11px", color: "var(--ink-dim)", marginTop: "2px" }}>
+            {isCabinet ? "Mod cabinet · AI Act + GDPR" : "AI Act · România"}
+          </div>
+        </div>
+
+        {/* Workspace switcher — visible only when there's >1 workspace */}
+        <div style={{ padding: "0 4px 8px" }}>
+          <WorkspaceSwitcher />
         </div>
 
         {/* Nav */}
         <nav style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
+          {isCabinet && (
+            <NavItem href="/dashboard/portofoliu" label="Portofoliu" icon={<Users size={15} />} />
+          )}
           <NavItem href="/dashboard/sisteme" label="Sisteme AI" icon={<Cpu size={15} />} />
           <NavItem href="/dashboard/conformitate" label="Conformitate" icon={<FileCheck size={15} />} />
           <NavItem href="/dashboard/literacy" label="AI Literacy" icon={<BookOpen size={15} />} />

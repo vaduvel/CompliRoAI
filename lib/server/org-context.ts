@@ -1,10 +1,12 @@
 import { headers } from "next/headers"
+import type { WorkspaceMode } from "@/lib/server/auth"
 
 export type OrgContext = {
   orgId: string
   userId: string
   email: string
   orgName: string
+  workspaceMode: WorkspaceMode
 }
 
 export async function getOrgContext(): Promise<OrgContext> {
@@ -13,10 +15,14 @@ export async function getOrgContext(): Promise<OrgContext> {
   const userId = h.get("x-aiact-user-id")
   const email = h.get("x-aiact-user-email")
   const orgName = h.get("x-aiact-org-name")
+  const workspaceModeHeader = h.get("x-aiact-workspace-mode")
 
   if (!orgId || !userId || !email) {
     throw new Error("Missing org context headers — middleware not running?")
   }
 
-  return { orgId, userId, email, orgName: orgName ?? "" }
+  const workspaceMode: WorkspaceMode =
+    workspaceModeHeader === "cabinet" ? "cabinet" : "solo"
+
+  return { orgId, userId, email, orgName: orgName ?? "", workspaceMode }
 }

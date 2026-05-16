@@ -4,19 +4,13 @@ import {
   SESSION_COOKIE,
   authenticateUser,
   createSessionToken,
+  getSessionCookieOptions,
 } from "@/lib/server/auth"
-
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
-
-function getSessionCookieOptions() {
-  return {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    maxAge: SESSION_TTL_MS / 1000,
-    path: "/",
-  }
-}
+import {
+  listUserMemberships,
+  pickDefaultWorkspace,
+  resolveWorkspaceMode,
+} from "@/lib/server/tenancy"
 
 export async function POST(request: Request) {
   try {
@@ -45,19 +39,30 @@ export async function POST(request: Request) {
       throw err
     }
 
+    // Pick default workspace (owner first, otherwise first active membership).
+    const memberships = await listUserMemberships(resolved.userId)
+    const defaultMembership = pickDefaultWorkspace(memberships)
+    const orgId = defaultMembership?.orgId ?? resolved.orgId
+    const orgName = defaultMembership?.orgName ?? resolved.orgName
+    const workspaceMode = await resolveWorkspaceMode(resolved.userId)
+
     const token = createSessionToken({
       userId: resolved.userId,
-      orgId: resolved.orgId,
+      orgId,
       email: resolved.email,
-      orgName: resolved.orgName,
+      orgName,
+      workspaceMode,
     })
+
+    const destination =
+      workspaceMode === "cabinet" ? "/dashboard/portofoliu" : "/dashboard"
 
     const response = NextResponse.json({
       ok: true,
-      orgId: resolved.orgId,
-      orgName: resolved.orgName,
-      workspaceMode: "solo",
-      destination: "/dashboard",
+      orgId,
+      orgName,
+      workspaceMode,
+      destination,
     })
     response.cookies.set(SESSION_COOKIE, token, getSessionCookieOptions())
     return response

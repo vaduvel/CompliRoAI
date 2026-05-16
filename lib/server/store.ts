@@ -22,6 +22,7 @@ export type GeneratedDocumentRecord = {
 export type OnboardingState = {
   completed: boolean
   completedAtISO?: string
+  role?: "solo" | "cabinet"
   companyInfo?: {
     cui?: string
     sector?:
@@ -34,6 +35,10 @@ export type OnboardingState = {
       | "education"
       | "altele"
     employeeCount?: "<10" | "10-49" | "50-249" | "250+"
+  }
+  cabinetInfo?: {
+    cabinetName?: string
+    clientScale?: string
   }
   currentStep?: 1 | 2 | 3 | 4
 }

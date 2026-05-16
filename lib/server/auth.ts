@@ -42,7 +42,29 @@ export type User = {
 }
 
 export const SESSION_COOKIE = "aiact_session"
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
+// 30 days — "recunoaște-mă mâine" pattern.
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
+
+export type WorkspaceMode = "solo" | "cabinet"
+
+export type SessionPayload = {
+  userId: string
+  orgId: string
+  email: string
+  orgName: string
+  workspaceMode: WorkspaceMode
+  exp: number
+}
+
+export function getSessionCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    maxAge: SESSION_TTL_MS / 1000,
+    path: "/",
+  }
+}
 
 // ---------------- session token ----------------
 
@@ -79,8 +101,16 @@ export function createSessionToken(payload: {
   orgId: string
   email: string
   orgName: string
+  workspaceMode?: WorkspaceMode
 }): string {
-  const full = { ...payload, exp: Date.now() + SESSION_TTL_MS }
+  const full: SessionPayload = {
+    userId: payload.userId,
+    orgId: payload.orgId,
+    email: payload.email,
+    orgName: payload.orgName,
+    workspaceMode: payload.workspaceMode ?? "solo",
+    exp: Date.now() + SESSION_TTL_MS,
+  }
   const encoded = Buffer.from(JSON.stringify(full)).toString("base64url")
   const signature = crypto
     .createHmac("sha256", getSessionSecret())
@@ -89,9 +119,11 @@ export function createSessionToken(payload: {
   return `${encoded}.${signature}`
 }
 
-export function verifySessionToken(
-  token: string
-): { userId: string; orgId: string; email: string; orgName: string } | null {
+function isWorkspaceMode(value: unknown): value is WorkspaceMode {
+  return value === "solo" || value === "cabinet"
+}
+
+export function verifySessionToken(token: string): SessionPayload | null {
   try {
     const dotIndex = token.lastIndexOf(".")
     if (dotIndex === -1) return null
@@ -105,13 +137,7 @@ export function verifySessionToken(
 
     if (signature !== expectedSignature) return null
 
-    const payload = JSON.parse(Buffer.from(encoded, "base64url").toString()) as {
-      userId: string
-      orgId: string
-      email: string
-      orgName: string
-      exp: number
-    }
+    const payload = JSON.parse(Buffer.from(encoded, "base64url").toString()) as Partial<SessionPayload>
     if (!payload || typeof payload !== "object") return null
     if (!payload.exp || payload.exp < Date.now()) return null
     if (!payload.userId || !payload.orgId || !payload.email) return null
@@ -121,6 +147,8 @@ export function verifySessionToken(
       orgId: payload.orgId,
       email: payload.email,
       orgName: payload.orgName ?? "",
+      workspaceMode: isWorkspaceMode(payload.workspaceMode) ? payload.workspaceMode : "solo",
+      exp: payload.exp,
     }
   } catch {
     return null

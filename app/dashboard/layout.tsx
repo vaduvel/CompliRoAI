@@ -7,6 +7,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const h = await headers()
   const userEmail = h.get("x-aiact-user-email") ?? undefined
   const orgName = h.get("x-aiact-org-name") ?? undefined
+  const workspaceModeHeader = h.get("x-aiact-workspace-mode")
+  const workspaceMode: "solo" | "cabinet" =
+    workspaceModeHeader === "cabinet" ? "cabinet" : "solo"
 
   const completed = await isOnboardingCompleted()
   if (!completed) {
@@ -14,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <DashboardShell userEmail={userEmail} orgName={orgName}>
+    <DashboardShell userEmail={userEmail} orgName={orgName} workspaceMode={workspaceMode}>
       {children}
     </DashboardShell>
   )
