@@ -629,6 +629,28 @@ function buildFileContents(input: {
     bytes: utf8(buildComplianceReportHtml(input)),
   })
 
+  // readiness-pack/latest.json — pointer la cel mai recent Readiness Pack
+  // generat pentru această org (dacă există) — Sprint 5 integration.
+  const readinessPacks =
+    (input.state as unknown as { readinessPacks?: Array<{ id: string; generatedAtISO: string; hashRoot: string; format: string; contentsCount: number; clientOrgId?: string; clientOrgName?: string }> }).readinessPacks ?? []
+  if (readinessPacks.length > 0) {
+    files.push({
+      path: "readiness-pack/latest.json",
+      bytes: utf8(
+        JSON.stringify(
+          {
+            note: "Readiness Pack-uri generate pentru această organizație. Pentru a regenera pachetul propriu-zis, folosiți /api/readiness-pack/generate.",
+            count: readinessPacks.length,
+            latest: readinessPacks[0],
+            history: readinessPacks.slice(0, 10),
+          },
+          null,
+          2
+        )
+      ),
+    })
+  }
+
   return files
 }
 

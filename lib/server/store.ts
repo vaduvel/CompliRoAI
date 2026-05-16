@@ -43,11 +43,24 @@ export type OnboardingState = {
   currentStep?: 1 | 2 | 3 | 4
 }
 
+export type ReadinessPackRecord = {
+  id: string
+  generatedAtISO: string
+  generatedByUserId: string
+  generatedByUserEmail?: string
+  format: "zip" | "markdown" | "html"
+  hashRoot: string
+  contentsCount: number
+  clientOrgId?: string
+  clientOrgName?: string
+}
+
 export type AIActState = {
   aiSystems: AISystemRecord[]
   literacyRecords: LiteracyRecord[]
   generatedDocuments: GeneratedDocumentRecord[]
   onboarding?: OnboardingState
+  readinessPacks?: ReadinessPackRecord[]
 }
 
 const DEFAULT_STATE: AIActState = {
@@ -69,6 +82,7 @@ function mergeWithDefault(partial: Partial<AIActState> | null | undefined): AIAc
     literacyRecords: partial?.literacyRecords ?? [],
     generatedDocuments: partial?.generatedDocuments ?? [],
     onboarding: partial?.onboarding ?? { completed: false, currentStep: 1 },
+    readinessPacks: partial?.readinessPacks,
   }
 }
 
