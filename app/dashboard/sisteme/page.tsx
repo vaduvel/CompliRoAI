@@ -5,6 +5,7 @@ import type {
   AISystemRecord,
   FriaRecord,
   HumanOversightProtocol,
+  LoggingConfig,
 } from "@/lib/compliance/types"
 import { AIInventoryPanel } from "@/components/ai-act/ai-inventory-panel"
 import { AISystemsList } from "@/components/ai-act/ai-systems-list"
@@ -14,14 +15,16 @@ export default function SistemePage() {
   const [systems, setSystems] = useState<AISystemRecord[]>([])
   const [friaRecords, setFriaRecords] = useState<FriaRecord[]>([])
   const [oversightRecords, setOversightRecords] = useState<HumanOversightProtocol[]>([])
+  const [loggingRecords, setLoggingRecords] = useState<LoggingConfig[]>([])
   const [loading, setLoading] = useState(true)
   const [workspaceMode, setWorkspaceMode] = useState<"imm-classic" | "ai-builder" | "cabinet">("imm-classic")
 
   const load = useCallback(async () => {
-    const [systemsRes, friaRes, ovRes] = await Promise.all([
+    const [systemsRes, friaRes, ovRes, lgRes] = await Promise.all([
       fetch("/api/ai-systems"),
       fetch("/api/fria"),
       fetch("/api/oversight"),
+      fetch("/api/logging-evidence"),
     ])
     if (systemsRes.ok) {
       const data = await systemsRes.json()
@@ -34,6 +37,10 @@ export default function SistemePage() {
     if (ovRes.ok) {
       const data = await ovRes.json()
       setOversightRecords((data.records ?? []) as HumanOversightProtocol[])
+    }
+    if (lgRes.ok) {
+      const data = await lgRes.json()
+      setLoggingRecords((data.records ?? []) as LoggingConfig[])
     }
     setLoading(false)
   }, [])
@@ -83,6 +90,22 @@ export default function SistemePage() {
     }
     return needs
   }, [systems, oversightRecords])
+
+  // Sprint 018 — sisteme care necesită config Art. 12 dar nu îl au:
+  // aceleași criterii ca Oversight pentru consistență UX.
+  const systemsRequiringLoggingIds = useMemo(() => {
+    const loggingSystemIds = new Set(
+      loggingRecords.map((r) => r.linkedAISystemId),
+    )
+    const needs = new Set<string>()
+    for (const s of systems) {
+      if (loggingSystemIds.has(s.id)) continue
+      if (s.riskLevel === "high") needs.add(s.id)
+      else if (s.purpose === "biometric-identification") needs.add(s.id)
+      else if (s.makesAutomatedDecisions && s.impactsRights) needs.add(s.id)
+    }
+    return needs
+  }, [systems, loggingRecords])
 
   return (
     <div style={{ padding: "32px", maxWidth: "900px", display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -144,6 +167,7 @@ export default function SistemePage() {
             workspaceMode={workspaceMode}
             systemsRequiringFriaIds={systemsRequiringFriaIds}
             systemsRequiringOversightIds={systemsRequiringOversightIds}
+            systemsRequiringLoggingIds={systemsRequiringLoggingIds}
           />
         )}
       </div>

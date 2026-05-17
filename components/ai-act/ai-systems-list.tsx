@@ -57,6 +57,12 @@ interface AISystemsListProps {
    * rights trigger the banner.
    */
   systemsRequiringOversightIds?: Set<string>
+  /**
+   * Sprint 018 — set of system IDs that DO NOT yet have a Logging Evidence
+   * config (Art. 12 + Art. 26(6)). High-risk + biometric ID + auto-decisions
+   * impacting rights trigger the banner.
+   */
+  systemsRequiringLoggingIds?: Set<string>
 }
 
 export function AISystemsList({
@@ -65,6 +71,7 @@ export function AISystemsList({
   workspaceMode = "imm-classic",
   systemsRequiringFriaIds,
   systemsRequiringOversightIds,
+  systemsRequiringLoggingIds,
 }: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -188,7 +195,8 @@ export function AISystemsList({
           system.riskLevel === "high" &&
           systemsRequiringFriaIds?.has(system.id) === true
         const needsOversight = systemsRequiringOversightIds?.has(system.id) === true
-        const hasBanner = needsFria || needsOversight
+        const needsLogging = systemsRequiringLoggingIds?.has(system.id) === true
+        const hasBanner = needsFria || needsOversight || needsLogging
 
         return (
           <div
@@ -238,7 +246,7 @@ export function AISystemsList({
                   borderLeft: "1px solid rgba(251,191,36,0.25)",
                   borderRight: "1px solid rgba(251,191,36,0.25)",
                   borderTop: needsFria ? "none" : "1px solid rgba(251,191,36,0.25)",
-                  borderBottom: "none",
+                  borderBottom: needsLogging ? "1px solid rgba(251,191,36,0.18)" : "none",
                   borderTopLeftRadius: needsFria ? "0" : "10px",
                   borderTopRightRadius: needsFria ? "0" : "10px",
                   fontSize: "11px",
@@ -258,6 +266,41 @@ export function AISystemsList({
                   }}
                 >
                   Creează protocol →
+                </Link>
+              </div>
+            )}
+            {needsLogging && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 12px",
+                  background: "var(--amber-soft)",
+                  borderLeft: "1px solid rgba(251,191,36,0.25)",
+                  borderRight: "1px solid rgba(251,191,36,0.25)",
+                  borderTop:
+                    needsFria || needsOversight ? "none" : "1px solid rgba(251,191,36,0.25)",
+                  borderBottom: "none",
+                  borderTopLeftRadius: needsFria || needsOversight ? "0" : "10px",
+                  borderTopRightRadius: needsFria || needsOversight ? "0" : "10px",
+                  fontSize: "11px",
+                  color: "#fbbf24",
+                }}
+              >
+                <ShieldAlert size={12} style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>
+                  Acest sistem necesită config Logging (Art. 12 + Art. 26(6))
+                </span>
+                <Link
+                  href={`/dashboard/logging-evidence?systemId=${encodeURIComponent(system.id)}`}
+                  style={{
+                    color: "#fbbf24",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Creează config →
                 </Link>
               </div>
             )}
