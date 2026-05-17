@@ -51,6 +51,12 @@ export type AISystemRecord = {
   policyAttestationStatus?: AISystemAttestationStatus
   policyAttestedAtISO?: string
   policyAttestedByEmail?: string
+  /**
+   * Sprint 012 — NIS2 AI slice. Setat de utilizator/cabinet când sistemul AI
+   * susține un serviciu esențial/important. Setarea declanșează
+   * `evaluateNis2AISystem` din `nis2-ai-rules.ts`.
+   */
+  nis2EntityScope?: AISystemNis2Scope
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1047,6 +1053,137 @@ export type VendorRecord = {
   notes?: string
   createdAtISO: string
   updatedAtISO: string
+  /**
+   * Sprint 012 — DORA AI slice. Setat când vendorul e material pentru un
+   * serviciu financiar al orgului. Setarea declanșează
+   * `evaluateDoraVendor` din `dora-ai-rules.ts`.
+   */
+  doraScope?: VendorDoraScope
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   DORA + NIS2 AI Slices — Sprint 012
+//
+//   STRICT: doar AI-relevant scope. Forbidden (per mandate § 13 + Rule 3) =
+//   full DORA dashboard, full NIS2 dashboard, generic DNSC registration,
+//   non-AI vendor management, generic cyber posture product.
+//
+//   Allowed DORA AI slice:
+//     - AI vendor in financial service (extension `VendorRecord.doraScope`)
+//     - Third-party AI risk
+//     - AI incident evidence (when AI causes operational incident in fintech)
+//     - DORA-style resilience notes when AI is material to financial service
+//
+//   Allowed NIS2 AI slice:
+//     - AI system used in essential/important entity
+//       (extension `AISystemRecord.nis2EntityScope`)
+//     - AI incident or cybersecurity AI system in NIS2 scope
+//     - Incident escalation + evidence pack for AI-critical service
+//
+//   Org self-declares regulatory profile via `OrgRegulatoryProfile`. Rules
+//   engines (`dora-ai-rules.ts`, `nis2-ai-rules.ts`) consume profile + record
+//   and emit findings tagged `EU_AI_ACT`/`GDPR`/`NIS2` so cockpit stays unified.
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Tipuri de entități DORA (Regulament UE 2022/2554, Art. 2).
+ * `ict_third_party` = furnizor critic de servicii ICT (capitol V DORA).
+ * `not_applicable` = orgul nu intră în scope DORA.
+ */
+export type DoraEntityType =
+  | "credit_institution"      // bancă (CRD IV)
+  | "payment_institution"     // PSP (PSD2)
+  | "emi"                     // electronic money institution
+  | "investment_firm"         // SSIF (MiFID II)
+  | "insurance"               // asigurător (Solvency II)
+  | "ucits_aifm"              // societate management fond (UCITS / AIFMD)
+  | "crowdfunding"            // platformă crowdfunding (Reg. 2020/1503)
+  | "crypto_casp"             // crypto-asset service provider (MiCA)
+  | "ict_third_party"         // furnizor critic ICT terță parte
+  | "not_applicable"
+
+/**
+ * Clase de entități NIS2 (Directiva UE 2022/2555, Anexa I + II).
+ * `essential` = Anexa I (Art. 3 alin. 1).
+ * `important` = Anexa II (Art. 3 alin. 2).
+ */
+export type Nis2EntityClass = "essential" | "important" | "not_in_scope"
+
+/**
+ * Sectoarele NIS2 (Anexa I + Anexa II). Listează doar sectoarele pe care
+ * o organizație din RO le-ar putea declara în mod realist; menținem
+ * `not_applicable` ca sentinel.
+ */
+export type Nis2Sector =
+  | "energy"
+  | "transport"
+  | "banking"                 // overlap cu DORA
+  | "financial_markets"       // overlap cu DORA
+  | "health"
+  | "drinking_water"
+  | "waste_water"
+  | "digital_infrastructure"  // DNS, cloud, data center, CDN, electronic comm
+  | "ict_service_management"  // MSP, MSSP
+  | "public_administration"
+  | "space"
+  | "postal_courier"
+  | "waste_management"
+  | "chemicals"
+  | "food"
+  | "manufacturing"
+  | "digital_providers"       // marketplace, search engine, social network
+  | "research"
+  | "not_applicable"
+
+/**
+ * Profil regulator declarat de organizație. Folosit ca toggle pentru:
+ *  - rulele DORA AI (vendor.doraScope.material)
+ *  - rulele NIS2 AI (system.nis2EntityScope.inScope)
+ *
+ * Self-declaration → NU înlocuiește consultanță juridică. Câmpul
+ * `notes` permite explicații libere (ex. "Solvency II §X")
+ */
+export type OrgRegulatoryProfile = {
+  orgId: string
+  // ── DORA self-declaration ────────────────────────────────────────────────
+  doraApplies: boolean
+  doraEntityType: DoraEntityType
+  doraEntityRegistrationNumber?: string   // ex. cod BNR / ASF
+  // ── NIS2 self-declaration ────────────────────────────────────────────────
+  nis2EntityClass: Nis2EntityClass
+  nis2Sectors: Nis2Sector[]
+  nis2DnscRegistrationNumber?: string     // ID registru DNSC dacă există
+  // ── Provenance ───────────────────────────────────────────────────────────
+  declaredByEmail?: string
+  declaredAtISO?: string
+  notes?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+/**
+ * Extensie DORA AI scope pe `VendorRecord`. `material: true` declanșează
+ * `evaluateDoraVendor` și emite findings (Art. 28-30 DORA: ICT contractual
+ * arrangements, exit strategy, incident notification SLA).
+ */
+export type VendorDoraScope = {
+  material: boolean                       // material pentru serviciu financiar
+  criticalForService?: string             // ex. "credit scoring", "payment routing"
+  assessmentNote?: string                 // notă internă (TIA-stil)
+  /** Marker setat de motorul DORA AI la ultima evaluare. */
+  evaluatedAtISO?: string
+}
+
+/**
+ * Extensie NIS2 scope pe `AISystemRecord`. `inScope: true` declanșează
+ * `evaluateNis2AISystem` și emite findings (Art. 21-23 NIS2: governance +
+ * incident escalation 24h/72h/1m, logging evidence).
+ */
+export type AISystemNis2Scope = {
+  inScope: boolean
+  service?: string                        // ex. "platformă plată cetățean"
+  assessmentNote?: string
+  evaluatedAtISO?: string
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1184,6 +1321,13 @@ export type ComplianceState = {
    * neclare, securitate insuficienta.
    */
   vendorRecords?: VendorRecord[]
+
+  /**
+   * Sprint 012 — DORA + NIS2 AI slice scope profile (org self-declaration).
+   * NU activează module noi by-default; doar gate-uiește rule engines (DORA
+   * AI / NIS2 AI) care apoi emit findings via canalul standard.
+   */
+  orgRegulatoryProfile?: OrgRegulatoryProfile
 
   // ── Cabinet workspaces & client onboarding ─────────────────────────────────
   partnerWorkspace?: {
