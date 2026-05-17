@@ -30,21 +30,22 @@ export async function POST(request: Request) {
 
     const { user, orgId } = await createUser(email, password, orgName)
 
-    // New users start as solo — workspaceMode is upgraded to "cabinet" after they
-    // pick role=cabinet in onboarding (which adds a partner_manager membership).
+    // Sprint 6.5 — new users start as "imm-classic" (default IMM segment).
+    // Real workspace mode is set during onboarding Pas 0 (user picks
+    // imm-classic vs ai-builder vs cabinet) and re-emitted by /api/onboarding.
     const token = createSessionToken({
       userId: user.id,
       orgId,
       email: user.email,
       orgName: user.orgName ?? "",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
     })
 
     const response = NextResponse.json({
       ok: true,
       orgId,
       orgName: user.orgName ?? "",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
     })
     response.cookies.set(SESSION_COOKIE, token, getSessionCookieOptions())
     return response

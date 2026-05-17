@@ -45,7 +45,23 @@ export const SESSION_COOKIE = "aiact_session"
 // 30 days — "recunoaște-mă mâine" pattern.
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
-export type WorkspaceMode = "solo" | "cabinet"
+/**
+ * Sprint 6.5 — Role-aware UI cu 3 segmente comerciale.
+ *
+ * - "imm-classic": IMM care folosește AI cumpărat (Copilot, ChatGPT, vendor SaaS).
+ *   Aliniat cu V1 Chatbot / V2 Copilot din landing.
+ * - "ai-builder": Companie care construiește cu AI (provider+deployer dual).
+ *   Aliniat cu V3 Agent din landing.
+ * - "cabinet": Consultant/contabil care gestionează portofoliu multi-client.
+ *
+ * Backward compatibility:
+ *   Vechile sesiuni au `workspaceMode = "solo"`. Le tratăm ca alias pentru
+ *   "imm-classic" în `normalizeWorkspaceMode()`. NU forțăm migrarea cookie-ului
+ *   imediat — la următoarea re-emitere (login / switch / onboarding) noile valori
+ *   vor fi scrise.
+ */
+export type WorkspaceMode = "imm-classic" | "ai-builder" | "cabinet"
+export type LegacyWorkspaceMode = WorkspaceMode | "solo"
 
 export type SessionPayload = {
   userId: string
@@ -54,6 +70,18 @@ export type SessionPayload = {
   orgName: string
   workspaceMode: WorkspaceMode
   exp: number
+}
+
+/**
+ * Normalizează un workspaceMode arbitrar (inclusiv vechiul "solo") la noile
+ * 3 valori. "solo" se mapează implicit la "imm-classic" pentru migrare zero-touch.
+ */
+export function normalizeWorkspaceMode(value: unknown): WorkspaceMode {
+  if (value === "cabinet") return "cabinet"
+  if (value === "ai-builder") return "ai-builder"
+  if (value === "imm-classic") return "imm-classic"
+  // Legacy "solo" + orice altă valoare → default IMM Classic
+  return "imm-classic"
 }
 
 export function getSessionCookieOptions() {
@@ -101,14 +129,14 @@ export function createSessionToken(payload: {
   orgId: string
   email: string
   orgName: string
-  workspaceMode?: WorkspaceMode
+  workspaceMode?: WorkspaceMode | LegacyWorkspaceMode
 }): string {
   const full: SessionPayload = {
     userId: payload.userId,
     orgId: payload.orgId,
     email: payload.email,
     orgName: payload.orgName,
-    workspaceMode: payload.workspaceMode ?? "solo",
+    workspaceMode: normalizeWorkspaceMode(payload.workspaceMode),
     exp: Date.now() + SESSION_TTL_MS,
   }
   const encoded = Buffer.from(JSON.stringify(full)).toString("base64url")
@@ -117,10 +145,6 @@ export function createSessionToken(payload: {
     .update(encoded)
     .digest("base64url")
   return `${encoded}.${signature}`
-}
-
-function isWorkspaceMode(value: unknown): value is WorkspaceMode {
-  return value === "solo" || value === "cabinet"
 }
 
 export function verifySessionToken(token: string): SessionPayload | null {
@@ -147,7 +171,7 @@ export function verifySessionToken(token: string): SessionPayload | null {
       orgId: payload.orgId,
       email: payload.email,
       orgName: payload.orgName ?? "",
-      workspaceMode: isWorkspaceMode(payload.workspaceMode) ? payload.workspaceMode : "solo",
+      workspaceMode: normalizeWorkspaceMode(payload.workspaceMode),
       exp: payload.exp,
     }
   } catch {

@@ -10,6 +10,7 @@ import {
 } from "./supabase-org-state"
 import type {
   AISystemRecord,
+  DsarRequest,
   LiteracyRecord,
   RoleAssessment,
   TransparencyImplementation,
@@ -24,10 +25,20 @@ export type GeneratedDocumentRecord = {
   approvalStatus?: "pending" | "approved_as_evidence"
 }
 
+export type OnboardingWorkspaceMode = "imm-classic" | "ai-builder" | "cabinet"
+
 export type OnboardingState = {
   completed: boolean
   completedAtISO?: string
+  /**
+   * Legacy field (pre-Sprint 6.5): "solo" sau "cabinet".
+   * Păstrat pentru backward compat — onboarding-ul nou scrie în `workspaceMode`.
+   */
   role?: "solo" | "cabinet"
+  /**
+   * Sprint 6.5 — 3 segmente comerciale aliniate la verticalele din landing.
+   */
+  workspaceMode?: OnboardingWorkspaceMode
   companyInfo?: {
     cui?: string
     sector?:
@@ -40,6 +51,13 @@ export type OnboardingState = {
       | "education"
       | "altele"
     employeeCount?: "<10" | "10-49" | "50-249" | "250+"
+  }
+  /** Sprint 6.5 — date extra pentru AI Builder path. */
+  builderInfo?: {
+    ctoEmail?: string
+    githubOrg?: string
+    firstModelDeployed?: string
+    customerFacing?: boolean
   }
   cabinetInfo?: {
     cabinetName?: string
@@ -76,6 +94,11 @@ export type AIActState = {
    * Folosit ca dovadă în Readiness Pack și Audit Pack.
    */
   transparencyImplementations?: TransparencyImplementation[]
+  /**
+   * GDPR DSAR requests (Sprint 007 — port DPO-OS).
+   * Data Subject Access Requests cu lifecycle complet (Art. 15-22).
+   */
+  dsarRequests?: DsarRequest[]
 }
 
 const DEFAULT_STATE: AIActState = {
@@ -100,6 +123,7 @@ function mergeWithDefault(partial: Partial<AIActState> | null | undefined): AIAc
     readinessPacks: partial?.readinessPacks,
     roleAssessment: partial?.roleAssessment,
     transparencyImplementations: partial?.transparencyImplementations,
+    dsarRequests: partial?.dsarRequests,
   }
 }
 

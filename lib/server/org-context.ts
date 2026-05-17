@@ -1,5 +1,5 @@
 import { headers } from "next/headers"
-import type { WorkspaceMode } from "@/lib/server/auth"
+import { normalizeWorkspaceMode, type WorkspaceMode } from "@/lib/server/auth"
 
 export type OrgContext = {
   orgId: string
@@ -21,8 +21,11 @@ export async function getOrgContext(): Promise<OrgContext> {
     throw new Error("Missing org context headers — middleware not running?")
   }
 
-  const workspaceMode: WorkspaceMode =
-    workspaceModeHeader === "cabinet" ? "cabinet" : "solo"
-
-  return { orgId, userId, email, orgName: orgName ?? "", workspaceMode }
+  return {
+    orgId,
+    userId,
+    email,
+    orgName: orgName ?? "",
+    workspaceMode: normalizeWorkspaceMode(workspaceModeHeader),
+  }
 }

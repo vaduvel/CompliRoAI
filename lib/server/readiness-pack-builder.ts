@@ -25,6 +25,7 @@ import JSZip from "jszip"
 
 import { classifyAISystem } from "@/lib/compliance/ai-act-classifier"
 import type { AISystemRecord } from "@/lib/compliance/types"
+import type { WorkspaceMode } from "@/lib/server/auth"
 import {
   clientFacingHtmlTemplate,
   executiveSummaryTemplate,
@@ -76,7 +77,7 @@ export type BuildReadinessPackOptions = {
   issuedByUserId: string
   issuedByUserEmail: string
   /** Mod workspace al emitentului. */
-  workspaceMode: "solo" | "cabinet"
+  workspaceMode: WorkspaceMode
   /** orgId-ul sesiunii curente (folosit pentru branding cabinet). */
   currentOrgId: string
   /** Format dorit. Default: "zip". */

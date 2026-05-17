@@ -73,7 +73,24 @@
 
 ## 2. ICP (Ideal Customer Profile) — 3 Segmente
 
-### Segment A: Cabinete consultanță DPO/avocați/contabili
+### Segment A: Cabinete consultanță AI-relevante
+
+**ATENȚIE:** "cabinet" în CompliRoAI = consultanți care servesc firme cu sisteme AI. NU contabili, NU HR, NU avocați muncii.
+
+ICP cabinet primar:
+- DPO externi (GDPR + AI Act — pentru că clienții lor folosesc AI)
+- Avocați tech / IT / AI (overlap AI Act + GDPR)
+- Consultanți cyber/NIS2 (pentru AI în infrastructură)
+- Consultanți fintech/DORA (pentru AI în servicii financiare)
+- Agenții AI/automation (Neodigital, Nenos type) — vând robots + atașează compliance pack
+- Auditori AI specializați
+
+NU ICP:
+- ❌ Contabili (n-au AI Act problem — au e-Factura/SAF-T)
+- ❌ Cabinete avocatură muncă (au Pay Transparency, nu AI Act)
+- ❌ HR consultanță (alt univers reglementator)
+
+**Persona comercială cabinet AI:** "gestionez clienți care folosesc AI, livrez compliance pack, plătesc abonament platformă, marja 95%."
 - **Profil:** Cabinet RO cu 5-100 clienți
 - **Durere:** Trebuie să adauge AI Act la oferta lor GDPR, manual cu Word + Excel + Drive
 - **Valoare propusă:** Multi-client portfolio + white-label + magic links + audit pack semnat

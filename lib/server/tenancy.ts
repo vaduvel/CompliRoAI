@@ -16,7 +16,15 @@
 import { hasSupabaseConfig, supabaseSelect, supabaseUpsert, supabaseDelete } from "@/lib/server/supabase-rest"
 
 export type UserRole = "owner" | "partner_manager" | "compliance" | "reviewer" | "viewer"
-export type WorkspaceMode = "solo" | "cabinet"
+/**
+ * Sprint 6.5 — extins de la 2 la 3 segmente comerciale.
+ * "imm-classic" = IMM clasic (folosește AI cumpărat).
+ * "ai-builder"  = construiește cu AI (provider+deployer dual).
+ * "cabinet"     = consultant/contabil multi-client.
+ *
+ * Re-exportăm canonical type-ul din `auth.ts` ca să rămână o singură sursă.
+ */
+export type WorkspaceMode = "imm-classic" | "ai-builder" | "cabinet"
 
 export type MembershipSummary = {
   membershipId: string
@@ -144,14 +152,19 @@ export async function getMembership(
 
 /**
  * Resolve workspace mode for a user.
+ *
  * Cabinet = at least one ACTIVE partner_manager membership.
+ * Otherwise: NU forțăm imm-classic vs ai-builder aici — alegerea e stocată în
+ * `state.onboarding.workspaceMode` și (după onboarding) re-emisă în token. Acest
+ * helper e folosit doar pentru "upgrade" la cabinet după un add-client; pentru
+ * solo flow returnăm `"imm-classic"` ca fallback safe.
  */
 export async function resolveWorkspaceMode(userId: string): Promise<WorkspaceMode> {
   const memberships = await listUserMemberships(userId)
   const hasPartnerRole = memberships.some(
     (m) => m.status === "active" && m.role === "partner_manager"
   )
-  return hasPartnerRole ? "cabinet" : "solo"
+  return hasPartnerRole ? "cabinet" : "imm-classic"
 }
 
 /**

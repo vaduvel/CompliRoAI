@@ -25,6 +25,7 @@ import JSZip from "jszip"
 
 import { classifyAISystem } from "@/lib/compliance/ai-act-classifier"
 import type { AISystemRecord, LiteracyRecord } from "@/lib/compliance/types"
+import type { WorkspaceMode } from "@/lib/server/auth"
 import type { AIActState, GeneratedDocumentRecord } from "@/lib/server/store"
 import { loadOrgStateFromSupabase, shouldUseSupabaseOrgState } from "@/lib/server/supabase-org-state"
 import { promises as fs } from "node:fs"
@@ -50,7 +51,7 @@ export type AuditPackManifest = {
     id: string
     name: string
     cui?: string | null
-    workspaceMode: "solo" | "cabinet"
+    workspaceMode: WorkspaceMode
   }
   /** Cabinet who issued the pack for a client (white-label). */
   issuedBy: {
@@ -100,7 +101,7 @@ export type BuildAuditPackOptions = {
   issuedByUserId: string
   issuedByUserEmail: string
   /** Workspace mode of the issuer. */
-  workspaceMode: "solo" | "cabinet"
+  workspaceMode: WorkspaceMode
   /** orgId of the *current session* (used for share-token registry lookup). */
   currentOrgId: string
   /** When true, the bundle is re-signed with a fresh cabinet signature (POST /sign). */
@@ -515,7 +516,7 @@ function buildFileContents(input: {
   branding: EffectiveBranding
   shareTokens: ShareTokenRecord[]
   issuedByUserEmail: string
-  workspaceMode: "solo" | "cabinet"
+  workspaceMode: WorkspaceMode
   generatedAt: string
   summary: { overallCompliancePct: number; highRiskSystemsCount: number }
 }): FileBytes[] {
@@ -741,7 +742,7 @@ function buildComplianceReportHtml(input: {
   orgName: string
   orgCui?: string | null
   generatedAt: string
-  workspaceMode: "solo" | "cabinet"
+  workspaceMode: WorkspaceMode
   summary: { overallCompliancePct: number; highRiskSystemsCount: number }
 }): string {
   const date = new Date(input.generatedAt).toLocaleDateString("ro-RO", {
@@ -816,7 +817,13 @@ function buildComplianceReportHtml(input: {
       ${brand.logoUrl ? `<img src="${escapeAttr(brand.logoUrl)}" alt="${escapeAttr(brand.brandName)}" />` : ""}
       <span class="brand-name">${escapeHtml(brand.brandName)}</span>
     </div>
-    <span class="badge">${escapeHtml(input.workspaceMode === "cabinet" ? "Mod cabinet" : "Mod solo")}</span>
+    <span class="badge">${escapeHtml(
+      input.workspaceMode === "cabinet"
+        ? "Mod cabinet"
+        : input.workspaceMode === "ai-builder"
+          ? "Mod AI Builder"
+          : "Mod IMM"
+    )}</span>
   </div>
 
   <div class="doc-title">Raport conformitate AI Act</div>

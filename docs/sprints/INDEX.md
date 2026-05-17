@@ -31,7 +31,7 @@
 | QW-NUDIF | Nudifier prohibition + autorități RO | ✅ DONE | d452fc6 | manual: Claude | _backfill_ |
 | QW-PRICING | Landing pricing 4 tiers | ✅ DONE | 9b9cdf5 | manual: Claude | _backfill_ |
 | 006.5 | Role-aware UI (3 modes) | ⏳ PLANNED | — | — | TBD |
-| 007 | PORT MASIV DPO-OS (Faza 1) | ⏳ PLANNED | — | — | TBD |
+| 007 | DSAR full port (GDPR Art. 15-22) | ✅ DONE | _pending push_ | manual: Claude | [sprint-007-dsar-port.md](sprint-007-dsar-port.md) |
 | 008 | FRIA Generator (Art. 27) | ⏳ PLANNED | — | — | TBD |
 | 009 | Human Oversight Protocols (Art. 14) | ⏳ PLANNED | — | — | TBD |
 | 010 | Logging Evidence (Art. 12) | ⏳ PLANNED | — | — | TBD |

@@ -19,7 +19,7 @@ type AuthMeResponse = {
     email: string
     orgId: string
     orgName: string
-    workspaceMode: "solo" | "cabinet"
+    workspaceMode: "imm-classic" | "ai-builder" | "cabinet"
   } | null
   workspaces?: Workspace[]
 }

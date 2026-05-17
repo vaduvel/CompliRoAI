@@ -12,13 +12,32 @@ function getSessionSecret(): string {
   return "dev-secret-change-me"
 }
 
+/**
+ * Sprint 6.5 — 3 workspace modes aliniate la verticalele din landing:
+ *   - imm-classic  → V1 Chatbot / V2 Copilot
+ *   - ai-builder   → V3 Agent (provider+deployer dual)
+ *   - cabinet      → multi-client portfolio
+ *
+ * Backward-compat: vechile sesiuni cu `workspaceMode = "solo"` sunt normalizate
+ * la "imm-classic" (Edge Runtime, no shared utils import).
+ */
+type EdgeWorkspaceMode = "imm-classic" | "ai-builder" | "cabinet"
+
 type EdgeSessionPayload = {
   userId: string
   orgId: string
   email: string
   orgName: string
-  workspaceMode: "solo" | "cabinet"
+  workspaceMode: EdgeWorkspaceMode
   exp: number
+}
+
+function normalizeEdgeWorkspaceMode(value: unknown): EdgeWorkspaceMode {
+  if (value === "cabinet") return "cabinet"
+  if (value === "ai-builder") return "ai-builder"
+  if (value === "imm-classic") return "imm-classic"
+  // Legacy "solo" + everything else → IMM Classic default
+  return "imm-classic"
 }
 
 async function verifyToken(token: string): Promise<EdgeSessionPayload | null> {
@@ -56,7 +75,7 @@ async function verifyToken(token: string): Promise<EdgeSessionPayload | null> {
       orgId: payload.orgId,
       email: payload.email,
       orgName: payload.orgName ?? "",
-      workspaceMode: payload.workspaceMode === "cabinet" ? "cabinet" : "solo",
+      workspaceMode: normalizeEdgeWorkspaceMode(payload.workspaceMode),
       exp: payload.exp,
     }
   } catch {

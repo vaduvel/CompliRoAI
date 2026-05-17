@@ -9,7 +9,7 @@ import { AlertTriangle } from "lucide-react"
 export default function SistemePage() {
   const [systems, setSystems] = useState<AISystemRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [workspaceMode, setWorkspaceMode] = useState<"solo" | "cabinet">("solo")
+  const [workspaceMode, setWorkspaceMode] = useState<"imm-classic" | "ai-builder" | "cabinet">("imm-classic")
 
   const load = useCallback(async () => {
     const res = await fetch("/api/ai-systems")
@@ -26,7 +26,10 @@ export default function SistemePage() {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (d?.user?.workspaceMode === "cabinet") setWorkspaceMode("cabinet")
+        const mode = d?.user?.workspaceMode
+        if (mode === "cabinet" || mode === "ai-builder" || mode === "imm-classic") {
+          setWorkspaceMode(mode)
+        }
       })
       .catch(() => {})
   }, [])

@@ -158,3 +158,47 @@ export type LiteracyRecord = {
   notes?: string
   createdAtISO: string
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+//   GDPR — DSAR (Sprint 007 port from DPO-OS v3-unified)
+//   Data Subject Access Requests — GDPR Art. 15-22
+//   Tracking cereri persoane vizate cu deadline legal (30 zile, extensibil 60).
+// ────────────────────────────────────────────────────────────────────────────
+
+export type DsarRequestType =
+  | "access"          // Art. 15 — dreptul de acces
+  | "rectification"   // Art. 16 — dreptul la rectificare
+  | "erasure"         // Art. 17 — dreptul la ștergere
+  | "portability"     // Art. 20 — dreptul la portabilitate
+  | "objection"       // Art. 21 — dreptul la opoziție
+  | "restriction"     // Art. 18 — dreptul la restricționare
+
+export type DsarStatus =
+  | "received"
+  | "in_progress"
+  | "awaiting_verification"
+  | "responded"
+  | "refused"
+
+export type DsarRequest = {
+  id: string
+  orgId: string
+  receivedAtISO: string
+  deadlineISO: string                  // receivedAt + 30 zile
+  extendedDeadlineISO?: string         // max 60 zile total, cu notificare
+  requesterName: string
+  requesterEmail: string
+  requestType: DsarRequestType
+  status: DsarStatus
+  identityVerified: boolean
+  systemsScoped?: boolean
+  dataSearchCompleted?: boolean
+  draftResponseGenerated: boolean
+  responseReviewedByHuman: boolean
+  responseSentAtISO?: string
+  archivedAtISO?: string
+  evidenceVaultIds: string[]
+  notes?: string
+  createdAtISO: string
+  updatedAtISO: string
+}

@@ -43,10 +43,14 @@ interface AISystemsListProps {
   systems: AISystemRecord[]
   onDelete: (id: string) => void
   /** When "cabinet", each row exposes a "Trimite spre aprobare" button. */
-  workspaceMode?: "solo" | "cabinet"
+  workspaceMode?: "imm-classic" | "ai-builder" | "cabinet"
 }
 
-export function AISystemsList({ systems, onDelete, workspaceMode = "solo" }: AISystemsListProps) {
+export function AISystemsList({
+  systems,
+  onDelete,
+  workspaceMode = "imm-classic",
+}: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
   const [createdLink, setCreatedLink] = useState<{ url: string; systemName: string } | null>(null)
