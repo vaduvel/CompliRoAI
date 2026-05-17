@@ -97,13 +97,25 @@ export async function middleware(request: NextRequest) {
   // Sprint 4 — audit pack verification is also public:
   //   /verify-pack                  — public verification page (drag & drop ZIP)
   //   /api/audit-pack/verify        — public verification endpoint
+  // Sprint 013 — Trust Center public surface:
+  //   /trust/[token]               — pagina publică (server component)
+  //   /api/trust-center/[token]    — GET public (no auth) pentru profile.
+  //                                  DELETE rămâne session-gated (gated explicit
+  //                                  prin metoda HTTP).
+  //   Excluded from public allowlist (still session-gated):
+  //     /api/trust-center           — GET list + POST create
+  const isPublicTrustToken =
+    /^\/api\/trust-center\/[^/]+$/.test(pathname) && request.method === "GET"
   if (
     pathname === "/share" ||
     pathname.startsWith("/share/") ||
     /^\/api\/share\/(?!create$|review$|revoke(?:\/|$))[^/]+(?:\/submit)?$/.test(pathname) ||
     pathname === "/verify-pack" ||
     pathname.startsWith("/verify-pack/") ||
-    pathname === "/api/audit-pack/verify"
+    pathname === "/api/audit-pack/verify" ||
+    pathname === "/trust" ||
+    pathname.startsWith("/trust/") ||
+    isPublicTrustToken
   ) {
     return NextResponse.next()
   }
