@@ -106,5 +106,83 @@ describe("audit-pack verify", () => {
     expect(result.valid).toBe(false)
     expect(result.errors.length).toBeGreaterThan(0)
   })
+
+  // Sprint 011 backward compat: a pre-Sprint-011 manifest (without the new
+  // optional summary fields) must still verify cleanly. We synthesize one
+  // with the OLD summary shape and confirm it verifies, then we synthesize
+  // one with the EXTENDED summary shape and confirm it also verifies.
+  it("verifies pre-Sprint-011 packs (old summary shape, no extra fields)", async () => {
+    const { zipBuffer } = await buildValidZipBuffer()
+    const result = await verifyAuditPackZip(zipBuffer)
+    expect(result.valid).toBe(true)
+  })
+
+  it("verifies Sprint-011 extended packs (new summary fields present)", async () => {
+    // Build a pack whose manifest base summary already contains the new
+    // Sprint 011 keys. Verification must accept both shapes.
+    const generatedAt = "2026-05-17T00:00:00.000Z"
+    const manifestBase = {
+      version: "1.0" as const,
+      schema: "compliroai.audit-pack/v1" as const,
+      generatedAt,
+      generatedBy: { userId: "u1", userEmail: "u1@example.com" },
+      org: { id: "org-test", name: "Test SRL", cui: "RO12345678", workspaceMode: "solo" as const },
+      issuedBy: {
+        brandName: "CompliRoAI",
+        signerName: null,
+        signerTitle: null,
+        contactEmail: null,
+        website: null,
+        logoUrl: null,
+        isCustomBrand: false,
+      },
+      summary: {
+        aiSystemsCount: 0,
+        annexIvDocumentsCount: 0,
+        literacyRecordsCount: 0,
+        shareTokensCount: 0,
+        overallCompliancePct: 100,
+        highRiskSystemsCount: 0,
+        findingsCount: 2,
+        dpiaRecordsCount: 1,
+        ropaActivitiesCount: 1,
+        breachRecordsCount: 0,
+        aiDataMapRecordsCount: 3,
+        vendorRecordsCount: 2,
+        dsarRequestsCount: 0,
+        eventsCount: 5,
+        chainOk: true,
+      },
+      hashAlgorithm: "sha256" as const,
+    }
+    const baseBytes = Buffer.from(JSON.stringify(manifestBase, null, 2), "utf8")
+    let chain = sha256(baseBytes)
+
+    const files: { path: string; bytes: Buffer }[] = [
+      { path: "findings/registry.md", bytes: Buffer.from("# Findings\n\n_None_", "utf8") },
+      { path: "audit-log/events.json", bytes: Buffer.from("[]\n", "utf8") },
+    ]
+    const contents = files.map((f) => {
+      const fh = sha256(f.bytes)
+      chain = sha256(Buffer.concat([Buffer.from(chain, "hex"), f.bytes]))
+      return { path: f.path, sizeBytes: f.bytes.length, sha256: fh, chainHashAfter: chain }
+    })
+    const manifest = {
+      ...manifestBase,
+      contents,
+      hashChainRoot: chain,
+      signature: "fake-sig",
+      signatureAlgorithm: "hmac-sha256" as const,
+    }
+    const zip = new JSZip()
+    zip.file("MANIFEST.json", JSON.stringify(manifest, null, 2))
+    for (const f of files) zip.file(f.path, f.bytes)
+    zip.file("signatures/SIGNATURE.txt", "fake")
+    const zipBuffer = (await zip.generateAsync({ type: "nodebuffer" })) as Buffer
+
+    const result = await verifyAuditPackZip(zipBuffer)
+    expect(result.valid).toBe(true)
+    expect(result.computedHashRoot).toBe(chain)
+  })
 })
 
