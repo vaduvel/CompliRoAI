@@ -35,7 +35,7 @@
 | **008A** | **Foundation Port: ComplianceState + findings + events + orchestrator + store adapter** | ✅ DONE | 089b6c4 | manual: Claude | [sprint-008a-foundation-port.md](sprint-008a-foundation-port.md) |
 | **008B** | **Findings + Dosar + Resolve (UI + API peste fundație)** | ✅ DONE | e8a5534 | manual: Claude | [sprint-008b-findings-dosar-resolve.md](sprint-008b-findings-dosar-resolve.md) |
 | **008C** | **DPIA + ROPA (drop-in pe fundație 008A/B, finding emission, orchestrator wire)** | ✅ DONE | 2bff11f | manual: Claude | [sprint-008c-dpia-ropa.md](sprint-008c-dpia-ropa.md) |
-| 008D | Breach GDPR 72h (Art. 33, slice DPO/AI) | ⏳ PLANNED | — | — | TBD |
+| **008D** | **Breach GDPR 72h (Art. 33 ANSPDCP + Art. 34 persoane vizate, finding rescue auto)** | ✅ DONE | 31e6f4f | manual: Claude | [sprint-008d-gdpr-breach.md](sprint-008d-gdpr-breach.md) |
 | 009 | AI Data Discovery + PII Discovery + AI Exposure Report + AI Policy Pack | ⏳ PLANNED | — | — | TBD |
 | 010 | Vendor AI Assessment + DPA review | ⏳ PLANNED | — | — | TBD |
 | 011 | Audit-log structured (toate event-urile auditabile) | ⏳ PLANNED | — | — | TBD |
