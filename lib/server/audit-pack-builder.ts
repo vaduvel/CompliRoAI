@@ -31,6 +31,7 @@ import type {
   ComplianceEvent,
   DpiaRecord,
   FriaRecord,
+  HumanOversightProtocol,
   LiteracyRecord,
   RopaActivityRecord,
   ScanFinding,
@@ -49,6 +50,7 @@ import { verifyEventChain } from "@/lib/compliance/events"
 import { buildDpiaMarkdownForRecord, type DpiaRecordWithLink } from "@/lib/server/dpia-store"
 import { buildBreachMarkdown } from "@/lib/server/breach-store"
 import { buildFriaMarkdown } from "@/lib/server/fria-store"
+import { buildOversightMarkdown } from "@/lib/server/oversight-store"
 import { DEPLOYER_TYPE_LABELS } from "@/lib/compliance/fria-schema"
 import { buildRopaMachineReadableExport } from "@/lib/compliance/ropa-risk-engine"
 import {
@@ -110,6 +112,8 @@ export type AuditPackManifest = {
     chainOk?: boolean
     // Sprint 016 — FRIA records included in pack.
     friaRecordsCount?: number
+    // Sprint 017 — Human Oversight protocols included in pack.
+    oversightProtocolsCount?: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -284,6 +288,7 @@ export async function buildAuditPack(
       eventsCount: (state.events ?? []).length,
       chainOk: verifyEventChain(state.events ?? []).ok,
       friaRecordsCount: (state.friaRecords ?? []).length,
+      oversightProtocolsCount: (state.humanOversightProtocols ?? []).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -713,6 +718,8 @@ function buildFileContents(input: {
   pushAuditLogFiles(files, input.state, input.orgName, input.generatedAt)
   // ── Sprint 016: FRIA evidence per Art. 27 AI Act ────────────────────────
   pushFriaFiles(files, input.state, input.orgName)
+  // ── Sprint 017: Human Oversight protocols per Art. 14 AI Act ────────────
+  pushOversightFiles(files, input.state, input.orgName)
 
   return files
 }
@@ -1155,6 +1162,56 @@ function pushFriaFiles(
   }
 }
 
+/**
+ * Sprint 017 — Human Oversight Protocols (Art. 14 AI Act). Pattern identic
+ * cu pushFriaFiles: registry.md + records/{id}.md regenerat live via
+ * buildOversightMarkdown pentru hash chain.
+ */
+function pushOversightFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const records = (state.humanOversightProtocols ?? []) as HumanOversightProtocol[]
+  const aiSystems = (state.aiSystems ?? []) as AISystemRecord[]
+
+  const lines: string[] = [
+    `# Human Oversight Protocols — ${orgName}`,
+    ``,
+    `**Total:** ${records.length}`,
+    `**Cadru:** EU AI Act Art. 14 — supraveghere umană (+ Art. 26(2) responsabilități deployer)`,
+    ``,
+  ]
+  if (records.length === 0) {
+    lines.push(`_Nu există protocoale Oversight înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Titlu | Sistem AI | Model | Completeness | Status | Aprobat de | Următoarea revizie |`,
+      `|---|---|---|---|---|---|---|---|`,
+    )
+    for (const r of records) {
+      const systemName =
+        aiSystems.find((s) => s.id === r.linkedAISystemId)?.name ??
+        r.linkedAISystemId
+      lines.push(
+        `| ${r.id} | ${escapeMdCell(r.title)} | ${escapeMdCell(systemName)} | ${r.oversightModel} | ${r.completeness} | ${r.status} | ${r.approvedByEmail ?? "—"} | ${r.nextReviewISO ? r.nextReviewISO.slice(0, 10) : "—"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "oversight/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+
+  for (const r of records) {
+    const systemName = aiSystems.find((s) => s.id === r.linkedAISystemId)?.name
+    files.push({
+      path: `oversight/records/${slugify(r.id)}.md`,
+      bytes: utf8(buildOversightMarkdown(r, orgName, systemName)),
+    })
+  }
+}
+
 function pushDsarFiles(
   files: FileBytes[],
   state: AIActState,
@@ -1315,6 +1372,32 @@ function buildAuditTrailLog(input: {
         input.issuedByUserEmail,
         "FRIA_AUTHORITY_NOTIFIED",
         `${fria.title} → ${fria.notifyAuthorityName ?? "—"} ref=${fria.authorityReference ?? "—"}`,
+      )
+    }
+  }
+
+  // Sprint 017 — Human Oversight Protocols (Art. 14)
+  for (const op of input.state.humanOversightProtocols ?? []) {
+    push(
+      op.createdAtISO,
+      input.issuedByUserEmail,
+      "OVERSIGHT_PROTOCOL_CREATED",
+      `${op.title} → system=${op.linkedAISystemId} model=${op.oversightModel} completeness=${op.completeness}`,
+    )
+    if (op.approvedAtISO) {
+      push(
+        op.approvedAtISO,
+        op.approvedByEmail ?? input.issuedByUserEmail,
+        "OVERSIGHT_PROTOCOL_APPROVED",
+        op.title,
+      )
+    }
+    for (const ev of op.evidenceItems) {
+      push(
+        ev.uploadedAtISO,
+        ev.uploadedByEmail,
+        "OVERSIGHT_EVIDENCE_ATTACHED",
+        `${op.title} → ${ev.type}: ${ev.description}`,
       )
     }
   }
@@ -1516,6 +1599,7 @@ function buildSignatureTxt(input: {
     `Literacy records:     ${input.manifest.summary.literacyRecordsCount}`,
     `Share tokens:         ${input.manifest.summary.shareTokensCount}`,
     `FRIA records (Art.27):${input.manifest.summary.friaRecordsCount ?? 0}`,
+    `Oversight protocols (Art.14):${input.manifest.summary.oversightProtocolsCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",

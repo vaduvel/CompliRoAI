@@ -138,6 +138,9 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     // Sprint 016 — cabinets prepare FRIA evaluations for client deployers
     // (deployer of a high-risk system per Art. 27(1)).
     "fria_generator",
+    // Sprint 017 — cabinets prepare Human Oversight Protocols (Art. 14) for
+    // client deployers of high-risk AI systems.
+    "human_oversight_protocols",
   ]),
 }
 
@@ -282,6 +285,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "email_notifications",
     // Sprint 016 — cabinet preparing FRIA for client deployer.
     "fria_generator",
+    // Sprint 017 — cabinet preparing Oversight Protocols (Art. 14).
+    "human_oversight_protocols",
   ]),
   cabinet_enterprise: new Set<Feature>([
     "ai_inventory",
@@ -309,6 +314,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "dpa",
     "sla",
     "fria_generator",
+    // Sprint 017 — cabinet preparing Oversight Protocols (Art. 14).
+    "human_oversight_protocols",
   ]),
   one_off_audit: new Set<Feature>([
     "ai_inventory",

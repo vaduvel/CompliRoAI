@@ -122,8 +122,9 @@ describe("nav-config — ai-builder exposes builder workflow", () => {
     expect(labels).not.toContain("Risc AI")
   })
 
-  it("ai-builder placeholders (FRIA, Oversight, Logging, PMM, Incidente, QMS, API/SDK) appear even on ai_builder tier", () => {
+  it("ai-builder placeholders (Logging, PMM, Incidente, QMS, API/SDK) appear even on ai_builder tier; FRIA + Oversight are live", () => {
     const labels = labelsForRole("ai-builder", "ai_builder")
+    // Sprint 016 + 017 — FRIA + Oversight sunt live (mutate în section "compliance").
     expect(labels).toContain("FRIA")
     expect(labels).toContain("Oversight uman")
     expect(labels).toContain("Logging")
@@ -156,15 +157,17 @@ describe("nav-config — cabinet exposes full collaboration workflow", () => {
     expect(labels).toContain("Setări (facturare)")
   })
 
-  it("cabinet does NOT see ai-builder-only modules (Annex IV / EU DB / API SDK / QMS), DOES see FRIA (Sprint 016 — cabinets prepare FRIA pentru clienți deployer)", () => {
+  it("cabinet does NOT see ai-builder-only modules (Annex IV / EU DB / API SDK / QMS), DOES see FRIA + Oversight (Sprint 016/017 — cabinets prepare pentru clienți deployer)", () => {
     const labels = labelsForRole("cabinet", "free_trial")
     expect(labels).not.toContain("Annex IV")
     expect(labels).not.toContain("EU Database")
     expect(labels).not.toContain("API / SDK")
     expect(labels).not.toContain("QMS")
-    // FRIA is shared între ai-builder + cabinet per mandate § 16 — cabinet
-    // prepares FRIA pe seama clienților deployer (Art. 27 AI Act).
+    // FRIA + Oversight sunt shared între ai-builder + cabinet per mandate § 16
+    // — cabinet prepares evaluări pe seama clienților deployer
+    // (Art. 27 + Art. 14 AI Act).
     expect(labels).toContain("FRIA")
+    expect(labels).toContain("Oversight uman")
   })
 
   it("cabinet on cabinet_solo tier sees magic links but NOT trust center / branding / approvals", () => {

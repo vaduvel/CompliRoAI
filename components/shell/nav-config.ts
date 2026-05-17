@@ -172,13 +172,15 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     requiredFeature: "fria_generator",
   },
   {
+    // Sprint 017 — Human Oversight Protocols (Art. 14). Cabinetele prepară
+    // protocoale Art. 14 pentru clienții deployer (similar cu FRIA). Plasat
+    // în "compliance" pentru cabinet alignment cu DPIA / FRIA.
     href: "/dashboard/human-oversight",
     label: "Oversight uman",
     iconName: "Eye",
-    section: "builder",
-    workspaceModes: ["ai-builder"],
+    section: "compliance",
+    workspaceModes: ["ai-builder", "cabinet"],
     requiredFeature: "human_oversight_protocols",
-    badge: "coming-soon",
   },
   {
     href: "/dashboard/logging-evidence",

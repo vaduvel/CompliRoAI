@@ -29,6 +29,7 @@ import type {
   ComplianceEvent,
   DpiaRecord,
   FriaRecord,
+  HumanOversightProtocol,
   RopaActivityRecord,
   ScanFinding,
   VendorRecord,
@@ -357,6 +358,65 @@ function buildSampleState(): AIActState {
     updatedAtISO: "2026-05-12T10:00:00.000Z",
   }
 
+  // Sprint 017 — Human Oversight Protocol pentru același sistem HR
+  const oversight: HumanOversightProtocol = {
+    id: "oversight-sample-1",
+    orgId: "org-test-pack",
+    title: "Oversight Protocol HR Screening 2026",
+    linkedAISystemId: "sys-hr-1",
+    oversightModel: "human_in_the_loop",
+    capabilitiesCovered: [
+      "understand_capabilities",
+      "aware_of_automation_bias",
+      "interpret_output_correctly",
+      "decide_not_to_use",
+      "intervene_or_stop",
+    ],
+    responsibleHumans: [
+      {
+        email: "dpo@acme.ro",
+        role: "DPO",
+        competenceLevel: "expert",
+        hasAuthorityToOverride: true,
+        hasSupportTeam: true,
+      },
+    ],
+    escalationSteps: [
+      {
+        triggerCondition: "Decizie negativă",
+        escalateToEmail: "manager@acme.ro",
+        escalateToRole: "Manager HR",
+        slaHours: 4,
+        notificationMethod: "email",
+      },
+    ],
+    contestationProcedure: {
+      channelDescription: "Email dpo@acme.ro pentru contestație",
+      acknowledgementSlaHours: 24,
+      resolutionSlaDays: 30,
+      reviewerRole: "DPO",
+      evidencePreservation: "Log-uri păstrate 3 ani",
+    },
+    stopProcedure: {
+      stopButtonAvailable: true,
+      stopButtonLocation: "Admin dashboard",
+      fallbackMode: "manual_processing",
+      fallbackDescription: "Recrutori procesează manual",
+      testedAtISO: "2026-04-01T00:00:00.000Z",
+      testFrequency: "quarterly",
+    },
+    evidenceChecklist: ["Training operatori"],
+    evidenceItems: [],
+    status: "approved",
+    completeness: "complete",
+    approvedByEmail: "dpo@acme.ro",
+    approvedAtISO: "2026-05-11T10:00:00.000Z",
+    nextReviewISO: "2026-11-08T00:00:00.000Z",
+    linkedFindingIds: [],
+    createdAtISO: "2026-05-10T10:00:00.000Z",
+    updatedAtISO: "2026-05-11T10:00:00.000Z",
+  }
+
   base = {
     ...base,
     aiSystems: [aiSystem],
@@ -367,6 +427,7 @@ function buildSampleState(): AIActState {
     aiDataMapRecords: [dataMap],
     vendorRecords: [vendor],
     friaRecords: [fria],
+    humanOversightProtocols: [oversight],
   } as AIActState
   base.events = appendComplianceEvents(base, [event1, event2])
   return base
@@ -586,6 +647,65 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
       currentOrgId: "org-test-pack",
     })
     expect(result.manifest.summary.friaRecordsCount).toBe(1)
+  })
+
+  // ── Sprint 017 — Human Oversight in Audit Pack ────────────────────────────
+  it("includes oversight/registry.md + per-record markdown", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const paths = Object.keys(zip.files)
+    expect(paths).toContain("oversight/registry.md")
+    expect(paths).toContain("oversight/records/oversight-sample-1.md")
+  })
+
+  it("oversight/registry.md contains title + model + sistem AI", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip.file("oversight/registry.md")!.async("string")
+    expect(md).toContain("Oversight Protocol HR Screening 2026")
+    expect(md).toContain("HR Screening AI")
+    expect(md).toContain("human_in_the_loop")
+    expect(md).toContain("Art. 14")
+  })
+
+  it("oversight/records/<id>.md is full evaluator-generated markdown", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip
+      .file("oversight/records/oversight-sample-1.md")!
+      .async("string")
+    expect(md).toContain("# Oversight Protocol — Oversight Protocol HR Screening 2026")
+    expect(md).toContain("## B. Capacități Art. 14(3) acoperite")
+    expect(md).toContain("## E. Stop + fallback")
+  })
+
+  it("manifest summary includes oversightProtocolsCount", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    expect(result.manifest.summary.oversightProtocolsCount).toBe(1)
   })
 
   it("FRIA inclusion preserves hash chain integrity", async () => {
