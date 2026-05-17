@@ -44,7 +44,7 @@
 | **014** | **PDF generator + Onboarding emails + Stripe billing (commercially usable: PDF on all exports, 10 RO email templates with Resend, Stripe checkout/portal/webhook with 7 tiers locked, billing UI + pricing page)** | ✅ DONE | 52437ed+ | manual: Claude | [sprint-014-pdf-emails-stripe.md](sprint-014-pdf-emails-stripe.md) |
 | **015** | **Role-aware UI final (3 modes per-role nav with feature gates, 7 placeholder pages, 3 cabinet pages, per-role dashboard landing, onboarding 3-mode, trial banner)** | ✅ DONE | 512fa0d+ | manual: Claude | [sprint-015-role-aware-ui.md](sprint-015-role-aware-ui.md) |
 | **016** | **FRIA Generator (Art. 27 — first AI Act depth module; BUILD NEW; 6-section wizard + 24 fundamental rights catalog + risk matrix likelihood×severity + Art. 27(4) DPIA reuse + ANSPDCP/ADR/ASF notification workflow + Audit Pack wired)** | ✅ DONE | 3d99e3f+ | subagent + manual: Claude | [sprint-016-fria-art-27.md](sprint-016-fria-art-27.md) |
-| 017 | Human Oversight Protocols (Art. 14) | ⏳ PLANNED | — | — | TBD |
+| **017** | **Human Oversight Protocols (Art. 14 — BUILD NEW; 5-section wizard cu cele 5 capacități Art. 14(3)(a)-(e) + responsibles Art. 26(2) + escalation + contestation + stop/fallback; two-person rule OBLIGATORIU pentru biometric ID per Art. 14(4); completeness check 3 niveluri + 5 reguli findings; AI Inventory banner; Audit Pack wired)** | ✅ DONE | f6d68cf+ | manual: Claude | [sprint-017-human-oversight-art-14.md](sprint-017-human-oversight-art-14.md) |
 | 018 | Logging Evidence (Art. 12) | ⏳ PLANNED | — | — | TBD |
 | 019 | Post-Market Monitoring (Art. 72) | ⏳ PLANNED | — | — | TBD |
 | 020 | Incident Reporting AI (Art. 73) | ⏳ PLANNED | — | — | TBD |
