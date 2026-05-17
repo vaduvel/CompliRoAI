@@ -287,6 +287,55 @@ Nu există SaaS multi-framework RO cu multi-client + white-label.
 
 ---
 
+## 10.5 ⭐ LOCKED — 3 Verticale × €799 Entry Offer (16 mai 2026 — final)
+
+**Regulă internă:** "Dacă mai cauți validare, nu mai e research. E procrastinare cu costum de consultant."
+
+### 3 Verticale Concrete
+
+**V1: AI Chatbot Compliance**
+- Target: eCommerce + customer service AI (Zybots-like, FAN Courier-integrated chatbots)
+- Pitch: "Chatbot-ul tău trebuie disclosure Art. 50. Tu vinzi, noi îl facem compliant."
+- Module: Art. 50 transparency + GDPR + Audit Pack
+
+**V2: AI Business Copilot Compliance**
+- Target: Firme FGO+ChatGPT, Copilot Enterprise, ChatGPT pe date interne
+- Pitch: "AI-ul tău vorbește cu datele firmei. Cine are acces? Ce loguri? GDPR safe?"
+- Module: AI Inventory + GDPR DPIA + Art. 4 Literacy + Vendor Assessment
+
+**V3: AI Agent / Automation Compliance**
+- Target: Agenții AI (Neodigital, Nenos B2B), firme cu Make/n8n/Zapier + AI
+- Pitch: "Vinzi roboți AI? Atașează compliance pack la fiecare proiect. €799 per livrare, white-label cu logo-ul tău."
+- Module: AI Inventory + Risk Classification + Annex IV + Deployer Pack + Audit Pack
+
+### Oferta Comercială Lock
+
+**AI Compliance Audit — €799 one-off:**
+1. AI Inventory
+2. Risk Classification per tool
+3. GDPR mapping (Art. 22 + DPIA)
+4. EU AI Act mapping (Art. 4 + 5 + 50)
+5. Transparency Notices RO+EN gata copy-paste
+6. Human Oversight Policy template
+7. AI Usage Policy template
+8. Literacy Training Evidence pack
+9. Incident Procedure
+10. Audit Pack PDF + ZIP signed cripto
+
+Livrare: 3-7 zile lucrătoare.
+Upsell natural: €99-299/lună abonament menținere + update-uri legale + Renewal Tracker.
+
+### Primul Contract Target
+
+5 firme pilot × €799 = **€4.000 revenue în 30 zile**.
+
+Distribution:
+- 2 cabinete consultanță DPO (V1+V2 combinate)
+- 2 IMM care folosesc AI direct (V1 sau V2)
+- 1 agenție AI (V3 cu white-label)
+
+---
+
 ## 11. Open Decisions / Pending
 
 1. **Domeniu propriu** — `compliroai.ro` cumpărat? Migrare DNS?
