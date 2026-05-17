@@ -39,7 +39,7 @@
 | **009** | **AI Data Discovery + PII Discovery + AI Exposure Report + AI Policy Pack (Wave 1 AI Discovery)** | ✅ DONE | 28d33e5+ | manual: Claude | [sprint-009-ai-data-pii-exposure-policy.md](sprint-009-ai-data-pii-exposure-policy.md) |
 | **010** | **Vendor AI Assessment + DPA review (17 vendori catalog + risk evaluator + lifecycle + brief)** | ✅ DONE | c5b9c73+ | manual: Claude | [sprint-010-vendor-ai-assessment.md](sprint-010-vendor-ai-assessment.md) |
 | **011** | **Structured Audit Log + Audit Pack wire-up (toate modulele în ZIP, ledger UI cu filters + verify + export)** | ✅ DONE | 06c834c+ | manual: Claude | [sprint-011-structured-audit-log.md](sprint-011-structured-audit-log.md) |
-| 012 | DORA AI slice + NIS2 AI slice (selectiv) | ⏳ PLANNED | — | — | TBD |
+| **012** | **DORA AI slice + NIS2 AI slice (org reg profile + 2 rules engines + aggregator + /dashboard/ai-regulatory-scope)** | ✅ DONE | 4b6f567+ | manual: Claude | [sprint-012-dora-nis2-ai-slices.md](sprint-012-dora-nis2-ai-slices.md) |
 | 013 | Approval queue + Calendar + Trust Center | ⏳ PLANNED | — | — | TBD |
 | 014 | PDF generator + Onboarding emails + Stripe | ⏳ PLANNED | — | — | TBD |
 | 015 | Role-aware UI (3 modes) build new | ⏳ PLANNED | — | — | TBD |
