@@ -22,10 +22,11 @@ describe("feature-gates — workspaceMode visibility", () => {
     expect(featureBelongsToWorkspace("imm-classic", "white_label")).toBe(false)
   })
 
-  it("ai-builder DOES see annex IV, FRIA, oversight, PMM, incidents, QMS, API/SDK", () => {
+  it("ai-builder DOES see annex IV, FRIA, oversight, logging, PMM, incidents, QMS, API/SDK", () => {
     expect(featureBelongsToWorkspace("ai-builder", "annex_iv_generator")).toBe(true)
     expect(featureBelongsToWorkspace("ai-builder", "fria_generator")).toBe(true)
     expect(featureBelongsToWorkspace("ai-builder", "human_oversight_protocols")).toBe(true)
+    expect(featureBelongsToWorkspace("ai-builder", "logging_evidence")).toBe(true)
     expect(featureBelongsToWorkspace("ai-builder", "post_market_monitoring")).toBe(true)
     expect(featureBelongsToWorkspace("ai-builder", "ai_incident_reporting")).toBe(true)
     expect(featureBelongsToWorkspace("ai-builder", "qms")).toBe(true)
@@ -48,12 +49,13 @@ describe("feature-gates — workspaceMode visibility", () => {
     expect(featureBelongsToWorkspace("cabinet", "client_intake")).toBe(true)
   })
 
-  it("cabinet does NOT see ai-builder-only depth modules (Annex IV / EU DB), DOES see FRIA + Oversight (Sprint 016/017 — cabinets prepare pentru clienți deployer)", () => {
+  it("cabinet does NOT see ai-builder-only depth modules (Annex IV / EU DB), DOES see FRIA + Oversight + Logging (Sprint 016/017/018 — cabinets prepare pentru clienți deployer)", () => {
     expect(featureBelongsToWorkspace("cabinet", "annex_iv_generator")).toBe(false)
     expect(featureBelongsToWorkspace("cabinet", "eu_database_wizard")).toBe(false)
-    // FRIA + Oversight shared cu cabinet per mandate § 16
+    // FRIA + Oversight + Logging shared cu cabinet per mandate § 16-19
     expect(featureBelongsToWorkspace("cabinet", "fria_generator")).toBe(true)
     expect(featureBelongsToWorkspace("cabinet", "human_oversight_protocols")).toBe(true)
+    expect(featureBelongsToWorkspace("cabinet", "logging_evidence")).toBe(true)
   })
 })
 

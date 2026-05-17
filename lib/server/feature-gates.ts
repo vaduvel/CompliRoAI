@@ -141,6 +141,8 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     // Sprint 017 — cabinets prepare Human Oversight Protocols (Art. 14) for
     // client deployers of high-risk AI systems.
     "human_oversight_protocols",
+    // Sprint 018 — cabinets prepare Logging Evidence configs (Art. 12 + 26(6)).
+    "logging_evidence",
   ]),
 }
 
@@ -287,6 +289,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "fria_generator",
     // Sprint 017 — cabinet preparing Oversight Protocols (Art. 14).
     "human_oversight_protocols",
+    // Sprint 018 — cabinet preparing Logging configs (Art. 12 + 26(6)).
+    "logging_evidence",
   ]),
   cabinet_enterprise: new Set<Feature>([
     "ai_inventory",
@@ -316,6 +320,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "fria_generator",
     // Sprint 017 — cabinet preparing Oversight Protocols (Art. 14).
     "human_oversight_protocols",
+    // Sprint 018 — cabinet preparing Logging configs (Art. 12 + 26(6)).
+    "logging_evidence",
   ]),
   one_off_audit: new Set<Feature>([
     "ai_inventory",

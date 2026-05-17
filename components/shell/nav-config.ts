@@ -183,13 +183,15 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     requiredFeature: "human_oversight_protocols",
   },
   {
+    // Sprint 018 — Logging Evidence (Art. 12 + Art. 26(6)). Cabinetele prepară
+    // configurări de logging pentru clienții deployer (similar cu FRIA +
+    // Oversight). Plasat în "compliance" pentru cabinet alignment.
     href: "/dashboard/logging-evidence",
     label: "Logging",
-    iconName: "Activity",
-    section: "builder",
-    workspaceModes: ["ai-builder"],
+    iconName: "Database",
+    section: "compliance",
+    workspaceModes: ["ai-builder", "cabinet"],
     requiredFeature: "logging_evidence",
-    badge: "coming-soon",
   },
   {
     href: "/dashboard/post-market-monitoring",

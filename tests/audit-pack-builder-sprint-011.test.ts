@@ -30,6 +30,7 @@ import type {
   DpiaRecord,
   FriaRecord,
   HumanOversightProtocol,
+  LoggingConfig,
   RopaActivityRecord,
   ScanFinding,
   VendorRecord,
@@ -417,6 +418,54 @@ function buildSampleState(): AIActState {
     updatedAtISO: "2026-05-11T10:00:00.000Z",
   }
 
+  const logging: LoggingConfig = {
+    id: "logging-sample-1",
+    orgId: "org-test-pack",
+    title: "Logging Config HR Screening 2026",
+    linkedAISystemId: "sys-hr-1",
+    severityLevel: "standard",
+    eventCategoriesLogged: [
+      "input_data_received",
+      "output_decision_made",
+      "human_override_applied",
+      "error_or_anomaly",
+      "system_start_stop",
+    ],
+    storageBackend: "siem_elastic",
+    storageLocation: "https://elastic.acme.ro/index=ai_hr_logs",
+    minRetentionMonths: 6,
+    actualRetentionMonths: 6,
+    retentionPolicy: "ILM rollover + delete la 6 luni; cold tier 3-6 luni.",
+    integrityMechanism: "hash_chain",
+    integrityMechanismDescription:
+      "SHA-256 chain per event; root hash semnat zilnic în S3 Object Lock.",
+    accessRoleDescription: "DPO + Security Team (MFA obligatoriu, role-based)",
+    accessLogged: true,
+    status: "active",
+    completeness: "complete",
+    retentionStatus: "compliant",
+    approvedByEmail: "dpo@acme.ro",
+    approvedAtISO: "2026-05-12T10:00:00.000Z",
+    lastEvidenceAtISO: "2026-05-15T10:00:00.000Z",
+    nextReviewISO: "2026-08-10T00:00:00.000Z",
+    evidenceChecklist: ["Export SIEM lunar", "Screenshot retention policy"],
+    evidenceItems: [
+      {
+        id: "logev-sample-1",
+        type: "log_export",
+        description: "Export SIEM mai 2026",
+        uploadedAtISO: "2026-05-15T10:00:00.000Z",
+        uploadedByEmail: "dpo@acme.ro",
+        coversPeriodStartISO: "2026-05-01T00:00:00.000Z",
+        coversPeriodEndISO: "2026-05-31T23:59:59.000Z",
+        eventCount: 124567,
+      },
+    ],
+    linkedFindingIds: [],
+    createdAtISO: "2026-05-12T09:00:00.000Z",
+    updatedAtISO: "2026-05-15T10:00:00.000Z",
+  }
+
   base = {
     ...base,
     aiSystems: [aiSystem],
@@ -428,6 +477,7 @@ function buildSampleState(): AIActState {
     vendorRecords: [vendor],
     friaRecords: [fria],
     humanOversightProtocols: [oversight],
+    loggingEvidence: [logging],
   } as AIActState
   base.events = appendComplianceEvents(base, [event1, event2])
   return base
@@ -706,6 +756,66 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
       currentOrgId: "org-test-pack",
     })
     expect(result.manifest.summary.oversightProtocolsCount).toBe(1)
+  })
+
+  // ── Sprint 018 — Logging Evidence in Audit Pack ───────────────────────────
+  it("includes logging/registry.md + per-record markdown", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const paths = Object.keys(zip.files)
+    expect(paths).toContain("logging/registry.md")
+    expect(paths).toContain("logging/records/logging-sample-1.md")
+  })
+
+  it("logging/registry.md contains title + severity + Art. 12 + Art. 26(6)", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip.file("logging/registry.md")!.async("string")
+    expect(md).toContain("Logging Config HR Screening 2026")
+    expect(md).toContain("HR Screening AI")
+    expect(md).toContain("standard")
+    expect(md).toContain("Art. 12")
+    expect(md).toContain("Art. 26(6)")
+  })
+
+  it("logging/records/<id>.md is full evaluator-generated markdown", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip
+      .file("logging/records/logging-sample-1.md")!
+      .async("string")
+    expect(md).toContain("# Logging Config — Logging Config HR Screening 2026")
+    expect(md).toContain("B. Categorii evenimente loguite")
+    expect(md).toContain("C. Storage + retenție")
+  })
+
+  it("manifest summary includes loggingConfigsCount", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    expect(result.manifest.summary.loggingConfigsCount).toBe(1)
   })
 
   it("FRIA inclusion preserves hash chain integrity", async () => {

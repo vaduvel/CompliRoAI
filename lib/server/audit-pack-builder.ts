@@ -33,6 +33,7 @@ import type {
   FriaRecord,
   HumanOversightProtocol,
   LiteracyRecord,
+  LoggingConfig,
   RopaActivityRecord,
   ScanFinding,
   VendorRecord,
@@ -51,6 +52,12 @@ import { buildDpiaMarkdownForRecord, type DpiaRecordWithLink } from "@/lib/serve
 import { buildBreachMarkdown } from "@/lib/server/breach-store"
 import { buildFriaMarkdown } from "@/lib/server/fria-store"
 import { buildOversightMarkdown } from "@/lib/server/oversight-store"
+import { buildLoggingMarkdown } from "@/lib/server/logging-evidence-store"
+import {
+  LOGGING_EVENT_CATEGORY_LABELS,
+  LOGGING_SEVERITY_LEVEL_LABELS,
+  LOGGING_STORAGE_BACKEND_LABELS,
+} from "@/lib/compliance/logging-schema"
 import { DEPLOYER_TYPE_LABELS } from "@/lib/compliance/fria-schema"
 import { buildRopaMachineReadableExport } from "@/lib/compliance/ropa-risk-engine"
 import {
@@ -114,6 +121,8 @@ export type AuditPackManifest = {
     friaRecordsCount?: number
     // Sprint 017 — Human Oversight protocols included in pack.
     oversightProtocolsCount?: number
+    // Sprint 018 — Logging Evidence configs included in pack.
+    loggingConfigsCount?: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -289,6 +298,7 @@ export async function buildAuditPack(
       chainOk: verifyEventChain(state.events ?? []).ok,
       friaRecordsCount: (state.friaRecords ?? []).length,
       oversightProtocolsCount: (state.humanOversightProtocols ?? []).length,
+      loggingConfigsCount: (state.loggingEvidence ?? []).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -720,6 +730,8 @@ function buildFileContents(input: {
   pushFriaFiles(files, input.state, input.orgName)
   // ── Sprint 017: Human Oversight protocols per Art. 14 AI Act ────────────
   pushOversightFiles(files, input.state, input.orgName)
+  // ── Sprint 018: Logging Evidence configs per Art. 12 + Art. 26(6) AI Act ──
+  pushLoggingFiles(files, input.state, input.orgName)
 
   return files
 }
@@ -1212,6 +1224,61 @@ function pushOversightFiles(
   }
 }
 
+/**
+ * Sprint 018 — Logging Evidence configs (Art. 12 + Art. 26(6) AI Act).
+ * Pattern identic cu pushOversightFiles: registry.md + records/{id}.md
+ * regenerat live via buildLoggingMarkdown.
+ */
+function pushLoggingFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const records = (state.loggingEvidence ?? []) as LoggingConfig[]
+  const aiSystems = (state.aiSystems ?? []) as AISystemRecord[]
+
+  const lines: string[] = [
+    `# Logging Evidence — ${orgName}`,
+    ``,
+    `**Total:** ${records.length}`,
+    `**Cadru:** EU AI Act Art. 12 — logging automat + Art. 26(6) — retenție min 6 luni`,
+    ``,
+  ]
+  if (records.length === 0) {
+    lines.push(`_Nu există configurări de logging înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Titlu | Sistem AI | Severitate | Storage | Retenție | Completeness | Retention status | Status | Activat de |`,
+      `|---|---|---|---|---|---|---|---|---|---|`,
+    )
+    for (const r of records) {
+      const systemName =
+        aiSystems.find((s) => s.id === r.linkedAISystemId)?.name ??
+        r.linkedAISystemId
+      lines.push(
+        `| ${r.id} | ${escapeMdCell(r.title)} | ${escapeMdCell(systemName)} | ${r.severityLevel} | ${r.storageBackend} | ${r.actualRetentionMonths}/${r.minRetentionMonths}mo | ${r.completeness} | ${r.retentionStatus} | ${r.status} | ${r.approvedByEmail ?? "—"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "logging/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+
+  for (const r of records) {
+    const systemName = aiSystems.find((s) => s.id === r.linkedAISystemId)?.name
+    files.push({
+      path: `logging/records/${slugify(r.id)}.md`,
+      bytes: utf8(buildLoggingMarkdown(r, orgName, systemName)),
+    })
+  }
+
+  // Suppress unused-import warnings when records=0 (still exporting labels for type safety).
+  void LOGGING_EVENT_CATEGORY_LABELS
+  void LOGGING_SEVERITY_LEVEL_LABELS
+  void LOGGING_STORAGE_BACKEND_LABELS
+}
+
 function pushDsarFiles(
   files: FileBytes[],
   state: AIActState,
@@ -1398,6 +1465,32 @@ function buildAuditTrailLog(input: {
         ev.uploadedByEmail,
         "OVERSIGHT_EVIDENCE_ATTACHED",
         `${op.title} → ${ev.type}: ${ev.description}`,
+      )
+    }
+  }
+
+  // Sprint 018 — Logging Evidence configs (Art. 12 + Art. 26(6))
+  for (const lg of input.state.loggingEvidence ?? []) {
+    push(
+      lg.createdAtISO,
+      input.issuedByUserEmail,
+      "LOGGING_CONFIG_CREATED",
+      `${lg.title} → system=${lg.linkedAISystemId} severity=${lg.severityLevel} retention=${lg.actualRetentionMonths}/${lg.minRetentionMonths}mo completeness=${lg.completeness}`,
+    )
+    if (lg.approvedAtISO) {
+      push(
+        lg.approvedAtISO,
+        lg.approvedByEmail ?? input.issuedByUserEmail,
+        "LOGGING_CONFIG_ACTIVATED",
+        lg.title,
+      )
+    }
+    for (const ev of lg.evidenceItems) {
+      push(
+        ev.uploadedAtISO,
+        ev.uploadedByEmail,
+        "LOGGING_EVIDENCE_ATTACHED",
+        `${lg.title} → ${ev.type}: ${ev.description}${ev.eventCount ? ` (${ev.eventCount} events)` : ""}`,
       )
     }
   }
@@ -1600,6 +1693,7 @@ function buildSignatureTxt(input: {
     `Share tokens:         ${input.manifest.summary.shareTokensCount}`,
     `FRIA records (Art.27):${input.manifest.summary.friaRecordsCount ?? 0}`,
     `Oversight protocols (Art.14):${input.manifest.summary.oversightProtocolsCount ?? 0}`,
+    `Logging configs (Art.12):${input.manifest.summary.loggingConfigsCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",
