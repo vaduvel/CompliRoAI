@@ -176,8 +176,9 @@ function detectCategory(detector: Detector, text: string): PIICategoryHit[] {
   if (detector.regex) {
     const matches = text.match(detector.regex) ?? []
     count += matches.length
-    if (matches.length > 0 && !sample) {
-      sample = maskSample(matches[0], detector.type)
+    const first = matches[0]
+    if (first && !sample) {
+      sample = maskSample(first, detector.type)
     }
   }
   if (detector.keywords) {
