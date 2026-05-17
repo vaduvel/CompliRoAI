@@ -84,6 +84,67 @@ export type RoleAssessment = {
   answers: RoleAssessmentAnswers
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+//   Art. 50 — Transparency Notices (Sprint 6)
+//   Obligații de transparență pentru sisteme AI care interacționează cu
+//   persoane fizice + watermarking conținut sintetic. Deadline aplicabilitate:
+//   2 decembrie 2026 (extindere Omnibus mai 2026, de la 2 august 2026).
+// ────────────────────────────────────────────────────────────────────────────
+
+export type TransparencyNoticeType =
+  | "chatbot-disclosure"
+  | "ai-generated-content"
+  | "deepfake-disclosure"
+  | "personalization-notice"
+  | "emotion-recognition-notice"
+  | "automated-decision-notice"
+
+export type TransparencyPlacement =
+  | "popup"
+  | "footer"
+  | "header"
+  | "email-signature"
+  | "video-overlay"
+  | "inline"
+
+export type TransparencyLanguage = "ro" | "en"
+
+export type TransparencyTemplate = {
+  language: TransparencyLanguage
+  placement: TransparencyPlacement
+  text: string
+  /** Variantă scurtă pentru spații mici (footer compact, badge etc). */
+  shortText?: string
+  /** HTML gata de copy-paste (cu styling inline mic). */
+  html?: string
+}
+
+export type TransparencyNoticeRequirement = {
+  noticeType: TransparencyNoticeType
+  /** Articolul AI Act care impune obligația (e.g. "Art. 50(1)"). */
+  article: string
+  /** Ce element din sistem a declanșat obligația — text scurt explicativ. */
+  triggeredBy: string
+  /** Data ISO la care obligația devine executorie. */
+  deadline: string
+  /** Text scurt al obligației (1-2 propoziții, în română). */
+  obligation: string
+  /** Severitate operațională — folosit pentru badge / prioritizare. */
+  severity: "critical" | "high" | "medium"
+  templates: TransparencyTemplate[]
+}
+
+export type TransparencyImplementation = {
+  id: string
+  systemId: string
+  noticeType: TransparencyNoticeType
+  placement: TransparencyPlacement
+  language: TransparencyLanguage
+  implementedAtISO: string
+  implementedByEmail: string
+  notes?: string
+}
+
 export type LiteracyRecord = {
   id: string
   employeeName: string

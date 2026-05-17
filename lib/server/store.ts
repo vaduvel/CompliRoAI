@@ -12,6 +12,7 @@ import type {
   AISystemRecord,
   LiteracyRecord,
   RoleAssessment,
+  TransparencyImplementation,
 } from "@/lib/compliance/types"
 
 export type GeneratedDocumentRecord = {
@@ -70,6 +71,11 @@ export type AIActState = {
    * Opțional, dar recomandat ca prerequisite înainte de a genera Readiness Pack.
    */
   roleAssessment?: RoleAssessment
+  /**
+   * Art. 50 Transparency notices marcate ca implementate (Sprint 6).
+   * Folosit ca dovadă în Readiness Pack și Audit Pack.
+   */
+  transparencyImplementations?: TransparencyImplementation[]
 }
 
 const DEFAULT_STATE: AIActState = {
@@ -93,6 +99,7 @@ function mergeWithDefault(partial: Partial<AIActState> | null | undefined): AIAc
     onboarding: partial?.onboarding ?? { completed: false, currentStep: 1 },
     readinessPacks: partial?.readinessPacks,
     roleAssessment: partial?.roleAssessment,
+    transparencyImplementations: partial?.transparencyImplementations,
   }
 }
 
