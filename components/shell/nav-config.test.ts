@@ -156,13 +156,15 @@ describe("nav-config — cabinet exposes full collaboration workflow", () => {
     expect(labels).toContain("Setări (facturare)")
   })
 
-  it("cabinet does NOT see ai-builder modules (Annex IV / FRIA / EU DB / API SDK)", () => {
+  it("cabinet does NOT see ai-builder-only modules (Annex IV / EU DB / API SDK / QMS), DOES see FRIA (Sprint 016 — cabinets prepare FRIA pentru clienți deployer)", () => {
     const labels = labelsForRole("cabinet", "free_trial")
     expect(labels).not.toContain("Annex IV")
-    expect(labels).not.toContain("FRIA")
     expect(labels).not.toContain("EU Database")
     expect(labels).not.toContain("API / SDK")
     expect(labels).not.toContain("QMS")
+    // FRIA is shared între ai-builder + cabinet per mandate § 16 — cabinet
+    // prepares FRIA pe seama clienților deployer (Art. 27 AI Act).
+    expect(labels).toContain("FRIA")
   })
 
   it("cabinet on cabinet_solo tier sees magic links but NOT trust center / branding / approvals", () => {

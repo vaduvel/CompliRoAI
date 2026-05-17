@@ -30,6 +30,7 @@ import type {
   BreachRecord,
   ComplianceEvent,
   DpiaRecord,
+  FriaRecord,
   LiteracyRecord,
   RopaActivityRecord,
   ScanFinding,
@@ -47,6 +48,8 @@ import { readState as readCurrentOrgState } from "@/lib/server/store"
 import { verifyEventChain } from "@/lib/compliance/events"
 import { buildDpiaMarkdownForRecord, type DpiaRecordWithLink } from "@/lib/server/dpia-store"
 import { buildBreachMarkdown } from "@/lib/server/breach-store"
+import { buildFriaMarkdown } from "@/lib/server/fria-store"
+import { DEPLOYER_TYPE_LABELS } from "@/lib/compliance/fria-schema"
 import { buildRopaMachineReadableExport } from "@/lib/compliance/ropa-risk-engine"
 import {
   buildVendorReviewBrief,
@@ -105,6 +108,8 @@ export type AuditPackManifest = {
     dsarRequestsCount?: number
     eventsCount?: number
     chainOk?: boolean
+    // Sprint 016 — FRIA records included in pack.
+    friaRecordsCount?: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -278,6 +283,7 @@ export async function buildAuditPack(
       dsarRequestsCount: (state.dsarRequests ?? []).length,
       eventsCount: (state.events ?? []).length,
       chainOk: verifyEventChain(state.events ?? []).ok,
+      friaRecordsCount: (state.friaRecords ?? []).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -705,6 +711,8 @@ function buildFileContents(input: {
   pushVendorFiles(files, input.state, input.orgName)
   pushDsarFiles(files, input.state, input.generatedAt)
   pushAuditLogFiles(files, input.state, input.orgName, input.generatedAt)
+  // ── Sprint 016: FRIA evidence per Art. 27 AI Act ────────────────────────
+  pushFriaFiles(files, input.state, input.orgName)
 
   return files
 }
@@ -1098,6 +1106,55 @@ function buildVendorRiskContext(
   }
 }
 
+function pushFriaFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const records = (state.friaRecords ?? []) as FriaRecord[]
+  const aiSystems = (state.aiSystems ?? []) as AISystemRecord[]
+
+  // Registry markdown — table of all FRIA records.
+  const lines: string[] = [
+    `# FRIA — ${orgName}`,
+    ``,
+    `**Total:** ${records.length}`,
+    `**Cadru:** EU AI Act Art. 27 — Fundamental Rights Impact Assessment`,
+    ``,
+  ]
+  if (records.length === 0) {
+    lines.push(`_Nu există FRIA înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Titlu | Sistem AI | Tip deployer | Risc | Status | Aprobat de | Notificat autoritate |`,
+      `|---|---|---|---|---|---|---|---|`,
+    )
+    for (const r of records) {
+      const systemName =
+        aiSystems.find((s) => s.id === r.linkedAISystemId)?.name ??
+        r.linkedAISystemId
+      const deployerLabel =
+        DEPLOYER_TYPE_LABELS[r.deployerType] ?? r.deployerType
+      lines.push(
+        `| ${r.id} | ${escapeMdCell(r.title)} | ${escapeMdCell(systemName)} | ${escapeMdCell(deployerLabel)} | ${r.overallRiskLevel} (${r.overallRiskScore}/100) | ${r.status} | ${r.approvedByEmail ?? "—"} | ${r.notifiedAtISO ? `${r.notifyAuthorityName ?? ""} (${r.notifiedAtISO.slice(0, 10)})` : "—"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "fria/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+
+  // Per-record markdown via buildFriaMarkdown (regenerated fresh at build).
+  for (const r of records) {
+    const systemName = aiSystems.find((s) => s.id === r.linkedAISystemId)?.name
+    files.push({
+      path: `fria/records/${slugify(r.id)}.md`,
+      bytes: utf8(buildFriaMarkdown(r, orgName, systemName)),
+    })
+  }
+}
+
 function pushDsarFiles(
   files: FileBytes[],
   state: AIActState,
@@ -1234,6 +1291,32 @@ function buildAuditTrailLog(input: {
       "LITERACY_TRAINING_LOGGED",
       `${rec.employeeName} (${rec.role}) — ${rec.trainingType}, ${rec.durationHours}h`
     )
+  }
+
+  // FRIA records (Art. 27)
+  for (const fria of input.state.friaRecords ?? []) {
+    push(
+      fria.createdAtISO,
+      input.issuedByUserEmail,
+      "FRIA_CREATED",
+      `${fria.title} → system=${fria.linkedAISystemId} risk=${fria.overallRiskLevel}`,
+    )
+    if (fria.approvedAtISO) {
+      push(
+        fria.approvedAtISO,
+        fria.approvedByEmail ?? input.issuedByUserEmail,
+        "FRIA_APPROVED",
+        fria.title,
+      )
+    }
+    if (fria.notifiedAtISO) {
+      push(
+        fria.notifiedAtISO,
+        input.issuedByUserEmail,
+        "FRIA_AUTHORITY_NOTIFIED",
+        `${fria.title} → ${fria.notifyAuthorityName ?? "—"} ref=${fria.authorityReference ?? "—"}`,
+      )
+    }
   }
 
   // Generation event itself
@@ -1432,6 +1515,7 @@ function buildSignatureTxt(input: {
     `Annex IV docs:        ${input.manifest.summary.annexIvDocumentsCount}`,
     `Literacy records:     ${input.manifest.summary.literacyRecordsCount}`,
     `Share tokens:         ${input.manifest.summary.shareTokensCount}`,
+    `FRIA records (Art.27):${input.manifest.summary.friaRecordsCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",

@@ -48,10 +48,11 @@ describe("feature-gates — workspaceMode visibility", () => {
     expect(featureBelongsToWorkspace("cabinet", "client_intake")).toBe(true)
   })
 
-  it("cabinet does NOT see ai-builder depth modules (Annex IV / FRIA / EU DB)", () => {
+  it("cabinet does NOT see ai-builder-only depth modules (Annex IV / EU DB), DOES see FRIA (Sprint 016 — cabinets prepare FRIA pentru clienți deployer)", () => {
     expect(featureBelongsToWorkspace("cabinet", "annex_iv_generator")).toBe(false)
-    expect(featureBelongsToWorkspace("cabinet", "fria_generator")).toBe(false)
     expect(featureBelongsToWorkspace("cabinet", "eu_database_wizard")).toBe(false)
+    // FRIA shared cu cabinet per mandate § 16
+    expect(featureBelongsToWorkspace("cabinet", "fria_generator")).toBe(true)
   })
 })
 

@@ -28,6 +28,7 @@ import type {
   BreachRecord,
   ComplianceEvent,
   DpiaRecord,
+  FriaRecord,
   RopaActivityRecord,
   ScanFinding,
   VendorRecord,
@@ -285,14 +286,87 @@ function buildSampleState(): AIActState {
     actorSource: "session",
   }
 
+  // Sprint 016 — Add a FRIA record + the AI system it links to.
+  const aiSystem = {
+    id: "sys-hr-1",
+    orgId: "org-test-pack",
+    name: "HR Screening AI",
+    purpose: "hr-screening" as const,
+    vendor: "OpenAI",
+    modelType: "LLM",
+    usesPersonalData: true,
+    makesAutomatedDecisions: true,
+    impactsRights: true,
+    hasHumanReview: false,
+    riskLevel: "high" as const,
+    rationale: "Used to triage CVs",
+    recommendedActions: [],
+    createdAtISO: "2026-05-01T08:00:00.000Z",
+  }
+  const fria: FriaRecord = {
+    id: "fria-sample-1",
+    orgId: "org-test-pack",
+    title: "FRIA HR Screening 2026",
+    linkedAISystemId: "sys-hr-1",
+    deployerType: "private_public_service",
+    processDescription: "Trierea automată a CV-urilor pentru posturile vacante",
+    frequencyOfUse: "weekly",
+    affectedGroups: [
+      {
+        category: "Candidați angajare",
+        estimatedCount: 500,
+        vulnerabilities: ["vârstnici"],
+      },
+    ],
+    rightsAtRisk: ["non_discrimination", "data_protection"],
+    riskAssessments: [
+      {
+        rightAffected: "non_discrimination",
+        description: "Posibilă discriminare indirectă pe vârstă",
+        likelihood: "possible",
+        severity: "moderate",
+        riskLevel: "medium",
+        mitigationMeasures: ["bias monitoring", "human-in-the-loop"],
+        residualRisk: "low",
+      },
+    ],
+    overallRiskScore: 25,
+    overallRiskLevel: "low",
+    humanOversightMeasures: [
+      {
+        measureType: "human_in_loop",
+        description: "Recrutor revizuiește toate respingerile",
+        responsibleRole: "Recrutor HR senior",
+        triggerConditions: "decizie negativă",
+        documentedAtISO: "2026-05-10T10:00:00.000Z",
+      },
+    ],
+    complaintMechanism:
+      "Plângerile se pot trimite la dpo@acme.ro; răspuns în 15 zile.",
+    governanceMeasures: ["Audit lunar bias", "Training trimestrial operatori"],
+    notifyAuthorityRequired: true,
+    notifyAuthorityName: "ADR (Autoritatea pentru Digitalizarea României)",
+    notifiedAtISO: "2026-05-12T10:00:00.000Z",
+    authorityReference: "ADR/2026/12345",
+    status: "approved",
+    approvedByEmail: "dpo@acme.ro",
+    approvedAtISO: "2026-05-11T10:00:00.000Z",
+    linkedFindingIds: [],
+    evidenceVaultIds: [],
+    createdAtISO: "2026-05-10T10:00:00.000Z",
+    updatedAtISO: "2026-05-12T10:00:00.000Z",
+  }
+
   base = {
     ...base,
+    aiSystems: [aiSystem],
     findings: [finding],
     dpiaRecords: [dpia],
     ropaActivities: [ropa],
     breachRecords: [breach],
     aiDataMapRecords: [dataMap],
     vendorRecords: [vendor],
+    friaRecords: [fria],
   } as AIActState
   base.events = appendComplianceEvents(base, [event1, event2])
   return base
@@ -449,6 +523,84 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const parsed = JSON.parse(json)
     expect(parsed.activities).toHaveLength(1)
     expect(parsed.activities[0].name).toBe("Procesare candidati HR")
+  })
+
+  // ── Sprint 016 — FRIA inclusion in Audit Pack ─────────────────────────────
+  it("includes fria/registry.md + per-record markdown", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const paths = Object.keys(zip.files)
+    expect(paths).toContain("fria/registry.md")
+    expect(paths).toContain("fria/records/fria-sample-1.md")
+  })
+
+  it("fria/registry.md contains FRIA title, deployer label, and authority reference", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip.file("fria/registry.md")!.async("string")
+    expect(md).toContain("FRIA HR Screening 2026")
+    expect(md).toContain("HR Screening AI")
+    expect(md).toContain("Entitate privată — servicii publice")
+    expect(md).toContain("ADR")
+  })
+
+  it("fria/records/<id>.md is a full evaluator-generated markdown", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip
+      .file("fria/records/fria-sample-1.md")!
+      .async("string")
+    // Sections produced by buildFriaMarkdown
+    expect(md).toContain("# FRIA — FRIA HR Screening 2026")
+    expect(md).toContain("## A. Profilul deployer-ului")
+    expect(md).toContain("## D. Drepturile fundamentale la risc")
+    expect(md).toContain("Nediscriminare")
+    // Authority notification documented
+    expect(md).toContain("ADR/2026/12345")
+  })
+
+  it("manifest summary includes friaRecordsCount", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    expect(result.manifest.summary.friaRecordsCount).toBe(1)
+  })
+
+  it("FRIA inclusion preserves hash chain integrity", async () => {
+    const { buildAuditPack, verifyAuditPackZip } = await import(
+      "@/lib/server/audit-pack-builder"
+    )
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const verification = await verifyAuditPackZip(result.zipBuffer)
+    expect(verification.valid).toBe(true)
+    expect(verification.errors).toEqual([])
   })
 })
 

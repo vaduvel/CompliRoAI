@@ -135,6 +135,9 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     "sso",
     "dpa",
     "sla",
+    // Sprint 016 — cabinets prepare FRIA evaluations for client deployers
+    // (deployer of a high-risk system per Art. 27(1)).
+    "fria_generator",
   ]),
 }
 
@@ -277,6 +280,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "client_intake",
     "pdf_exports",
     "email_notifications",
+    // Sprint 016 — cabinet preparing FRIA for client deployer.
+    "fria_generator",
   ]),
   cabinet_enterprise: new Set<Feature>([
     "ai_inventory",
@@ -303,6 +308,7 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "sso",
     "dpa",
     "sla",
+    "fria_generator",
   ]),
   one_off_audit: new Set<Feature>([
     "ai_inventory",

@@ -159,13 +159,17 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     requiredFeature: "eu_database_wizard",
   },
   {
+    // FRIA = Fundamental Rights Impact Assessment (Art. 27 AI Act).
+    // Obligație compliance pentru deployeri high-risk; expusă atât în ai-builder
+    // (provider+deployer dual) cât și în cabinet (consultantul prepară FRIA
+    // pe seama clienților deployer). Plasată în "compliance" pentru cabinet
+    // alignment cu DPIA/RoPA și pentru a păstra section grouping fără "builder".
     href: "/dashboard/fria",
     label: "FRIA",
     iconName: "ShieldAlert",
-    section: "builder",
-    workspaceModes: ["ai-builder"],
+    section: "compliance",
+    workspaceModes: ["ai-builder", "cabinet"],
     requiredFeature: "fria_generator",
-    badge: "coming-soon",
   },
   {
     href: "/dashboard/human-oversight",
