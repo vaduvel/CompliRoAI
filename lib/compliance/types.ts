@@ -655,6 +655,127 @@ export type RopaActivityRecord = {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+//   GDPR Breach — Art. 33 (ANSPDCP notification 72h) + Art. 34 (data subject
+//   notification). Sprint 008D — standalone GDPR module, separat de NIS2
+//   incident management (Sprint 012 va wire AI-critical NIS2 slice).
+// ────────────────────────────────────────────────────────────────────────────
+
+export type BreachSeverity = "low" | "medium" | "high" | "critical"
+
+export type BreachStatus =
+  | "draft"                    // în evaluare internă
+  | "assessing"                // se evaluează necesitatea notificării
+  | "anspdcp_required"         // necesită notificare ANSPDCP (Art. 33)
+  | "anspdcp_notified"         // notificare ANSPDCP trimisă
+  | "subjects_required"        // necesită notificare persoane vizate (Art. 34)
+  | "subjects_notified"        // persoane vizate notificate
+  | "closed"                   // caz închis cu toate notificările trimise
+  | "no_notification_required" // documentat că nu necesită notificare
+
+export type AnspdcpNotificationStatus = "draft" | "submitted" | "acknowledged"
+
+export type BreachDataCategory =
+  | "identification"           // nume, CNP, CI
+  | "contact"                  // email, telefon, adresă
+  | "financial"                // date bancare, card, salariu
+  | "special_health"           // date sănătate
+  | "special_biometric"        // date biometrice
+  | "special_genetic"          // date genetice
+  | "special_political"        // opinii politice
+  | "special_religious"        // convingeri religioase
+  | "special_sexual"           // viață sexuală
+  | "special_criminal"         // condamnări penale
+  | "children"                 // date minori
+  | "employee"                 // date angajați
+  | "credentials"              // parole, autentificare
+  | "behavioral"               // tracking, cookie-uri, comportament
+  | "other"
+
+export type BreachCause =
+  | "cyberattack"              // ransomware, phishing, hack
+  | "insider_malicious"        // angajat rău-intenționat
+  | "insider_accidental"       // greșeală angajat
+  | "lost_device"              // laptop/telefon pierdut
+  | "misconfiguration"         // ex: backup public
+  | "third_party"              // vendor / subprocesator
+  | "physical"                 // intruziune fizică, documente
+  | "ai_system"                // AI a expus date (hallucinare, prompt leak)
+  | "other"
+
+export type BreachSubjectNotificationMethod =
+  | "email"
+  | "letter"
+  | "public_communication"
+  | "other"
+  | "not_yet"
+
+export type BreachAnspdcpNotification = {
+  status: AnspdcpNotificationStatus
+  submittedAtISO?: string
+  referenceNumber?: string               // nr. înregistrare primit
+  delayJustification?: string            // dacă notificarea > 72h, justificare obligatorie
+}
+
+export type BreachSubjectNotification = {
+  sentAtISO?: string
+  method: BreachSubjectNotificationMethod
+  contentDocumented: boolean
+  skipReason?: string                    // dacă subjectNotificationRequired=false dar e personal data, justificare
+}
+
+export type BreachEvidence = {
+  id: string
+  note: string
+  url?: string
+  fileName?: string
+  attachedByEmail?: string
+  attachedAtISO: string
+}
+
+export type BreachRecord = {
+  id: string
+  orgId: string
+  // Identification
+  title: string
+  description: string
+  cause: BreachCause
+  // Timeline (CRITICAL — 72h clock starts here)
+  discoveredAtISO: string                  // momentul descoperirii
+  occurredAtISO?: string                   // momentul incidentului (poate fi necunoscut)
+  deadlineISO: string                      // discoveredAt + 72h (calculat automat)
+  // Scope & impact
+  severity: BreachSeverity
+  dataCategories: BreachDataCategory[]
+  affectedSubjectsCount?: number           // număr aproximativ persoane afectate
+  affectedSubjectsCategories: string[]     // ex: ["angajați", "clienți B2C"]
+  affectedSystems: string[]                // ex: ["CRM", "fileserver", "Mailchimp"]
+  // Risk assessment
+  likelyConsequences: string               // ce se poate întâmpla persoanelor afectate
+  highRiskToRights: boolean                // dacă DA → Art. 34 notificare persoane vizate
+  // Mitigation
+  containmentMeasures: string[]            // măsuri luate pentru limitare
+  preventionMeasures: string[]             // măsuri viitoare
+  // ANSPDCP notification (Art. 33)
+  anspdcpNotificationRequired: boolean     // determinat automatic dacă date personale + nu evident sigur
+  anspdcpNotification?: BreachAnspdcpNotification
+  // Data subject notification (Art. 34)
+  subjectNotificationRequired: boolean
+  subjectNotification?: BreachSubjectNotification
+  // Lifecycle
+  status: BreachStatus
+  assignedToEmail?: string
+  linkedFindingId?: string                 // finding generat în /dashboard/resolve
+  linkedAISystemIds?: string[]             // dacă AI e cauza
+  evidenceVaultIds: string[]               // ID-uri evidence vault legacy (compat)
+  evidence?: BreachEvidence[]              // dovezi atașate (note + url + fileName)
+  notes?: string
+  // Audit
+  createdAtISO: string
+  updatedAtISO: string
+  closedAtISO?: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 //   Client portal (cabinet ↔ client comments + uploads pe finding-uri).
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -756,6 +877,14 @@ export type ComplianceState = {
   ropaActivities?: RopaActivityRecord[]
   discoveryTriggers?: import("@/lib/compliance/discovery-trigger-orchestrator").DiscoveryTriggerRecord[]
   aiDataMapRecords?: AIDataMapRecord[]
+
+  /**
+   * GDPR breach records (Sprint 008D — Art. 33 ANSPDCP 72h + Art. 34 data
+   * subject notification). Standalone modul, separat de NIS2 incidents.
+   * Sprint 012 va wire AI-critical NIS2 slice care, când implică date
+   * personale, poate emite un BreachRecord legat via `linkedFindingId`.
+   */
+  breachRecords?: BreachRecord[]
 
   // ── Cabinet workspaces & client onboarding ─────────────────────────────────
   partnerWorkspace?: {
