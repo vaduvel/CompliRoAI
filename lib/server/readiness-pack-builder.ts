@@ -46,6 +46,7 @@ import {
   shouldUseSupabaseOrgState,
 } from "@/lib/server/supabase-org-state"
 import {
+  mergeWithDefault,
   readState as readCurrentOrgState,
   writeState,
   type AIActState,
@@ -561,15 +562,7 @@ async function loadStateForOrg(
   try {
     if (shouldUseSupabaseOrgState()) {
       const remote = await loadOrgStateFromSupabase<Partial<AIActState>>(targetOrgId)
-      if (remote) {
-        return {
-          aiSystems: remote.aiSystems ?? [],
-          literacyRecords: remote.literacyRecords ?? [],
-          generatedDocuments: remote.generatedDocuments ?? [],
-          onboarding: remote.onboarding ?? { completed: false, currentStep: 1 },
-          roleAssessment: remote.roleAssessment,
-        }
-      }
+      if (remote) return mergeWithDefault(remote)
     }
   } catch {
     // fall through to local
@@ -577,21 +570,9 @@ async function loadStateForOrg(
   try {
     const filePath = path.join(process.cwd(), ".data", `state-${targetOrgId}.json`)
     const raw = await fs.readFile(filePath, "utf-8")
-    const parsed = JSON.parse(raw) as Partial<AIActState>
-    return {
-      aiSystems: parsed.aiSystems ?? [],
-      literacyRecords: parsed.literacyRecords ?? [],
-      generatedDocuments: parsed.generatedDocuments ?? [],
-      onboarding: parsed.onboarding ?? { completed: false, currentStep: 1 },
-      roleAssessment: parsed.roleAssessment,
-    }
+    return mergeWithDefault(JSON.parse(raw) as Partial<AIActState>)
   } catch {
-    return {
-      aiSystems: [],
-      literacyRecords: [],
-      generatedDocuments: [],
-      onboarding: { completed: false, currentStep: 1 },
-    }
+    return mergeWithDefault(null)
   }
 }
 

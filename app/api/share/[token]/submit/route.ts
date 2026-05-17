@@ -19,7 +19,7 @@ import {
   markShareTokenUsed,
   verifyShareToken,
 } from "@/lib/server/share-token-store"
-import type { AIActState } from "@/lib/server/store"
+import { mergeWithDefault, type AIActState } from "@/lib/server/store"
 import { writeFileSafe } from "@/lib/server/fs-safe"
 import { promises as fs } from "node:fs"
 import path from "node:path"
@@ -57,13 +57,6 @@ function localStatePath(orgId: string): string {
 }
 
 async function readOrgStateForSubmit(orgId: string): Promise<ExtendedState> {
-  const defaults: ExtendedState = {
-    aiSystems: [],
-    literacyRecords: [],
-    generatedDocuments: [],
-    onboarding: { completed: false, currentStep: 1 },
-  }
-
   if (hasSupabaseConfig()) {
     try {
       const rows = await supabaseSelect<{ state: Partial<ExtendedState> | null }>(
@@ -72,7 +65,7 @@ async function readOrgStateForSubmit(orgId: string): Promise<ExtendedState> {
         "public"
       )
       const remote = rows[0]?.state
-      if (remote) return { ...defaults, ...remote }
+      if (remote) return mergeWithDefault(remote) as ExtendedState
     } catch {
       // fall through
     }
@@ -80,9 +73,9 @@ async function readOrgStateForSubmit(orgId: string): Promise<ExtendedState> {
 
   try {
     const raw = await fs.readFile(localStatePath(orgId), "utf8")
-    return { ...defaults, ...(JSON.parse(raw) as Partial<ExtendedState>) }
+    return mergeWithDefault(JSON.parse(raw) as Partial<ExtendedState>) as ExtendedState
   } catch {
-    return defaults
+    return mergeWithDefault(null) as ExtendedState
   }
 }
 

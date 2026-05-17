@@ -26,7 +26,7 @@ import JSZip from "jszip"
 import { classifyAISystem } from "@/lib/compliance/ai-act-classifier"
 import type { AISystemRecord, LiteracyRecord } from "@/lib/compliance/types"
 import type { WorkspaceMode } from "@/lib/server/auth"
-import type { AIActState, GeneratedDocumentRecord } from "@/lib/server/store"
+import { mergeWithDefault, type AIActState, type GeneratedDocumentRecord } from "@/lib/server/store"
 import { loadOrgStateFromSupabase, shouldUseSupabaseOrgState } from "@/lib/server/supabase-org-state"
 import { promises as fs } from "node:fs"
 import path from "node:path"
@@ -1039,14 +1039,7 @@ async function loadStateForOrg(
   try {
     if (shouldUseSupabaseOrgState()) {
       const remote = await loadOrgStateFromSupabase<Partial<AIActState>>(targetOrgId)
-      if (remote) {
-        return {
-          aiSystems: remote.aiSystems ?? [],
-          literacyRecords: remote.literacyRecords ?? [],
-          generatedDocuments: remote.generatedDocuments ?? [],
-          onboarding: remote.onboarding ?? { completed: false, currentStep: 1 },
-        }
-      }
+      if (remote) return mergeWithDefault(remote)
     }
   } catch {
     // fall through to local
@@ -1054,19 +1047,8 @@ async function loadStateForOrg(
   try {
     const filePath = path.join(process.cwd(), ".data", `state-${targetOrgId}.json`)
     const raw = await fs.readFile(filePath, "utf-8")
-    const parsed = JSON.parse(raw) as Partial<AIActState>
-    return {
-      aiSystems: parsed.aiSystems ?? [],
-      literacyRecords: parsed.literacyRecords ?? [],
-      generatedDocuments: parsed.generatedDocuments ?? [],
-      onboarding: parsed.onboarding ?? { completed: false, currentStep: 1 },
-    }
+    return mergeWithDefault(JSON.parse(raw) as Partial<AIActState>)
   } catch {
-    return {
-      aiSystems: [],
-      literacyRecords: [],
-      generatedDocuments: [],
-      onboarding: { completed: false, currentStep: 1 },
-    }
+    return mergeWithDefault(null)
   }
 }

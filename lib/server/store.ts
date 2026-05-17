@@ -1,3 +1,17 @@
+// State store CompliRoAI — Sprint 008A-7 upgrade.
+//
+// `AIActState` este acum alias pentru `ComplianceState` (subset AI-relevant
+// portat din DPO-OS). Tipurile native CompliRoAI (`GeneratedDocumentRecord`,
+// `OnboardingState`, `ReadinessPackRecord`, `OnboardingWorkspaceMode`) sunt
+// re-exportate aici pentru backward compat cu modulele care le importau
+// direct din `@/lib/server/store`.
+//
+// Adapter pattern pentru module DPO-OS portate (vezi `lib/server/dsar-store.ts`):
+// modulele primesc orgId explicit în signature, dar intern folosim
+// readState()/writeState() — care rezolvă orgId din getOrgContext()
+// (middleware). Funcțiile `mutateFreshStateForOrg` / `readFreshStateForOrg`
+// expun signature DPO-OS (orgId, mutator) ca să fie drop-in pentru cod ported.
+
 import { promises as fs } from "node:fs"
 import path from "node:path"
 
@@ -8,105 +22,32 @@ import {
   persistOrgStateToSupabase,
   shouldUseSupabaseOrgState,
 } from "./supabase-org-state"
+import { initialComplianceState } from "@/lib/compliance/engine"
 import type {
-  AISystemRecord,
-  DsarRequest,
-  LiteracyRecord,
-  RoleAssessment,
-  TransparencyImplementation,
+  AIActGeneratedDocumentRecord,
+  AIActOnboardingState,
+  AIActReadinessPackRecord,
+  ComplianceState,
 } from "@/lib/compliance/types"
 
-export type GeneratedDocumentRecord = {
-  id: string
-  systemId: string
-  documentType: "annex-iv"
-  content: string
-  createdAtISO: string
-  approvalStatus?: "pending" | "approved_as_evidence"
-}
+// ── Re-exports backward compat ───────────────────────────────────────────────
+// Codul existent face `import { GeneratedDocumentRecord } from "@/lib/server/store"`.
+// Păstrăm aliasurile cu numele istoric, dar shape-ul vine din types.ts.
 
+export type GeneratedDocumentRecord = AIActGeneratedDocumentRecord
+export type OnboardingState = AIActOnboardingState
+export type ReadinessPackRecord = AIActReadinessPackRecord
 export type OnboardingWorkspaceMode = "imm-classic" | "ai-builder" | "cabinet"
 
-export type OnboardingState = {
-  completed: boolean
-  completedAtISO?: string
-  /**
-   * Legacy field (pre-Sprint 6.5): "solo" sau "cabinet".
-   * Păstrat pentru backward compat — onboarding-ul nou scrie în `workspaceMode`.
-   */
-  role?: "solo" | "cabinet"
-  /**
-   * Sprint 6.5 — 3 segmente comerciale aliniate la verticalele din landing.
-   */
-  workspaceMode?: OnboardingWorkspaceMode
-  companyInfo?: {
-    cui?: string
-    sector?:
-      | "fintech"
-      | "saas"
-      | "consulting"
-      | "ecommerce"
-      | "industrial"
-      | "healthcare"
-      | "education"
-      | "altele"
-    employeeCount?: "<10" | "10-49" | "50-249" | "250+"
-  }
-  /** Sprint 6.5 — date extra pentru AI Builder path. */
-  builderInfo?: {
-    ctoEmail?: string
-    githubOrg?: string
-    firstModelDeployed?: string
-    customerFacing?: boolean
-  }
-  cabinetInfo?: {
-    cabinetName?: string
-    clientScale?: string
-  }
-  currentStep?: 1 | 2 | 3 | 4
-}
+/**
+ * Stare totală CompliRoAI per organizație. Sprint 008A-7: alias pentru
+ * `ComplianceState` (subset AI-relevant portat din DPO-OS). Toate modulele
+ * portate ulterior (DPIA, RoPA, Breach, Findings, Vendor) extind acest
+ * type prin adăugarea câmpurilor opționale în `lib/compliance/types.ts`.
+ */
+export type AIActState = ComplianceState
 
-export type ReadinessPackRecord = {
-  id: string
-  generatedAtISO: string
-  generatedByUserId: string
-  generatedByUserEmail?: string
-  format: "zip" | "markdown" | "html"
-  hashRoot: string
-  contentsCount: number
-  clientOrgId?: string
-  clientOrgName?: string
-}
-
-export type AIActState = {
-  aiSystems: AISystemRecord[]
-  literacyRecords: LiteracyRecord[]
-  generatedDocuments: GeneratedDocumentRecord[]
-  onboarding?: OnboardingState
-  readinessPacks?: ReadinessPackRecord[]
-  /**
-   * AI Act Role Assessment (Sprint 5.5) — provider / deployer / importer etc.
-   * Opțional, dar recomandat ca prerequisite înainte de a genera Readiness Pack.
-   */
-  roleAssessment?: RoleAssessment
-  /**
-   * Art. 50 Transparency notices marcate ca implementate (Sprint 6).
-   * Folosit ca dovadă în Readiness Pack și Audit Pack.
-   */
-  transparencyImplementations?: TransparencyImplementation[]
-  /**
-   * GDPR DSAR requests (Sprint 007 — port DPO-OS).
-   * Data Subject Access Requests cu lifecycle complet (Art. 15-22).
-   */
-  dsarRequests?: DsarRequest[]
-}
-
-const DEFAULT_STATE: AIActState = {
-  aiSystems: [],
-  literacyRecords: [],
-  generatedDocuments: [],
-  onboarding: { completed: false, currentStep: 1 },
-}
+// ── State management ─────────────────────────────────────────────────────────
 
 const stateCache = new Map<string, AIActState>()
 
@@ -114,16 +55,29 @@ function getStatePath(orgId: string): string {
   return path.join(process.cwd(), ".data", `state-${orgId}.json`)
 }
 
-function mergeWithDefault(partial: Partial<AIActState> | null | undefined): AIActState {
+/**
+ * Construiește o stare completă cu toate câmpurile `ComplianceState` required,
+ * pornind opțional de la un partial (e.g. citit din Supabase cross-org).
+ *
+ * Export public pentru cod care construiește state literal-uri în afara
+ * fluxului readState/writeState (e.g. cabinet → client cross-org readers
+ * în `audit-pack-builder` / `readiness-pack-builder`).
+ */
+export function mergeWithDefault(partial: Partial<AIActState> | null | undefined): AIActState {
+  const base = structuredClone(initialComplianceState)
+  if (!partial || typeof partial !== "object") return base
   return {
-    aiSystems: partial?.aiSystems ?? [],
-    literacyRecords: partial?.literacyRecords ?? [],
-    generatedDocuments: partial?.generatedDocuments ?? [],
-    onboarding: partial?.onboarding ?? { completed: false, currentStep: 1 },
-    readinessPacks: partial?.readinessPacks,
-    roleAssessment: partial?.roleAssessment,
-    transparencyImplementations: partial?.transparencyImplementations,
-    dsarRequests: partial?.dsarRequests,
+    ...base,
+    ...partial,
+    // Required arrays — merge cu fallback explicit ca să nu rămânem cu undefined.
+    alerts: partial.alerts ?? base.alerts,
+    findings: partial.findings ?? base.findings,
+    events: partial.events ?? base.events,
+    generatedDocuments: partial.generatedDocuments ?? base.generatedDocuments,
+    aiSystems: partial.aiSystems ?? base.aiSystems,
+    literacyRecords: partial.literacyRecords ?? base.literacyRecords,
+    // Onboarding: păstrează existing sau cade pe default {completed:false, step:1}.
+    onboarding: partial.onboarding ?? base.onboarding,
   }
 }
 
@@ -150,7 +104,7 @@ export async function readState(): Promise<AIActState> {
     stateCache.set(orgId, state)
     return state
   } catch {
-    const state = structuredClone(DEFAULT_STATE)
+    const state = mergeWithDefault(null)
     stateCache.set(orgId, state)
     return state
   }
@@ -170,4 +124,45 @@ export async function writeState(state: AIActState): Promise<void> {
   }
 
   await writeFileSafe(getStatePath(orgId), JSON.stringify(state, null, 2))
+}
+
+// ── DPO-OS adapter pattern (drop-in compat pentru module portate) ────────────
+//
+// DPO-OS sources presupun signature `mutateFreshStateForOrg(orgId, mutator)`
+// peste `mvp-store`. CompliRoAI rezolvă orgId din request headers, deci
+// orgId/orgName params sunt unused, dar păstrate pentru drop-in compat.
+
+/**
+ * Wraps readState + mutator + writeState într-un singur call.
+ * Modulul caller primește current state, returnează next state.
+ *
+ * @param _orgId   Ignorat — CompliRoAI rezolvă orgId din getOrgContext().
+ *                 Păstrat în signature pentru drop-in compat cu DPO-OS.
+ * @param mutator  Funcție pură care primește state curent și returnează next state.
+ * @param _orgName Ignorat — același motiv (DPO-OS îl folosea pentru a popula
+ *                 contextul org la prima scriere; CompliRoAI îl ia din headers).
+ */
+export async function mutateFreshStateForOrg(
+  _orgId: string,
+  mutator: (state: ComplianceState) => ComplianceState,
+  _orgName?: string,
+): Promise<ComplianceState> {
+  const current = await readState()
+  const next = mutator(current)
+  await writeState(next)
+  return next
+}
+
+/**
+ * Read-only variant a `mutateFreshStateForOrg`. Modulele portate care doar
+ * citesc (e.g. cockpit dashboard, audit pack) folosesc această funcție.
+ *
+ * @param _orgId   Ignorat — vezi `mutateFreshStateForOrg`.
+ * @param _orgName Ignorat — vezi `mutateFreshStateForOrg`.
+ */
+export async function readFreshStateForOrg(
+  _orgId: string,
+  _orgName?: string,
+): Promise<ComplianceState> {
+  return readState()
 }
