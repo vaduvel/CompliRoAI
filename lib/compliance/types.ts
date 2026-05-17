@@ -1353,6 +1353,20 @@ export type ComplianceState = {
   roleAssessment?: RoleAssessment
   transparencyImplementations?: TransparencyImplementation[]
   dsarRequests?: DsarRequest[]
+
+  /**
+   * Sprint 013 — Approval queue (cabinet workflow: client request →
+   * consultant decide). Apply pattern: la `approve`, motorul aplică
+   * `proposedChange` pe entitate.
+   */
+  approvalRequests?: ApprovalRequest[]
+
+  /**
+   * Sprint 013 — Trust Center public tokens (link-uri shareable la profilul
+   * public de compliance). Token-ul e HMAC self-contained — registry-ul de
+   * aici servește pentru revocare + listare + view tracking.
+   */
+  trustCenterTokens?: TrustCenterToken[]
 }
 
 // Forward decl pentru tipuri trăite în `lib/server/store.ts` care sunt parte
@@ -1452,4 +1466,182 @@ export type DsarRequest = {
   notes?: string
   createdAtISO: string
   updatedAtISO: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Approval Queue — Sprint 013
+//
+//   Pentru flow cabinet: client face acțiune → consultant aprobă/respinge
+//   înainte de finalizare. Aplicabil pentru DPIA screening, breach skip
+//   notification, vendor approval, finding status change critic, etc.
+//
+//   Tied la share-tokens (Sprint 002): requesterii via magic link au
+//   `linkedShareTokenId` setat pentru audit.
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Categoriile de schimbări care intră în cozile de aprobare. Acoperă
+ * deciziile high-stakes care, în modul cabinet, trebuie să treacă printr-un
+ * consultant înainte să devină definitive.
+ */
+export type ApprovalEntityType =
+  | "finding_status_change"
+  | "dpia_screening"
+  | "breach_anspdcp_decision"
+  | "breach_subject_skip"
+  | "vendor_approved"
+  | "vendor_rejected"
+  | "ai_system_classification"
+  | "transparency_notice_published"
+  | "readiness_pack_exported"
+  | "audit_pack_exported"
+
+export type ApprovalStatus = "pending" | "approved" | "rejected" | "withdrawn"
+
+export type ApprovalRequesterRole = "client" | "consultant"
+
+export type ApprovalRequest = {
+  id: string
+  orgId: string
+  // ── Ce se aprobă ──────────────────────────────────────────────────────────
+  entityType: ApprovalEntityType
+  entityId: string                            // findingId, dpiaId, breachId, vendorId, etc.
+  title: string                               // ex: "Aprobă DPIA pentru HR Screening"
+  description: string                         // human-readable summary
+  /**
+   * Payload structurat care descrie schimbarea propusă. La approve, motorul
+   * o aplică automat pe entitate (vezi `approval-queue-store.approveRequest`).
+   */
+  proposedChange: Record<string, unknown>
+  // ── Requester ─────────────────────────────────────────────────────────────
+  requestedByEmail: string
+  requestedByRole: ApprovalRequesterRole
+  requestedAtISO: string
+  // ── Reviewer ──────────────────────────────────────────────────────────────
+  status: ApprovalStatus
+  reviewedByEmail?: string
+  reviewedAtISO?: string
+  reviewComment?: string
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  expiresAtISO?: string                        // opțional: expirare automată după N zile
+  linkedShareTokenId?: string                  // dacă a fost generat via magic link
+  notes?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Calendar Event — Sprint 013
+//
+//   View agregat al deadline-urilor din toate modulele AI/GDPR/DORA/NIS2.
+//   Generate de `lib/compliance/calendar-aggregator.ts` ca pure function din
+//   ComplianceState. NU include fiscal (per mandate Rule 3).
+// ────────────────────────────────────────────────────────────────────────────
+
+export type CalendarEventModule =
+  | "dsar"
+  | "dpia"
+  | "ropa"
+  | "breach"
+  | "vendor"
+  | "ai_act_regulatory"      // dates oficiale: Art. 50, high-risk Annex III, etc.
+  | "approval"
+  | "finding"
+  | "audit_pack"             // reminder lunar pentru audit pack
+  | "trust_center"           // expirare link Trust Center
+
+export type CalendarEventSeverity = "info" | "warning" | "urgent" | "critical"
+
+export type CalendarEventStatus = "upcoming" | "due_today" | "overdue" | "completed"
+
+export type CalendarEventRecurrence = {
+  interval: "monthly" | "quarterly" | "yearly"
+  until?: string
+}
+
+export type CalendarEvent = {
+  /** ID stabil: `{module}-{entityId}-{kind}` ca să fie idempotent peste re-renders. */
+  id: string
+  module: CalendarEventModule
+  entityId?: string
+  entityLinkHref?: string                     // ex: "/dashboard/dsar"
+  title: string
+  description?: string
+  dateISO: string                             // start
+  endDateISO?: string                         // pentru intervale
+  allDay: boolean
+  severity: CalendarEventSeverity
+  status: CalendarEventStatus
+  recurring?: CalendarEventRecurrence
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Trust Center — Sprint 013
+//
+//   Surface publică read-only pentru a dovedi postura de compliance către
+//   clienți/auditori. Generat din ComplianceState curent, dar NU expune PII,
+//   numele actorilor, conținut findings, nume vendori. Doar counts +
+//   framework declarations + audit pack hash.
+//
+//   Distribuit prin token HMAC self-contained (pattern Sprint 002).
+// ────────────────────────────────────────────────────────────────────────────
+
+export type TrustCenterToken = {
+  id: string
+  orgId: string
+  /** Token public (HMAC self-contained, fără DB lookup necesar). */
+  token: string
+  /** Label intern (ex: "Link pentru clientul X"). */
+  label: string
+  createdByEmail: string
+  createdAtISO: string
+  expiresAtISO?: string                       // opțional; null = fără expirare
+  revokedAtISO?: string
+  viewCount: number
+  lastViewedAtISO?: string
+}
+
+export type TrustCenterPublicProfile = {
+  // ── Org identification (controlat de white-label) ─────────────────────────
+  orgName: string
+  brandingLogoUrl?: string
+  brandingColor?: string
+  brandingSecondaryColor?: string
+  brandingFooter?: string
+  // ── Generated stamp ───────────────────────────────────────────────────────
+  generatedAtISO: string
+  // ── AI Act role ───────────────────────────────────────────────────────────
+  aiActRole?: AIActRole | "unknown"
+  roleDeterminedAtISO?: string
+  // ── Frameworks declarate ──────────────────────────────────────────────────
+  frameworksInScope: Array<"AI_ACT" | "GDPR" | "DORA" | "NIS2">
+  doraEntityType?: string
+  nis2EntityClass?: string
+  // ── Compliance posture (counts only, NO details) ──────────────────────────
+  stats: {
+    aiSystemsCount: number
+    highRiskSystemsCount: number
+    findingsOpen: number
+    findingsResolved: number
+    findingsCritical: number
+    dpiaCompletedCount: number
+    ropaActivitiesCount: number
+    breachesClosedCount: number
+    breachesPendingCount: number
+    vendorsApprovedCount: number
+    transparencyNoticesImplementedCount: number
+    literacyRecordsCount: number
+  }
+  // ── Latest audit pack (hash root pentru verificare) ───────────────────────
+  latestAuditPack?: {
+    generatedAtISO: string
+    hashRoot: string
+    contentsCount: number
+  }
+  // ── Attestations publice (text + dată confirmare + ref legală) ────────────
+  attestations: Array<{
+    label: string
+    confirmedAtISO: string
+    legalReference: string
+  }>
 }
