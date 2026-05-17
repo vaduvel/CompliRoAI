@@ -1391,6 +1391,18 @@ export type ComplianceState = {
    * protocolul este incomplet sau lipsește pentru un sistem high-risk.
    */
   humanOversightProtocols?: HumanOversightProtocol[]
+
+  /**
+   * Sprint 018 — Logging Evidence per AI system (Art. 12 + Art. 26(6) AI Act).
+   * Fiecare config descrie cum sunt logate evenimentele unui sistem AI
+   * high-risk (categorii loguite, backend storage, retenție minimă 6 luni),
+   * cum se asigură integritatea (hash chain, write-once, signed writes) și
+   * cine are acces. Dovezi (export-uri SIEM, screenshot-uri, rapoarte
+   * audit) sunt atașate per config cu retenție tracking. Findings emise
+   * când config lipsește pentru sistem high-risk, retenția este sub minim
+   * sau logs au expirat.
+   */
+  loggingEvidence?: LoggingConfig[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1887,6 +1899,194 @@ export type HumanOversightProtocol = {
   approvedAtISO?: string
   rejectionReason?: string
   nextReviewISO?: string                    // typically +6 months
+  // Lifecycle
+  linkedFindingIds: string[]
+  notes?: string
+  generatedMarkdown?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Logging Evidence — Art. 12 + Art. 26(6) AI Act — Sprint 018 BUILD NEW
+//
+//   Art. 12(1): high-risk AI systems "shall technically allow for the
+//     automatic recording of events (logs) over their lifetime".
+//   Art. 12(2): logs must enable identification of situations risk Art. 79(1)
+//     + substantial modifications, post-market monitoring (Art. 72) + human
+//     oversight (Art. 14).
+//   Art. 12(3): pentru biometric identification la distanță (Annex III 1(a))
+//     OBLIGATORIU min: (a) periodul de utilizare; (b) baza de date de
+//     referință; (c) input data verificate; (d) operatorii naturali.
+//   Art. 26(6): deployer-ul păstrează logs MIN 6 luni (sau mai mult per
+//     drepturile fundamentale / GDPR / lege EU/națională).
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Severitatea logging-ului per cerințele Art. 12 — variază cu riscul:
+ *  - minimal           — recomandat pentru limited/minimal risk
+ *  - standard          — high-risk standard (Art. 12(1))
+ *  - enhanced          — high-risk + decizii cu impact (Art. 12(2))
+ *  - biometric_full    — Annex III pt. 1(a) — Art. 12(3) integral
+ */
+export type LoggingSeverityLevel =
+  | "minimal"
+  | "standard"
+  | "enhanced"
+  | "biometric_full"
+
+/**
+ * Backend-uri tipice de storage logs. Folosit pentru self-declaration deployer.
+ */
+export type LoggingStorageBackend =
+  | "local_files"
+  | "siem_splunk"
+  | "siem_elastic"
+  | "siem_datadog"
+  | "cloud_aws_cloudwatch"
+  | "cloud_azure_monitor"
+  | "cloud_gcp_logging"
+  | "supabase"
+  | "other"
+
+/**
+ * Stările de workflow pentru config-ul de logging.
+ */
+export type LoggingConfigStatus =
+  | "draft"
+  | "in_review"
+  | "active"
+  | "expired"
+  | "obsolete"
+  | "rejected"
+
+/**
+ * Cât de complet e configurat logging-ul față de Art. 12.
+ */
+export type LoggingCompleteness = "incomplete" | "partial" | "complete"
+
+/**
+ * Statusul retenției față de minRetentionMonths (Art. 26(6)).
+ *  - compliant            — există dovadă recentă + actualRetention >= min
+ *  - approaching_expiry   — < 30 zile până la expirarea ultimei dovezi
+ *  - expired              — past retention end (last evidence + actualRetention < now)
+ *  - no_evidence          — niciun item evidence atașat încă
+ */
+export type LoggingRetentionStatus =
+  | "compliant"
+  | "approaching_expiry"
+  | "expired"
+  | "no_evidence"
+
+/**
+ * Categoriile de evenimente loguite — derivate Art. 12(2) + Art. 12(3) +
+ * Art. 14 (override) + Art. 72 (post-market monitoring).
+ */
+export type LoggingEventCategory =
+  | "input_data_received"
+  | "output_decision_made"
+  | "human_override_applied"
+  | "human_review_completed"
+  | "stop_button_pressed"
+  | "model_updated"
+  | "data_drift_detected"
+  | "error_or_anomaly"
+  | "user_authentication"
+  | "biometric_match_attempt"        // Art. 12(3)
+  | "biometric_match_result"         // Art. 12(3)
+  | "system_start_stop"
+  | "other"
+
+/**
+ * Item de dovadă atașat config-ului (export SIEM, screenshot, raport audit).
+ */
+export type LogEvidenceItem = {
+  id: string
+  type:
+    | "log_export"
+    | "siem_screenshot"
+    | "audit_report"
+    | "retention_proof"
+    | "integrity_proof"
+    | "access_log"
+    | "other"
+  description: string
+  uploadedAtISO: string
+  uploadedByEmail: string
+  url?: string
+  fileName?: string
+  /** SHA-256 declarat pentru tamper detection (opțional). */
+  fileHash?: string
+  /** Perioada acoperită de dovadă (folosit la calcul retention). */
+  coversPeriodStartISO?: string
+  coversPeriodEndISO?: string
+  eventCount?: number
+}
+
+/**
+ * Câmpuri suplimentare obligatorii Art. 12(3) pentru biometric ID Annex III 1(a).
+ */
+export type LoggingBiometricSpecifics = {
+  periodOfUseTracked: boolean
+  referenceDatabaseRecorded: boolean
+  inputDataRecorded: boolean
+  operatorsIdentified: boolean
+}
+
+/**
+ * Înregistrarea completă a configurării de logging pentru un sistem AI.
+ *
+ * Flow status:
+ *   1. draft     — creat de operator
+ *   2. in_review — DPO/responsabil verifică
+ *   3. active    — în vigoare
+ *   4. expired   — retenția a depășit min/actual
+ *   5. obsolete  — sistemul retras
+ *   6. rejected  — review-ul a respins config-ul
+ */
+export type LoggingConfig = {
+  id: string
+  orgId: string
+  // Identification
+  title: string                             // ex: "Logging Config — HR Screening AI"
+  linkedAISystemId: string
+  severityLevel: LoggingSeverityLevel
+  // Art. 12 — categorii loguite
+  eventCategoriesLogged: LoggingEventCategory[]
+  // Storage
+  storageBackend: LoggingStorageBackend
+  storageLocation: string                   // SIEM URL / bucket path / etc.
+  // Art. 26(6) — retenția
+  minRetentionMonths: number                // cerut (>= 6 default; mai mult pentru drepturi/GDPR)
+  actualRetentionMonths: number             // declarat de deployer
+  retentionPolicy: string                   // descriere narativă
+  // Integritate
+  integrityMechanism:
+    | "hash_chain"
+    | "writeonce"
+    | "signed_writes"
+    | "external_audit"
+    | "none"
+  integrityMechanismDescription: string
+  // Access control
+  accessRoleDescription: string             // cine poate citi logs
+  accessLogged: boolean                     // meta-logging: dacă accesul la logs e și el logat
+  // Art. 12(3) — biometric specific
+  biometricSpecific?: LoggingBiometricSpecifics
+  // Workflow
+  status: LoggingConfigStatus
+  completeness: LoggingCompleteness
+  retentionStatus: LoggingRetentionStatus
+  approvedByEmail?: string
+  approvedAtISO?: string
+  rejectionReason?: string
+  /** ISO al ultimei dovezi atașate — folosit pentru retentionStatus. */
+  lastEvidenceAtISO?: string
+  /** Următoarea revizie (default +90 zile la create/update). */
+  nextReviewISO?: string
+  // Evidence
+  evidenceChecklist: string[]               // listă liberă de items
+  evidenceItems: LogEvidenceItem[]
   // Lifecycle
   linkedFindingIds: string[]
   notes?: string
