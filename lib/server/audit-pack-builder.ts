@@ -24,7 +24,17 @@ import { createHash, createHmac } from "node:crypto"
 import JSZip from "jszip"
 
 import { classifyAISystem } from "@/lib/compliance/ai-act-classifier"
-import type { AISystemRecord, LiteracyRecord } from "@/lib/compliance/types"
+import type {
+  AIDataMapRecord,
+  AISystemRecord,
+  BreachRecord,
+  ComplianceEvent,
+  DpiaRecord,
+  LiteracyRecord,
+  RopaActivityRecord,
+  ScanFinding,
+  VendorRecord,
+} from "@/lib/compliance/types"
 import type { WorkspaceMode } from "@/lib/server/auth"
 import { mergeWithDefault, type AIActState, type GeneratedDocumentRecord } from "@/lib/server/store"
 import { loadOrgStateFromSupabase, shouldUseSupabaseOrgState } from "@/lib/server/supabase-org-state"
@@ -34,6 +44,20 @@ import { getEffectiveBranding, type EffectiveBranding } from "@/lib/server/white
 import { listOrgShareTokens, type ShareTokenRecord } from "@/lib/server/share-token-store"
 import { buildAIActEvidencePack } from "@/lib/server/evidence-pack"
 import { readState as readCurrentOrgState } from "@/lib/server/store"
+import { verifyEventChain } from "@/lib/compliance/events"
+import { buildDpiaMarkdownForRecord, type DpiaRecordWithLink } from "@/lib/server/dpia-store"
+import { buildBreachMarkdown } from "@/lib/server/breach-store"
+import { buildRopaMachineReadableExport } from "@/lib/compliance/ropa-risk-engine"
+import {
+  buildVendorReviewBrief,
+  evaluateVendorReview,
+} from "@/lib/compliance/vendor-review-engine"
+import type { VendorRiskContext } from "@/lib/compliance/vendor-risk"
+import { buildAIPolicyPack } from "@/lib/compliance/ai-policy-pack"
+import {
+  formatEventsAsJSON,
+  formatEventsAsMarkdown,
+} from "@/lib/compliance/audit-log-formatters"
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Types
@@ -71,6 +95,16 @@ export type AuditPackManifest = {
     shareTokensCount: number
     overallCompliancePct: number
     highRiskSystemsCount: number
+    // Sprint 011 — extended summary (backward compatible; optional).
+    findingsCount?: number
+    dpiaRecordsCount?: number
+    ropaActivitiesCount?: number
+    breachRecordsCount?: number
+    aiDataMapRecordsCount?: number
+    vendorRecordsCount?: number
+    dsarRequestsCount?: number
+    eventsCount?: number
+    chainOk?: boolean
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -234,6 +268,16 @@ export async function buildAuditPack(
       shareTokensCount: shareTokens.length,
       overallCompliancePct,
       highRiskSystemsCount,
+      // Sprint 011 — extended summary counts.
+      findingsCount: (state.findings ?? []).length,
+      dpiaRecordsCount: (state.dpiaRecords ?? []).length,
+      ropaActivitiesCount: (state.ropaActivities ?? []).length,
+      breachRecordsCount: (state.breachRecords ?? []).length,
+      aiDataMapRecordsCount: (state.aiDataMapRecords ?? []).length,
+      vendorRecordsCount: (state.vendorRecords ?? []).length,
+      dsarRequestsCount: (state.dsarRequests ?? []).length,
+      eventsCount: (state.events ?? []).length,
+      chainOk: verifyEventChain(state.events ?? []).ok,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -652,7 +696,480 @@ function buildFileContents(input: {
     })
   }
 
+  // ── Sprint 011: wire toate modulele noi în Audit Pack ────────────────────
+  pushFindingsFiles(files, input.state, input.orgName, input.generatedAt)
+  pushDpiaFiles(files, input.state, input.orgName)
+  pushRopaFiles(files, input.state, input.orgName, input.targetOrgId, input.generatedAt)
+  pushBreachFiles(files, input.state, input.orgName)
+  pushAIDiscoveryFiles(files, input.state, input.orgName, input.generatedAt)
+  pushVendorFiles(files, input.state, input.orgName)
+  pushDsarFiles(files, input.state, input.generatedAt)
+  pushAuditLogFiles(files, input.state, input.orgName, input.generatedAt)
+
   return files
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 011 — Module-specific file builders
+//   Toate pure: primesc state + orgName, returnează FileBytes[] împinși în
+//   array-ul `files`. Funcționează egal pentru same-org și cross-org pack-uri.
+// ────────────────────────────────────────────────────────────────────────────
+
+function pushFindingsFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+  generatedAt: string,
+): void {
+  const findings = state.findings ?? []
+  files.push({
+    path: "findings/registry.md",
+    bytes: utf8(buildFindingsRegistryMd(findings, orgName, generatedAt)),
+  })
+  // Audit trail = events with type prefix "finding."
+  const findingEvents = (state.events ?? []).filter((e) =>
+    e.type.startsWith("finding."),
+  )
+  files.push({
+    path: "findings/audit-trail.md",
+    bytes: utf8(buildFindingAuditTrailMd(findingEvents, orgName, generatedAt)),
+  })
+}
+
+function buildFindingsRegistryMd(
+  findings: ScanFinding[],
+  orgName: string,
+  generatedAt: string,
+): string {
+  const lines: string[] = [
+    `# Registru findings — ${orgName}`,
+    ``,
+    `**Exportat:** ${generatedAt}`,
+    `**Total:** ${findings.length}`,
+    ``,
+  ]
+  if (findings.length === 0) {
+    lines.push(`_Nu există findings înregistrate._`)
+    return lines.join("\n") + "\n"
+  }
+  lines.push(
+    `| ID | Titlu | Categorie | Severitate | Status | Creat | Notă dovadă |`,
+    `|---|---|---|---|---|---|---|`,
+  )
+  for (const f of findings) {
+    const note = (f.operationalEvidenceNote ?? "—")
+      .replace(/\|/g, "\\|")
+      .replace(/\r?\n/g, " ")
+      .slice(0, 80)
+    lines.push(
+      `| ${f.id} | ${escapeMdCell(f.title)} | ${f.category} | ${f.severity} | ${
+        f.findingStatus ?? "open"
+      } | ${f.createdAtISO} | ${note} |`,
+    )
+  }
+  return lines.join("\n") + "\n"
+}
+
+function buildFindingAuditTrailMd(
+  events: ComplianceEvent[],
+  orgName: string,
+  generatedAt: string,
+): string {
+  const lines: string[] = [
+    `# Findings audit trail — ${orgName}`,
+    ``,
+    `**Exportat:** ${generatedAt}`,
+    `**Evenimente:** ${events.length}`,
+    ``,
+  ]
+  if (events.length === 0) {
+    lines.push(`_Nu există evenimente de tip finding.* în ledger._`)
+    return lines.join("\n") + "\n"
+  }
+  const sorted = [...events].sort((a, b) =>
+    b.createdAtISO.localeCompare(a.createdAtISO),
+  )
+  lines.push(
+    `| Timestamp | Actor | Tip | Finding ID | Mesaj |`,
+    `|---|---|---|---|---|`,
+  )
+  for (const e of sorted) {
+    lines.push(
+      `| ${e.createdAtISO} | ${escapeMdCell(e.actorLabel ?? "system")} | ${e.type} | ${e.entityId} | ${escapeMdCell(e.message)} |`,
+    )
+  }
+  return lines.join("\n") + "\n"
+}
+
+function pushDpiaFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const dpiaRecords = (state.dpiaRecords ?? []) as DpiaRecordWithLink[]
+  const lines: string[] = [
+    `# DPIA — ${orgName}`,
+    ``,
+    `**Total DPIA:** ${dpiaRecords.length}`,
+    ``,
+  ]
+  if (dpiaRecords.length === 0) {
+    lines.push(`_Nu există DPIA înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Titlu | Status | Risc rezidual | Creat | Aprobat |`,
+      `|---|---|---|---|---|---|`,
+    )
+    for (const r of dpiaRecords) {
+      lines.push(
+        `| ${r.id} | ${escapeMdCell(r.title)} | ${r.status} | ${r.residualRisk} | ${r.createdAtISO} | ${r.approvedAtISO ?? "—"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "dpia/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+  // Per-record markdown via buildDpiaMarkdownForRecord.
+  for (const r of dpiaRecords) {
+    files.push({
+      path: `dpia/records/${slugify(r.id)}.md`,
+      bytes: utf8(buildDpiaMarkdownForRecord(r, orgName)),
+    })
+  }
+}
+
+function pushRopaFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+  orgId: string,
+  generatedAt: string,
+): void {
+  const activities = (state.ropaActivities ?? []) as RopaActivityRecord[]
+  const exported = buildRopaMachineReadableExport({
+    activities,
+    orgId,
+    orgName,
+    nowISO: generatedAt,
+  })
+  // Machine-readable JSON
+  files.push({
+    path: "ropa/data-map.json",
+    bytes: utf8(JSON.stringify(exported, null, 2) + "\n"),
+  })
+  // Markdown (inline, derived from machine-readable export to remain pure)
+  files.push({
+    path: "ropa/data-map.md",
+    bytes: utf8(buildRopaMarkdownFromExport(exported, orgName)),
+  })
+}
+
+function buildRopaMarkdownFromExport(
+  exported: ReturnType<typeof buildRopaMachineReadableExport>,
+  orgName: string,
+): string {
+  const lines: string[] = [
+    `# RoPA / Data Map — ${orgName}`,
+    ``,
+    `Schema: ${exported.schemaVersion} · Jurisdictie: ${exported.jurisdiction}`,
+    `Generat: ${exported.generatedAtISO}`,
+    `Activitati: ${exported.summary.exportedActivities} · Risc mediu: ${exported.summary.riskScoreAverage}/100`,
+    ``,
+    `## Sumar`,
+    `- Total activitati: ${exported.summary.activityCount}`,
+    `- Risc inalt: ${exported.summary.highRiskActivities}`,
+    `- Risc mediu: ${exported.summary.mediumRiskActivities}`,
+    `- Fara temei juridic: ${exported.summary.missingLegalBasis}`,
+    `- Fara retentie: ${exported.summary.missingRetention}`,
+    `- DPIA triggers: ${exported.summary.dpiaTriggers}`,
+    `- Vendor review triggers: ${exported.summary.vendorReviewTriggers}`,
+    ``,
+    `## Activitati`,
+  ]
+  for (const a of exported.activities) {
+    lines.push(`### ${a.name}`)
+    lines.push(``)
+    if (a.department) lines.push(`**Departament:** ${a.department}`)
+    if (a.ownerName) lines.push(`**Owner:** ${a.ownerName}`)
+    lines.push(`**Scop:** ${a.purpose || "—"}`)
+    lines.push(`**Temei juridic:** ${a.legalBasis || "—"}`)
+    if (a.article9Condition) lines.push(`**Condiție Art. 9:** ${a.article9Condition}`)
+    lines.push(`**Persoane vizate:** ${a.dataSubjects.join(", ") || "—"}`)
+    lines.push(`**Categorii date:** ${a.dataCategories.join(", ") || "—"}`)
+    if (a.specialCategories.length)
+      lines.push(`**Date speciale:** ${a.specialCategories.join(", ")}`)
+    lines.push(`**Destinatari:** ${a.recipients.join(", ") || "—"}`)
+    lines.push(`**Procesatori:** ${a.processors.join(", ") || "—"}`)
+    lines.push(`**Sisteme:** ${a.systems.join(", ") || "—"}`)
+    if (a.thirdCountryTransfers.length)
+      lines.push(
+        `**Transferuri externe:** ${a.thirdCountryTransfers.map((t) => `${t.country}${t.mechanism ? ` (${t.mechanism})` : ""}`).join(", ")}`,
+      )
+    lines.push(`**Retenție:** ${a.retentionRule || "—"}`)
+    lines.push(`**Măsuri securitate:** ${a.securityMeasures.join(", ") || "—"}`)
+    lines.push(
+      `**Status:** ${a.status} · **Risc:** ${a.risk.level} (${a.risk.score}/100)`,
+    )
+    if (a.risk.reasons.length) {
+      lines.push(`**Motive risc:**`)
+      a.risk.reasons.forEach((r) => lines.push(`- ${r}`))
+    }
+    if (a.linkedAISystemIds.length) {
+      lines.push(`**Sisteme AI legate:** ${a.linkedAISystemIds.join(", ")}`)
+    }
+    if (a.links.findings.length) {
+      lines.push(`**Findings:** ${a.links.findings.join(", ")}`)
+    }
+    lines.push(``)
+  }
+  return lines.join("\n")
+}
+
+function pushBreachFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const records = (state.breachRecords ?? []) as BreachRecord[]
+  const lines: string[] = [
+    `# Incidente date personale (Art. 33/34 GDPR) — ${orgName}`,
+    ``,
+    `**Total:** ${records.length}`,
+    ``,
+  ]
+  if (records.length === 0) {
+    lines.push(`_Nu există incidente înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Titlu | Severitate | Status | Descoperit | Deadline 72h |`,
+      `|---|---|---|---|---|---|`,
+    )
+    for (const r of records) {
+      lines.push(
+        `| ${r.id} | ${escapeMdCell(r.title)} | ${r.severity} | ${r.status} | ${r.discoveredAtISO} | ${r.deadlineISO} |`,
+      )
+    }
+  }
+  files.push({
+    path: "breach/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+  for (const r of records) {
+    files.push({
+      path: `breach/records/${slugify(r.id)}.md`,
+      bytes: utf8(buildBreachMarkdown(r, orgName)),
+    })
+  }
+}
+
+function pushAIDiscoveryFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+  generatedAt: string,
+): void {
+  const dataMap = (state.aiDataMapRecords ?? []) as AIDataMapRecord[]
+  // AI Data Map list
+  const lines: string[] = [
+    `# AI Data Map — ${orgName}`,
+    ``,
+    `**Total tool-uri AI:** ${dataMap.length}`,
+    `**Exportat:** ${generatedAt}`,
+    ``,
+  ]
+  if (dataMap.length === 0) {
+    lines.push(`_Nu există tool-uri AI înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Tool | Vendor | Categorie | Date personale | Risc | DPA |`,
+      `|---|---|---|---|---|---|---|`,
+    )
+    for (const r of dataMap) {
+      lines.push(
+        `| ${r.id} | ${escapeMdCell(r.toolName)} | ${escapeMdCell(r.vendor)} | ${r.useCaseCategory} | ${r.processesPersonalData ? "Da" : "Nu"} | ${r.riskCandidate} | ${r.dpaSigned ? "Da" : "Nu"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "ai-discovery/data-map.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+
+  // Latest exposure report (if any)
+  const reports = state.aiExposureReports ?? []
+  const latest = reports.length > 0 ? reports[0] : null
+  files.push({
+    path: "ai-discovery/exposure-report.md",
+    bytes: utf8(
+      latest
+        ? latest.markdown
+        : `# AI Exposure Report — ${orgName}\n\n_Nu există raport generat (folosește /api/ai-data-discovery/exposure-report)._\n`,
+    ),
+  })
+
+  // Policy pack — 5 markdown templates regenerate la build.
+  const policyPack = buildAIPolicyPack({
+    orgName,
+    generatedAtISO: generatedAt,
+  })
+  for (const tpl of policyPack.templates) {
+    files.push({
+      path: `ai-discovery/policy-pack/${tpl.fileName}`,
+      bytes: utf8(tpl.markdown),
+    })
+  }
+}
+
+function pushVendorFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const vendors = (state.vendorRecords ?? []) as VendorRecord[]
+  const aiSystems = (state.aiSystems ?? []) as AISystemRecord[]
+  const dataMaps = (state.aiDataMapRecords ?? []) as AIDataMapRecord[]
+
+  const lines: string[] = [
+    `# Vendor AI — ${orgName}`,
+    ``,
+    `**Total vendori:** ${vendors.length}`,
+    ``,
+  ]
+  if (vendors.length === 0) {
+    lines.push(`_Nu există vendori înregistrați._`)
+  } else {
+    lines.push(
+      `| ID | Vendor | Produs | Regiune | DPA | Risc | Status |`,
+      `|---|---|---|---|---|---|---|`,
+    )
+    for (const v of vendors) {
+      lines.push(
+        `| ${v.id} | ${escapeMdCell(v.name)} | ${escapeMdCell(v.productUsed)} | ${v.vendorRegion} | ${v.dpaStatus} | ${v.riskLevel} | ${v.reviewStatus} |`,
+      )
+    }
+  }
+  files.push({
+    path: "vendor/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+
+  for (const v of vendors) {
+    const ctx = buildVendorRiskContext(v, aiSystems, dataMaps)
+    // Re-evaluăm pentru a obține risk reasons fresh la build-time.
+    evaluateVendorReview(v, ctx)
+    files.push({
+      path: `vendor/briefs/${slugify(v.id)}.md`,
+      bytes: utf8(buildVendorReviewBrief(v, ctx, orgName)),
+    })
+  }
+}
+
+/**
+ * Recomputează `VendorRiskContext` din state — inline pentru ca audit-pack
+ * să fie auto-suficient (nu cere imports din vendor-review-store care folosește
+ * readState() request-scoped).
+ */
+function buildVendorRiskContext(
+  vendor: VendorRecord,
+  aiSystems: AISystemRecord[],
+  aiDataMaps: AIDataMapRecord[],
+): VendorRiskContext {
+  const linkedSystems = aiSystems.filter((s) =>
+    vendor.linkedAISystemIds.includes(s.id),
+  )
+  const linkedMaps = aiDataMaps.filter((m) =>
+    vendor.linkedAIDataMapIds.includes(m.id),
+  )
+  const personalData =
+    linkedSystems.some((s) => s.usesPersonalData) ||
+    linkedMaps.some((m) => m.processesPersonalData)
+  const specialCategories = linkedMaps.some((m) => m.processesSpecialCategories)
+  const childrenData = linkedMaps.some((m) => m.childrenData)
+  const isAIVendor =
+    vendor.serviceCategory.toLowerCase().includes("ai") ||
+    linkedSystems.length > 0 ||
+    linkedMaps.length > 0
+  return {
+    processesPersonalData: personalData,
+    processesSpecialCategories: specialCategories,
+    childrenData,
+    isAIVendor,
+  }
+}
+
+function pushDsarFiles(
+  files: FileBytes[],
+  state: AIActState,
+  generatedAt: string,
+): void {
+  const dsar = state.dsarRequests ?? []
+  const lines: string[] = [
+    `# DSAR Registry`,
+    ``,
+    `**Exportat:** ${generatedAt}`,
+    `**Total cereri:** ${dsar.length}`,
+    ``,
+  ]
+  if (dsar.length === 0) {
+    lines.push(`_Nu există cereri DSAR înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Tip | Solicitant | Email | Status | Primit | Deadline |`,
+      `|---|---|---|---|---|---|---|`,
+    )
+    for (const r of dsar) {
+      lines.push(
+        `| ${r.id} | ${r.requestType} | ${escapeMdCell(r.requesterName)} | ${escapeMdCell(r.requesterEmail)} | ${r.status} | ${r.receivedAtISO} | ${r.deadlineISO} |`,
+      )
+    }
+  }
+  files.push({
+    path: "dsar/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+}
+
+function pushAuditLogFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+  generatedAt: string,
+): void {
+  const events = state.events ?? []
+  // JSON: include hash chain fields pentru audit forensic.
+  files.push({
+    path: "audit-log/events.json",
+    bytes: utf8(formatEventsAsJSON(events, true)),
+  })
+  // Markdown: tabular pentru auditor inspectabil rapid.
+  files.push({
+    path: "audit-log/events.md",
+    bytes: utf8(formatEventsAsMarkdown(events, orgName, generatedAt)),
+  })
+  // Chain verification snapshot la build-time.
+  const verification = verifyEventChain(events)
+  files.push({
+    path: "audit-log/chain-verification.json",
+    bytes: utf8(
+      JSON.stringify(
+        {
+          verifiedAtISO: generatedAt,
+          totalEvents: events.length,
+          ...verification,
+        },
+        null,
+        2,
+      ) + "\n",
+    ),
+  })
+}
+
+function escapeMdCell(value: string): string {
+  return value
+    .replace(/\|/g, "\\|")
+    .replace(/\r?\n/g, " ")
+    .trim()
 }
 
 function buildAnnexFileName(
