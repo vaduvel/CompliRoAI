@@ -909,6 +909,147 @@ export type BreachRecord = {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+//   Vendor AI Assessment + DPA Review — Sprint 010
+//   GDPR Art. 28 (processor) + AI Act vendor obligations.
+//
+//   Vendor record links to one or more AI systems / data flows. CompliRoAI
+//   tracks: DPA status, training data rights, subprocessor/transfer risk,
+//   security evidence, AI-specific terms. Risk evaluator emits findings for
+//   missing DPA, missing transfer review, missing security evidence,
+//   missing AI terms, expired DPA, high-risk without human review.
+//
+//   NU full NIS2 vendor management (per mandate Rule 3). AI-critical
+//   NIS2 vendor slice goes in Sprint 012.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type VendorRiskLevel = "minimal" | "low" | "medium" | "high" | "critical"
+
+export type VendorReviewStatus =
+  | "draft"
+  | "in_review"
+  | "needs_dpa"
+  | "needs_transfer_review"
+  | "needs_security_review"
+  | "approved"
+  | "rejected"
+  | "expired"
+
+export type DPAStatus =
+  | "not_required"
+  | "missing"
+  | "draft_received"
+  | "negotiating"
+  | "signed"
+  | "expired"
+
+export type VendorTransferMechanism =
+  | "none"
+  | "adequacy_decision"
+  | "scc_controller_processor"
+  | "scc_processor_processor"
+  | "bcr"
+  | "derogation_art_49"
+  | "unknown"
+
+export type VendorRegion = "EU" | "US" | "UK" | "other" | "unknown"
+
+export type VendorRole =
+  | "processor"
+  | "controller"
+  | "joint_controller"
+  | "subprocessor"
+
+export type VendorAITrainingOptOut =
+  | "yes"
+  | "no"
+  | "default_opt_out"
+  | "unknown"
+
+export type VendorAIInputRetention =
+  | "no_retention"
+  | "session_only"
+  | "days_30"
+  | "indefinite"
+  | "unknown"
+
+export type VendorAIOutputOwnership =
+  | "client"
+  | "vendor"
+  | "shared"
+  | "unknown"
+
+export type VendorAIModelTransparency =
+  | "documented"
+  | "partial"
+  | "opaque"
+  | "unknown"
+
+export type VendorAITerms = {
+  trainingDataOptOut: VendorAITrainingOptOut
+  inputDataRetention: VendorAIInputRetention
+  outputRightsOwnership: VendorAIOutputOwnership
+  modelTransparency: VendorAIModelTransparency
+  reproducibilityGuarantees: boolean
+}
+
+export type VendorSecurityEvidence = {
+  iso27001: boolean
+  soc2: boolean
+  penTestRecent: boolean
+  encryptionInTransit: boolean
+  encryptionAtRest: boolean
+  mfaEnforced: boolean
+  auditLogsAvailable: boolean
+  /** Vendor-promised SLA in hours pentru notificarea unui incident (ex. 24, 48, 72). */
+  incidentNotificationCommitmentHours?: number
+}
+
+export type VendorRecord = {
+  id: string
+  orgId: string
+  // ── Identification ────────────────────────────────────────────────────────
+  name: string                                   // "OpenAI", "Microsoft Azure OpenAI"
+  legalEntity?: string                           // "OpenAI Ireland Limited"
+  contactEmail?: string
+  productUsed: string                            // "ChatGPT Enterprise", "Azure OpenAI Service"
+  vendorRegion: VendorRegion
+  // ── Relationship ─────────────────────────────────────────────────────────
+  role: VendorRole
+  serviceCategory: string                        // "AI/LLM", "AI Vision", "AI Voice", "Vector DB", etc.
+  linkedAISystemIds: string[]
+  linkedAIDataMapIds: string[]
+  // ── DPA (Art. 28 GDPR) ───────────────────────────────────────────────────
+  dpaStatus: DPAStatus
+  dpaUrl?: string
+  dpaSignedAtISO?: string
+  dpaExpiresAtISO?: string
+  // ── International transfers (Art. 44-49 GDPR) ────────────────────────────
+  transferRequired: boolean                      // true if data leaves EU/SEE
+  transferMechanism: VendorTransferMechanism
+  transferAssessmentNote?: string                // TIA summary
+  // ── Subprocessors ────────────────────────────────────────────────────────
+  subprocessorsList: string[]                    // ["Stripe", "AWS US-East", ...]
+  subprocessorsUrl?: string                      // link to public subprocessor page
+  // ── Security ─────────────────────────────────────────────────────────────
+  securityEvidence: VendorSecurityEvidence
+  // ── AI-specific terms ────────────────────────────────────────────────────
+  aiTerms: VendorAITerms
+  // ── Risk + review ────────────────────────────────────────────────────────
+  riskLevel: VendorRiskLevel
+  riskReasons: string[]
+  reviewStatus: VendorReviewStatus
+  humanReviewRequired: boolean
+  reviewedByEmail?: string
+  reviewedAtISO?: string
+  nextRevalidationISO?: string                   // typically +1 year
+  // ── Lifecycle ────────────────────────────────────────────────────────────
+  linkedFindingIds: string[]
+  notes?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 //   Client portal (cabinet ↔ client comments + uploads pe finding-uri).
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -1035,6 +1176,14 @@ export type ComplianceState = {
    * personale, poate emite un BreachRecord legat via `linkedFindingId`.
    */
   breachRecords?: BreachRecord[]
+
+  /**
+   * Vendor records (Sprint 010 — Vendor AI Assessment + GDPR Art. 28 DPA
+   * Review). Fiecare vendor link-uieste la AI systems / AI data map; engine-ul
+   * emite findings pentru lipsa DPA, transfer fara mecanism, AI terms
+   * neclare, securitate insuficienta.
+   */
+  vendorRecords?: VendorRecord[]
 
   // ── Cabinet workspaces & client onboarding ─────────────────────────────────
   partnerWorkspace?: {
