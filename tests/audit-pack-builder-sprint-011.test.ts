@@ -31,6 +31,7 @@ import type {
   FriaRecord,
   HumanOversightProtocol,
   LoggingConfig,
+  PmmPlan,
   RopaActivityRecord,
   ScanFinding,
   VendorRecord,
@@ -466,6 +467,82 @@ function buildSampleState(): AIActState {
     updatedAtISO: "2026-05-15T10:00:00.000Z",
   }
 
+  const pmm: PmmPlan = {
+    id: "pmm-sample-1",
+    orgId: "org-test-pack",
+    title: "PMM Plan HR Screening 2026",
+    linkedAISystemId: "sys-hr-1",
+    dataCollectionMethods: [
+      "system_logs",
+      "performance_metrics",
+      "user_feedback",
+      "bias_metrics",
+    ],
+    dataCollectionFrequency: "daily",
+    dataCollectionDescription:
+      "SIEM Splunk recepționează evenimente Art. 12 real-time; dashboard zilnic agregă metrici.",
+    complianceEvaluationMethods: [
+      "comparare AI vs ground truth lunar",
+      "bias audit trimestrial",
+    ],
+    complianceMetricsTracked: ["accuracy", "bias_gap_demographic", "p95_latency_ms"],
+    correctiveActionProcess:
+      "Pragul accuracy < 0.85 declanșează review; ML lead aprobă roll-back în 4h.",
+    preventiveActionProcess:
+      "PSI > 0.2 declanșează retrain candidat; bias audit trimestrial.",
+    reviewCycle: "quarterly",
+    reviewCycleMonths: 3,
+    reviews: [
+      {
+        id: "pmm-rv-sample-1",
+        reviewDateISO: "2026-05-01T00:00:00.000Z",
+        reviewedByEmail: "dpo@acme.ro",
+        reviewType: "scheduled",
+        performanceMetrics: { accuracy: 0.92, bias_gap_pct: 3.5 },
+        risksDetected: ["bias gap în creștere pe grup A"],
+        correctiveActions: ["retrain Q3"],
+        preventiveActions: ["bias audit lunar"],
+        nextReviewISO: "2026-08-01T00:00:00.000Z",
+      },
+    ],
+    versionChanges: [
+      {
+        id: "pmm-vc-sample-1",
+        changedAtISO: "2026-04-10T00:00:00.000Z",
+        changedByEmail: "ml@acme.ro",
+        oldVersion: "v1.0",
+        newVersion: "v1.1",
+        changeType: "config_update",
+        substantialModification: false,
+        riskReassessmentRequired: false,
+        description: "Tweak threshold",
+      },
+    ],
+    anomalies: [
+      {
+        id: "pmm-ano-sample-1",
+        detectedAtISO: "2026-05-05T00:00:00.000Z",
+        severity: "medium",
+        category: "performance_drop",
+        description: "latency p95 crescut 50ms",
+        impactDescription: "ușoară degradare UX",
+        resolved: true,
+        resolvedAtISO: "2026-05-06T00:00:00.000Z",
+        escalatedToIncident: false,
+      },
+    ],
+    status: "active",
+    completeness: "complete",
+    freshnessStatus: "fresh",
+    approvedByEmail: "dpo@acme.ro",
+    approvedAtISO: "2026-04-20T00:00:00.000Z",
+    lastReviewAtISO: "2026-05-01T00:00:00.000Z",
+    nextReviewISO: "2026-08-01T00:00:00.000Z",
+    linkedFindingIds: [],
+    createdAtISO: "2026-04-15T00:00:00.000Z",
+    updatedAtISO: "2026-05-01T00:00:00.000Z",
+  }
+
   base = {
     ...base,
     aiSystems: [aiSystem],
@@ -478,6 +555,7 @@ function buildSampleState(): AIActState {
     friaRecords: [fria],
     humanOversightProtocols: [oversight],
     loggingEvidence: [logging],
+    pmmPlans: [pmm],
   } as AIActState
   base.events = appendComplianceEvents(base, [event1, event2])
   return base
@@ -818,6 +896,69 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     expect(result.manifest.summary.loggingConfigsCount).toBe(1)
   })
 
+  // ── Sprint 019 — PMM in Audit Pack ────────────────────────────────────────
+  it("includes pmm/registry.md + per-record markdown", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const paths = Object.keys(zip.files)
+    expect(paths).toContain("pmm/registry.md")
+    expect(paths).toContain("pmm/records/pmm-sample-1.md")
+  })
+
+  it("pmm/registry.md contains title + ciclu + Art. 72 + Annex IV", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip.file("pmm/registry.md")!.async("string")
+    expect(md).toContain("PMM Plan HR Screening 2026")
+    expect(md).toContain("HR Screening AI")
+    expect(md).toContain("quarterly")
+    expect(md).toContain("Art. 72")
+    expect(md).toContain("Annex IV")
+  })
+
+  it("pmm/records/<id>.md is full evaluator-generated markdown with timelines", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip.file("pmm/records/pmm-sample-1.md")!.async("string")
+    expect(md).toContain("# PMM Plan — PMM Plan HR Screening 2026")
+    expect(md).toContain("A. Sistem AI")
+    expect(md).toContain("B. Data collection")
+    expect(md).toContain("C. Evaluare conformitate")
+    expect(md).toContain("D. Acțiune corectivă")
+    expect(md).toContain("## Reviews periodice")
+    expect(md).toContain("## Version changes")
+    expect(md).toContain("## Anomalii detectate")
+  })
+
+  it("manifest summary includes pmmPlansCount", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    expect(result.manifest.summary.pmmPlansCount).toBe(1)
+  })
+
   it("FRIA inclusion preserves hash chain integrity", async () => {
     const { buildAuditPack, verifyAuditPackZip } = await import(
       "@/lib/server/audit-pack-builder"
@@ -855,6 +996,7 @@ describe("audit-pack backward compat (Sprint 011)", () => {
     expect(paths).toContain("vendor/registry.md")
     expect(paths).toContain("dsar/registry.md")
     expect(paths).toContain("audit-log/events.md")
+    expect(paths).toContain("pmm/registry.md")
     // Verify ok
     const { verifyAuditPackZip } = await import("@/lib/server/audit-pack-builder")
     const verification = await verifyAuditPackZip(result.zipBuffer)

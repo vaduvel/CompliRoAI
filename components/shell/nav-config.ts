@@ -196,11 +196,10 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   {
     href: "/dashboard/post-market-monitoring",
     label: "PMM",
-    iconName: "TrendingUp",
-    section: "builder",
-    workspaceModes: ["ai-builder"],
+    iconName: "Activity",
+    section: "compliance",
+    workspaceModes: ["ai-builder", "cabinet"],
     requiredFeature: "post_market_monitoring",
-    badge: "coming-soon",
   },
   {
     href: "/dashboard/ai-incidents",

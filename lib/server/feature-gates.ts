@@ -143,6 +143,8 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     "human_oversight_protocols",
     // Sprint 018 — cabinets prepare Logging Evidence configs (Art. 12 + 26(6)).
     "logging_evidence",
+    // Sprint 019 — cabinets prepare PMM plans (Art. 72).
+    "post_market_monitoring",
   ]),
 }
 
@@ -291,6 +293,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "human_oversight_protocols",
     // Sprint 018 — cabinet preparing Logging configs (Art. 12 + 26(6)).
     "logging_evidence",
+    // Sprint 019 — cabinet preparing PMM plans (Art. 72).
+    "post_market_monitoring",
   ]),
   cabinet_enterprise: new Set<Feature>([
     "ai_inventory",
@@ -322,6 +326,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "human_oversight_protocols",
     // Sprint 018 — cabinet preparing Logging configs (Art. 12 + 26(6)).
     "logging_evidence",
+    // Sprint 019 — cabinet preparing PMM plans (Art. 72).
+    "post_market_monitoring",
   ]),
   one_off_audit: new Set<Feature>([
     "ai_inventory",

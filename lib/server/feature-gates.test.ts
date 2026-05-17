@@ -49,13 +49,14 @@ describe("feature-gates — workspaceMode visibility", () => {
     expect(featureBelongsToWorkspace("cabinet", "client_intake")).toBe(true)
   })
 
-  it("cabinet does NOT see ai-builder-only depth modules (Annex IV / EU DB), DOES see FRIA + Oversight + Logging (Sprint 016/017/018 — cabinets prepare pentru clienți deployer)", () => {
+  it("cabinet does NOT see ai-builder-only depth modules (Annex IV / EU DB), DOES see FRIA + Oversight + Logging + PMM (Sprint 016/017/018/019 — cabinets prepare pentru clienți deployer)", () => {
     expect(featureBelongsToWorkspace("cabinet", "annex_iv_generator")).toBe(false)
     expect(featureBelongsToWorkspace("cabinet", "eu_database_wizard")).toBe(false)
-    // FRIA + Oversight + Logging shared cu cabinet per mandate § 16-19
+    // FRIA + Oversight + Logging + PMM shared cu cabinet per mandate § 16-20
     expect(featureBelongsToWorkspace("cabinet", "fria_generator")).toBe(true)
     expect(featureBelongsToWorkspace("cabinet", "human_oversight_protocols")).toBe(true)
     expect(featureBelongsToWorkspace("cabinet", "logging_evidence")).toBe(true)
+    expect(featureBelongsToWorkspace("cabinet", "post_market_monitoring")).toBe(true)
   })
 })
 

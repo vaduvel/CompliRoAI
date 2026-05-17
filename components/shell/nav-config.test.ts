@@ -122,9 +122,9 @@ describe("nav-config — ai-builder exposes builder workflow", () => {
     expect(labels).not.toContain("Risc AI")
   })
 
-  it("ai-builder placeholders (PMM, Incidente, QMS, API/SDK) appear even on ai_builder tier; FRIA + Oversight + Logging are live", () => {
+  it("ai-builder placeholders (Incidente, QMS, API/SDK) appear even on ai_builder tier; FRIA + Oversight + Logging + PMM are live", () => {
     const labels = labelsForRole("ai-builder", "ai_builder")
-    // Sprint 016 + 017 + 018 — FRIA + Oversight + Logging sunt live (mutate în section "compliance").
+    // Sprint 016 + 017 + 018 + 019 — FRIA + Oversight + Logging + PMM sunt live (mutate în section "compliance").
     expect(labels).toContain("FRIA")
     expect(labels).toContain("Oversight uman")
     expect(labels).toContain("Logging")
@@ -157,18 +157,19 @@ describe("nav-config — cabinet exposes full collaboration workflow", () => {
     expect(labels).toContain("Setări (facturare)")
   })
 
-  it("cabinet does NOT see ai-builder-only modules (Annex IV / EU DB / API SDK / QMS), DOES see FRIA + Oversight + Logging (Sprint 016/017/018 — cabinets prepare pentru clienți deployer)", () => {
+  it("cabinet does NOT see ai-builder-only modules (Annex IV / EU DB / API SDK / QMS), DOES see FRIA + Oversight + Logging + PMM (Sprint 016/017/018/019 — cabinets prepare pentru clienți deployer)", () => {
     const labels = labelsForRole("cabinet", "free_trial")
     expect(labels).not.toContain("Annex IV")
     expect(labels).not.toContain("EU Database")
     expect(labels).not.toContain("API / SDK")
     expect(labels).not.toContain("QMS")
-    // FRIA + Oversight + Logging sunt shared între ai-builder + cabinet per
-    // mandate § 16-19 — cabinet prepares evaluări pe seama clienților deployer
-    // (Art. 27 + Art. 14 + Art. 12 AI Act).
+    // FRIA + Oversight + Logging + PMM sunt shared între ai-builder + cabinet
+    // per mandate § 16-20 — cabinet prepares evaluări pe seama clienților
+    // deployer (Art. 27 + Art. 14 + Art. 12 + Art. 72 AI Act).
     expect(labels).toContain("FRIA")
     expect(labels).toContain("Oversight uman")
     expect(labels).toContain("Logging")
+    expect(labels).toContain("PMM")
   })
 
   it("cabinet on cabinet_solo tier sees magic links but NOT trust center / branding / approvals", () => {

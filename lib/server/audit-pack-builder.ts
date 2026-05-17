@@ -34,6 +34,7 @@ import type {
   HumanOversightProtocol,
   LiteracyRecord,
   LoggingConfig,
+  PmmPlan,
   RopaActivityRecord,
   ScanFinding,
   VendorRecord,
@@ -58,6 +59,8 @@ import {
   LOGGING_SEVERITY_LEVEL_LABELS,
   LOGGING_STORAGE_BACKEND_LABELS,
 } from "@/lib/compliance/logging-schema"
+import { buildPmmMarkdown } from "@/lib/server/pmm-store"
+import { PMM_REVIEW_CYCLE_LABELS } from "@/lib/compliance/pmm-schema"
 import { DEPLOYER_TYPE_LABELS } from "@/lib/compliance/fria-schema"
 import { buildRopaMachineReadableExport } from "@/lib/compliance/ropa-risk-engine"
 import {
@@ -123,6 +126,8 @@ export type AuditPackManifest = {
     oversightProtocolsCount?: number
     // Sprint 018 — Logging Evidence configs included in pack.
     loggingConfigsCount?: number
+    // Sprint 019 — PMM plans included in pack.
+    pmmPlansCount?: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -299,6 +304,7 @@ export async function buildAuditPack(
       friaRecordsCount: (state.friaRecords ?? []).length,
       oversightProtocolsCount: (state.humanOversightProtocols ?? []).length,
       loggingConfigsCount: (state.loggingEvidence ?? []).length,
+      pmmPlansCount: (state.pmmPlans ?? []).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -732,6 +738,8 @@ function buildFileContents(input: {
   pushOversightFiles(files, input.state, input.orgName)
   // ── Sprint 018: Logging Evidence configs per Art. 12 + Art. 26(6) AI Act ──
   pushLoggingFiles(files, input.state, input.orgName)
+  // ── Sprint 019: PMM plans per Art. 72 + Annex IV AI Act ─────────────────
+  pushPmmFiles(files, input.state, input.orgName)
 
   return files
 }
@@ -1279,6 +1287,61 @@ function pushLoggingFiles(
   void LOGGING_STORAGE_BACKEND_LABELS
 }
 
+/**
+ * Sprint 019 — Post-Market Monitoring plans (Art. 72 + Annex IV AI Act).
+ * Pattern identic cu pushLoggingFiles: registry.md + records/{id}.md
+ * regenerat live via buildPmmMarkdown. Records includ inline reviews,
+ * version changes, anomalii (timeline complet pentru auditor).
+ */
+function pushPmmFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const records = (state.pmmPlans ?? []) as PmmPlan[]
+  const aiSystems = (state.aiSystems ?? []) as AISystemRecord[]
+
+  const lines: string[] = [
+    `# Post-Market Monitoring — ${orgName}`,
+    ``,
+    `**Total planuri:** ${records.length}`,
+    `**Cadru:** EU AI Act Art. 72 — sistem PMM + Annex IV pct. 10 — descriere PMM în technical documentation + Art. 43(4) — substantial modification triggers re-evaluation`,
+    ``,
+  ]
+  if (records.length === 0) {
+    lines.push(`_Nu există planuri PMM înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Titlu | Sistem AI | Ciclu | Completeness | Freshness | Reviews | Version changes | Anomalii | Status | Aprobat de |`,
+      `|---|---|---|---|---|---|---|---|---|---|---|`,
+    )
+    for (const r of records) {
+      const systemName =
+        aiSystems.find((s) => s.id === r.linkedAISystemId)?.name ??
+        r.linkedAISystemId
+      const unresolved = r.anomalies.filter((a) => !a.resolved).length
+      lines.push(
+        `| ${r.id} | ${escapeMdCell(r.title)} | ${escapeMdCell(systemName)} | ${r.reviewCycle} | ${r.completeness} | ${r.freshnessStatus} | ${r.reviews.length} | ${r.versionChanges.length} | ${r.anomalies.length} (${unresolved} unresolved) | ${r.status} | ${r.approvedByEmail ?? "—"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "pmm/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+
+  for (const r of records) {
+    const systemName = aiSystems.find((s) => s.id === r.linkedAISystemId)?.name
+    files.push({
+      path: `pmm/records/${slugify(r.id)}.md`,
+      bytes: utf8(buildPmmMarkdown(r, orgName, systemName)),
+    })
+  }
+
+  // Suppress unused-import warning when records=0
+  void PMM_REVIEW_CYCLE_LABELS
+}
+
 function pushDsarFiles(
   files: FileBytes[],
   state: AIActState,
@@ -1495,6 +1558,48 @@ function buildAuditTrailLog(input: {
     }
   }
 
+  // Sprint 019 — Post-Market Monitoring plans (Art. 72)
+  for (const pm of input.state.pmmPlans ?? []) {
+    push(
+      pm.createdAtISO,
+      input.issuedByUserEmail,
+      "PMM_PLAN_CREATED",
+      `${pm.title} → system=${pm.linkedAISystemId} cycle=${pm.reviewCycle} completeness=${pm.completeness}`,
+    )
+    if (pm.approvedAtISO) {
+      push(
+        pm.approvedAtISO,
+        pm.approvedByEmail ?? input.issuedByUserEmail,
+        "PMM_PLAN_ACTIVATED",
+        pm.title,
+      )
+    }
+    for (const rv of pm.reviews) {
+      push(
+        rv.reviewDateISO,
+        rv.reviewedByEmail,
+        "PMM_REVIEW_RECORDED",
+        `${pm.title} → ${rv.reviewType} (risks=${rv.risksDetected.length} corrective=${rv.correctiveActions.length})`,
+      )
+    }
+    for (const ch of pm.versionChanges) {
+      push(
+        ch.changedAtISO,
+        ch.changedByEmail,
+        "PMM_VERSION_CHANGE",
+        `${pm.title} → ${ch.oldVersion}→${ch.newVersion} (${ch.changeType}, substantial=${ch.substantialModification})`,
+      )
+    }
+    for (const a of pm.anomalies) {
+      push(
+        a.detectedAtISO,
+        a.detectedByEmail ?? input.issuedByUserEmail,
+        "PMM_ANOMALY_RECORDED",
+        `${pm.title} → ${a.severity} ${a.category}: ${a.description}${a.escalatedToIncident ? " [ESCALATED]" : ""}`,
+      )
+    }
+  }
+
   // Generation event itself
   push(input.generatedAt, input.issuedByUserEmail, "AUDIT_PACK_GENERATED", `org=${input.orgName}`)
 
@@ -1694,6 +1799,7 @@ function buildSignatureTxt(input: {
     `FRIA records (Art.27):${input.manifest.summary.friaRecordsCount ?? 0}`,
     `Oversight protocols (Art.14):${input.manifest.summary.oversightProtocolsCount ?? 0}`,
     `Logging configs (Art.12):${input.manifest.summary.loggingConfigsCount ?? 0}`,
+    `PMM plans (Art.72):   ${input.manifest.summary.pmmPlansCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",
