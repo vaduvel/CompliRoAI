@@ -40,7 +40,7 @@
 | **010** | **Vendor AI Assessment + DPA review (17 vendori catalog + risk evaluator + lifecycle + brief)** | ✅ DONE | c5b9c73+ | manual: Claude | [sprint-010-vendor-ai-assessment.md](sprint-010-vendor-ai-assessment.md) |
 | **011** | **Structured Audit Log + Audit Pack wire-up (toate modulele în ZIP, ledger UI cu filters + verify + export)** | ✅ DONE | 06c834c+ | manual: Claude | [sprint-011-structured-audit-log.md](sprint-011-structured-audit-log.md) |
 | **012** | **DORA AI slice + NIS2 AI slice (org reg profile + 2 rules engines + aggregator + /dashboard/ai-regulatory-scope)** | ✅ DONE | 4b6f567+ | manual: Claude | [sprint-012-dora-nis2-ai-slices.md](sprint-012-dora-nis2-ai-slices.md) |
-| 013 | Approval queue + Calendar + Trust Center | ⏳ PLANNED | — | — | TBD |
+| **013** | **Approval queue + Calendar + Trust Center (collaboration cabinet + 8-source deadline aggregator + RFC 5545 iCal + public white-labeled trust surface)** | ✅ DONE | 19ac0fa+ | manual: Claude | [sprint-013-approval-calendar-trust.md](sprint-013-approval-calendar-trust.md) |
 | 014 | PDF generator + Onboarding emails + Stripe | ⏳ PLANNED | — | — | TBD |
 | 015 | Role-aware UI (3 modes) build new | ⏳ PLANNED | — | — | TBD |
 | 016 | FRIA Generator (Art. 27) | ⏳ PLANNED | — | — | TBD |
