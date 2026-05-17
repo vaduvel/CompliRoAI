@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Send, Trash2 } from "lucide-react"
+import Link from "next/link"
+import { Send, ShieldAlert, Trash2 } from "lucide-react"
 import type { AISystemRecord, AISystemRiskLevel } from "@/lib/compliance/types"
 
 const RISK_LABELS: Record<AISystemRiskLevel, string> = {
@@ -44,12 +45,19 @@ interface AISystemsListProps {
   onDelete: (id: string) => void
   /** When "cabinet", each row exposes a "Trimite spre aprobare" button. */
   workspaceMode?: "imm-classic" | "ai-builder" | "cabinet"
+  /**
+   * Set of high-risk system IDs that DO NOT yet have a FRIA record (Art. 27).
+   * When a system id appears here, the row renders an amber banner pointing
+   * deployer to start a FRIA evaluation.
+   */
+  systemsRequiringFriaIds?: Set<string>
 }
 
 export function AISystemsList({
   systems,
   onDelete,
   workspaceMode = "imm-classic",
+  systemsRequiringFriaIds,
 }: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -169,10 +177,48 @@ export function AISystemsList({
         const badgeStyle = RISK_BADGE_STYLES[system.riskLevel] ?? RISK_BADGE_STYLES.minimal
         const riskLabel = RISK_LABELS[system.riskLevel] ?? system.riskLevel
         const actionCount = system.recommendedActions?.length ?? 0
+        const needsFria =
+          system.riskLevel === "high" &&
+          systemsRequiringFriaIds?.has(system.id) === true
 
         return (
           <div
             key={system.id}
+            style={{ display: "flex", flexDirection: "column", gap: "0" }}
+          >
+            {needsFria && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 12px",
+                  background: "var(--amber-soft)",
+                  border: "1px solid rgba(251,191,36,0.25)",
+                  borderTopLeftRadius: "10px",
+                  borderTopRightRadius: "10px",
+                  borderBottom: "none",
+                  fontSize: "11px",
+                  color: "#fbbf24",
+                }}
+              >
+                <ShieldAlert size={12} style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>
+                  Acest sistem high-risk necesită FRIA (Art. 27)
+                </span>
+                <Link
+                  href={`/dashboard/fria?systemId=${encodeURIComponent(system.id)}`}
+                  style={{
+                    color: "#fbbf24",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Pornește evaluare →
+                </Link>
+              </div>
+            )}
+          <div
             style={{
               display: "flex",
               alignItems: "center",
@@ -180,7 +226,11 @@ export function AISystemsList({
               padding: "12px 16px",
               background: "var(--bg-raised)",
               border: "1px solid var(--border)",
-              borderRadius: "10px",
+              borderTopLeftRadius: needsFria ? "0" : "10px",
+              borderTopRightRadius: needsFria ? "0" : "10px",
+              borderBottomLeftRadius: "10px",
+              borderBottomRightRadius: "10px",
+              borderTop: needsFria ? "none" : "1px solid var(--border)",
             }}
           >
             {/* Main info */}
@@ -332,6 +382,7 @@ export function AISystemsList({
             >
               <Trash2 size={13} />
             </button>
+          </div>
           </div>
         )
       })}

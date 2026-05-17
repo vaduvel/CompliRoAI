@@ -1,21 +1,29 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import type { AISystemRecord } from "@/lib/compliance/types"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import type { AISystemRecord, FriaRecord } from "@/lib/compliance/types"
 import { AIInventoryPanel } from "@/components/ai-act/ai-inventory-panel"
 import { AISystemsList } from "@/components/ai-act/ai-systems-list"
 import { AlertTriangle } from "lucide-react"
 
 export default function SistemePage() {
   const [systems, setSystems] = useState<AISystemRecord[]>([])
+  const [friaRecords, setFriaRecords] = useState<FriaRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [workspaceMode, setWorkspaceMode] = useState<"imm-classic" | "ai-builder" | "cabinet">("imm-classic")
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/ai-systems")
-    if (res.ok) {
-      const data = await res.json()
+    const [systemsRes, friaRes] = await Promise.all([
+      fetch("/api/ai-systems"),
+      fetch("/api/fria"),
+    ])
+    if (systemsRes.ok) {
+      const data = await systemsRes.json()
       setSystems(data.systems)
+    }
+    if (friaRes.ok) {
+      const data = await friaRes.json()
+      setFriaRecords((data.records ?? []) as FriaRecord[])
     }
     setLoading(false)
   }, [])
@@ -40,6 +48,15 @@ export default function SistemePage() {
   }
 
   const highRiskCount = systems.filter((s) => s.riskLevel === "high").length
+
+  const systemsRequiringFriaIds = useMemo(() => {
+    const friaSystemIds = new Set(friaRecords.map((r) => r.linkedAISystemId))
+    const needs = new Set<string>()
+    for (const s of systems) {
+      if (s.riskLevel === "high" && !friaSystemIds.has(s.id)) needs.add(s.id)
+    }
+    return needs
+  }, [systems, friaRecords])
 
   return (
     <div style={{ padding: "32px", maxWidth: "900px", display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -95,7 +112,12 @@ export default function SistemePage() {
         {loading ? (
           <div style={{ fontSize: "13px", color: "var(--ink-dim)", padding: "24px 0" }}>Se încarcă...</div>
         ) : (
-          <AISystemsList systems={systems} onDelete={handleDelete} workspaceMode={workspaceMode} />
+          <AISystemsList
+            systems={systems}
+            onDelete={handleDelete}
+            workspaceMode={workspaceMode}
+            systemsRequiringFriaIds={systemsRequiringFriaIds}
+          />
         )}
       </div>
     </div>
