@@ -1367,6 +1367,70 @@ export type ComplianceState = {
    * aici servește pentru revocare + listare + view tracking.
    */
   trustCenterTokens?: TrustCenterToken[]
+
+  /**
+   * Sprint 014 — Stripe billing subscription. Updated by webhook handler;
+   * read by /dashboard/setari/billing UI + by feature gates (read-only enforcement).
+   */
+  orgSubscription?: OrgSubscription
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Billing — Sprint 014
+//
+//   Stripe integration cu 7 tiers locked per CompliRoAI pricing mandate § 15.
+//   NU se permit fiscal SKUs aici (rule mandate). Tier names exact ca în
+//   pricing table din functional spec v2 § 5.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type BillingTier =
+  | "free_trial"
+  | "imm_solo"
+  | "imm_mid"
+  | "ai_builder"
+  | "cabinet_solo"
+  | "cabinet_pro"
+  | "cabinet_enterprise"
+  | "one_off_audit"
+
+export type SubscriptionStatus =
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "incomplete"
+  | "incomplete_expired"
+  | "unpaid"
+  | "none"
+
+export type OrgSubscription = {
+  orgId: string
+  // ── Stripe linkage ────────────────────────────────────────────────────────
+  stripeCustomerId?: string
+  stripeSubscriptionId?: string
+  stripePriceId?: string
+  // ── Current tier ──────────────────────────────────────────────────────────
+  tier: BillingTier
+  status: SubscriptionStatus
+  // ── Period ────────────────────────────────────────────────────────────────
+  currentPeriodStartISO?: string
+  currentPeriodEndISO?: string
+  trialEndsAtISO?: string
+  cancelAtPeriodEnd: boolean
+  // ── Pricing ───────────────────────────────────────────────────────────────
+  monthlyPriceEUR?: number
+  // ── Usage metrics (informational; not enforced as hard limits in v1) ──────
+  usageMetrics: {
+    activeClients?: number
+    aiSystemsCount?: number
+    findingsActiveCount?: number
+    auditPacksGeneratedThisMonth?: number
+    apiCallsThisMonth?: number
+  }
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  lastWebhookEventAtISO?: string
+  createdAtISO: string
+  updatedAtISO: string
 }
 
 // Forward decl pentru tipuri trăite în `lib/server/store.ts` care sunt parte
