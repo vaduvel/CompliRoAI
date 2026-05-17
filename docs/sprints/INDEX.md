@@ -37,7 +37,7 @@
 | **008C** | **DPIA + ROPA (drop-in pe fundație 008A/B, finding emission, orchestrator wire)** | ✅ DONE | 2bff11f | manual: Claude | [sprint-008c-dpia-ropa.md](sprint-008c-dpia-ropa.md) |
 | **008D** | **Breach GDPR 72h (Art. 33 ANSPDCP + Art. 34 persoane vizate, finding rescue auto)** | ✅ DONE | 31e6f4f | manual: Claude | [sprint-008d-gdpr-breach.md](sprint-008d-gdpr-breach.md) |
 | **009** | **AI Data Discovery + PII Discovery + AI Exposure Report + AI Policy Pack (Wave 1 AI Discovery)** | ✅ DONE | 28d33e5+ | manual: Claude | [sprint-009-ai-data-pii-exposure-policy.md](sprint-009-ai-data-pii-exposure-policy.md) |
-| 010 | Vendor AI Assessment + DPA review | ⏳ PLANNED | — | — | TBD |
+| **010** | **Vendor AI Assessment + DPA review (17 vendori catalog + risk evaluator + lifecycle + brief)** | ✅ DONE | c5b9c73+ | manual: Claude | [sprint-010-vendor-ai-assessment.md](sprint-010-vendor-ai-assessment.md) |
 | 011 | Audit-log structured (toate event-urile auditabile) | ⏳ PLANNED | — | — | TBD |
 | 012 | DORA AI slice + NIS2 AI slice (selectiv) | ⏳ PLANNED | — | — | TBD |
 | 013 | Approval queue + Calendar + Trust Center | ⏳ PLANNED | — | — | TBD |
