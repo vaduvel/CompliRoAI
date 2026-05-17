@@ -8,11 +8,21 @@
 
 ## 1. Mantra Strategic
 
-> **"CompliRoAI = EU AI Act Compliance Operating System pentru ecosistemul AI românesc.**
+> **"CompliRoAI = Compliance OS pentru era AI.**
 >
-> **Citim legea, transformăm fiecare obligație într-un workflow, document, dovadă și export auditabil.**
+> **Azi:** GDPR + NIS2 + DORA + Fiscal + Pay Transparency + Whistleblowing + AI Act — toate frameworks-urile pe care cabinetul tău le livrează deja.
 >
-> **Servim cabinetele care livrează compliance, IMM-urile care folosesc AI, și AI builder-ii care construiesc cu AI. Toți au aceeași lege. Noi le servim pe toți, în limba lor."**
+> **Mâine (2027-2028):** când 80% din clienții tăi au automatizări AI, AI Act layer e deja activ, integrat, gata. Nu cumperi alt tool, nu migrezi.
+>
+> **Pe cabinetul tău:** nu mai cumperi 7 tools. Cumperi platforma care crește cu tine. AI Act = super-layer peste compliance matur."
+
+### Strategic Bet (Updated 16 mai 2026)
+
+**Play:** ALL IN — port toate frameworks-urile existente în DPO-OS, AI Act ca super-layer.
+
+**De ce:** AI penetration RO SME = 5.2% azi → 60-80% în 2028 (Eurostat trajectory). Cabinete pe platformă în 2026 (cu GDPR/NIS2/DORA) = entrenched când AI Act explodează în 2027-2028.
+
+**Compounding moat:** cumpărător la €399/lună cabinet 2026 → €699 (DORA tier) 2027 → €999 (AI Act activated) 2028+. **LTV per cabinet 5 ani: €30-50k.**
 
 ### Principii De Bază
 
