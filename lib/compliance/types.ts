@@ -1373,6 +1373,15 @@ export type ComplianceState = {
    * read by /dashboard/setari/billing UI + by feature gates (read-only enforcement).
    */
   orgSubscription?: OrgSubscription
+
+  /**
+   * Sprint 016 — FRIA records (Art. 27 AI Act). Fiecare record evaluează
+   * impactul asupra drepturilor fundamentale al unui sistem AI high-risk
+   * pentru un deployer eligibil (organism public / servicii publice /
+   * credit scoring / asigurări viață-sănătate). Findings emise de evaluator
+   * sunt linkate via `linkedFindingIds[]`.
+   */
+  friaRecords?: FriaRecord[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1527,6 +1536,182 @@ export type DsarRequest = {
   responseSentAtISO?: string
   archivedAtISO?: string
   evidenceVaultIds: string[]
+  notes?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   FRIA — Fundamental Rights Impact Assessment (Art. 27 AI Act)
+//   Sprint 016 — BUILD NEW pentru obligația deployer-ului unui sistem AI
+//   high-risk (Reg. (UE) 2024/1689, Art. 27 + Carta drepturilor fundamentale).
+//
+//   FRIA este distinctă de DPIA (GDPR Art. 35): DPIA evaluează prelucrarea
+//   datelor cu caracter personal, FRIA evaluează impactul sistemului AI
+//   asupra DREPTURILOR FUNDAMENTALE ale persoanelor afectate. Art. 27(4)
+//   permite reutilizarea DPIA dacă acoperă aceleași riscuri.
+//
+//   Categorii deployer (Art. 27(1)):
+//     (a) public bodies + private entities providing public services
+//     (b) credit scoring (Annex III pt. 5(b))
+//     (b) life/health insurance pricing (Annex III pt. 5(c))
+//
+//   Drepturile fundamentale evaluate vin din Carta UE — 24 drepturi
+//   relevante pentru sistemele AI (selectate din Titlurile I-VI).
+// ────────────────────────────────────────────────────────────────────────────
+
+export type FriaDeployerType =
+  | "public_body"                    // Art. 27(1)(a) — organism public
+  | "private_public_service"         // Art. 27(1)(a) — entitate privată cu serv. publice
+  | "credit_assessment"              // Art. 27(1)(b) — Annex III pt. 5(b)
+  | "life_health_insurance"          // Art. 27(1)(b) — Annex III pt. 5(c)
+  | "other_high_risk_deployer"       // deployer high-risk fără mandat Art. 27(1)
+  | "not_applicable"
+
+export type FriaRecordStatus =
+  | "draft"
+  | "screening_done"
+  | "in_review"
+  | "needs_mitigation"
+  | "approved"
+  | "rejected"
+  | "obsolete"
+
+export type FriaRiskLevel = "low" | "medium" | "high" | "critical"
+
+/**
+ * Drepturile fundamentale evaluate în FRIA (selecție din Carta UE 2012/C 326/02).
+ * 24 drepturi acoperă obligația Art. 27(1)(d) de a identifica „riscurile
+ * specifice pentru drepturile persoanelor".
+ */
+export type FundamentalRight =
+  // Titlul I — Demnitate
+  | "human_dignity"                  // Art. 1
+  | "right_to_life"                  // Art. 2
+  | "integrity_of_person"            // Art. 3
+  // Titlul II — Libertăți
+  | "privacy_family_life"            // Art. 7
+  | "data_protection"                // Art. 8
+  | "freedom_thought_religion"       // Art. 10
+  | "freedom_expression"             // Art. 11
+  | "freedom_assembly"               // Art. 12
+  | "right_to_education"             // Art. 14
+  | "right_to_work"                  // Art. 15
+  | "freedom_to_conduct_business"    // Art. 16
+  | "right_to_property"              // Art. 17
+  | "right_to_asylum"                // Art. 18
+  // Titlul III — Egalitate
+  | "equality_before_law"            // Art. 20
+  | "non_discrimination"             // Art. 21
+  | "cultural_religious_linguistic_diversity" // Art. 22
+  | "gender_equality"                // Art. 23
+  | "rights_of_child"                // Art. 24
+  | "rights_of_elderly"              // Art. 25
+  | "rights_of_disabled"             // Art. 26
+  // Titlul IV — Solidaritate
+  | "fair_working_conditions"        // Art. 31
+  | "social_security"                // Art. 34
+  | "consumer_protection"            // Art. 38
+  // Titlul V — Cetățenie / Justiție
+  | "good_administration"            // Art. 41
+  | "effective_remedy"               // Art. 47
+
+export type FriaLikelihood = "rare" | "unlikely" | "possible" | "likely" | "almost_certain"
+export type FriaSeverity = "negligible" | "minor" | "moderate" | "major" | "catastrophic"
+
+export type FriaAffectedGroup = {
+  /** Etichetă liberă: "candidați angajare", "beneficiari de venit minim garantat", "clienți creditare". */
+  category: string
+  estimatedCount?: number
+  /** Vulnerabilități declarate: copii, vârstnici, persoane cu dizabilități, etc. */
+  vulnerabilities: string[]
+}
+
+export type FriaRiskAssessment = {
+  rightAffected: FundamentalRight
+  description: string
+  likelihood: FriaLikelihood
+  severity: FriaSeverity
+  riskLevel: FriaRiskLevel
+  mitigationMeasures: string[]
+  residualRisk: FriaRiskLevel
+}
+
+export type FriaHumanOversightMeasureType =
+  | "human_in_loop"
+  | "human_on_loop"
+  | "human_in_command"
+  | "override"
+  | "audit_log"
+  | "explainability"
+  | "complaint_mechanism"
+  | "fallback"
+
+export type FriaHumanOversightMeasure = {
+  measureType: FriaHumanOversightMeasureType
+  description: string
+  /** Rolul responsabil: "DPO", "Compliance officer", "Operator HR", etc. */
+  responsibleRole: string
+  /** Condițiile care declanșează măsura: "scor sub prag", "decizie negativă". */
+  triggerConditions: string
+  documentedAtISO: string
+}
+
+export type FriaFrequencyOfUse =
+  | "real_time_continuous"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "ad_hoc"
+  | "one_time"
+
+export type FriaRecord = {
+  id: string
+  orgId: string
+  title: string
+  /** Sistemul AI cu risc înalt evaluat. */
+  linkedAISystemId: string
+  /** Art. 27(4) — DPIA care acoperă aceleași riscuri (reuse). */
+  linkedDpiaRecordId?: string
+  deployerType: FriaDeployerType
+  /** Descrierea procesului în care e folosit sistemul AI. */
+  processDescription: string
+  periodOfUseStartISO?: string
+  periodOfUseEndISO?: string
+  frequencyOfUse: FriaFrequencyOfUse
+  expectedVolume?: number
+  /** Categoriile de persoane afectate de output-ul sistemului AI. */
+  affectedGroups: FriaAffectedGroup[]
+  /** Drepturile fundamentale identificate ca fiind la risc (multi-select din 24). */
+  rightsAtRisk: FundamentalRight[]
+  /** Evaluare per-drept: likelihood × severity → riskLevel + mitigare. */
+  riskAssessments: FriaRiskAssessment[]
+  /** Scor agregat 0-100 calculat de evaluator. */
+  overallRiskScore: number
+  overallRiskLevel: FriaRiskLevel
+  /** Măsurile Art. 14 de supraveghere umană implementate. */
+  humanOversightMeasures: FriaHumanOversightMeasure[]
+  /** Descrierea mecanismului de plângere conform Art. 27(1)(f). */
+  complaintMechanism: string
+  /** Măsuri organizatorice + tehnice suplimentare. */
+  governanceMeasures: string[]
+  /** Notificare autoritate de supraveghere conform Art. 27(3) — ADR/ANSPDCP/ASF. */
+  notifyAuthorityRequired: boolean
+  notifyAuthorityName?: string
+  notifiedAtISO?: string
+  authorityReference?: string
+  status: FriaRecordStatus
+  reviewedByEmail?: string
+  reviewedAtISO?: string
+  approvedByEmail?: string
+  approvedAtISO?: string
+  rejectionReason?: string
+  /** Findings emise de evaluator (linkate în /dashboard/resolve). */
+  linkedFindingIds: string[]
+  /** Evidence vault attachments (compat with audit pack). */
+  evidenceVaultIds: string[]
+  /** Markdown generat de evaluator pentru export. */
+  generatedMarkdown?: string
   notes?: string
   createdAtISO: string
   updatedAtISO: string
