@@ -1,6 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation"
-import { Cpu, FileCheck, BookOpen, LogOut, Users, Link2, Palette, ShieldCheck, Sparkles, Compass, MessageSquare, Mail, AlertCircle, History, ClipboardCheck, Database, ShieldAlert, Search, Package, FileSearch, Landmark, CheckSquare, Calendar, Eye } from "lucide-react"
+import { Cpu, FileCheck, BookOpen, LogOut, Users, Link2, Palette, ShieldCheck, Sparkles, Compass, MessageSquare, Mail, AlertCircle, History, ClipboardCheck, Database, ShieldAlert, Search, Package, FileSearch, Landmark, CheckSquare, Calendar, Eye, CreditCard } from "lucide-react"
 import { NavItem } from "./nav-item"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 
@@ -101,6 +101,11 @@ export function DashboardShell({ children, userEmail, orgName, workspaceMode = "
               icon={<Palette size={15} />}
             />
           )}
+          <NavItem
+            href="/dashboard/setari/billing"
+            label="Setări facturare"
+            icon={<CreditCard size={15} />}
+          />
         </nav>
 
         {/* User footer */}
