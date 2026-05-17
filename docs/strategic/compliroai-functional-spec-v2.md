@@ -136,18 +136,26 @@ Aici diferențiem.
 - Implementation spec v1 + sprint log system + commit hashes backfilled
 
 ### Faza 1 — PORT MASIV DPO-OS (în execuție)
+
+**Decizie locked (17 mai):** Foundation First. Nu mai forțăm module standalone fără fundație, pentru că un modul DPO-OS matur trăiește pe `ComplianceState` + findings + events + orchestrator + audit trail. Fără ele = half-baked.
+
 Port modul cu modul, fiecare în sprint dedicat, cu test + log.
 
 | Sprint | Conținut | Status | Owner |
 |---|---|---|---|
-| 007 | DSAR (Art. 15-22) | ✅ DONE | manual: Claude |
-| 008 | DPIA + ROPA + Breach | ⏳ next | TBD |
+| 007 | DSAR (Art. 15-22) — modul izolat, fără dep | ✅ DONE | manual: Claude |
+| **008A** | **Foundation Port:** ScanFinding + ComplianceEvent + ComplianceState (filtrat AI/GDPR) + events + orgKnowledge + discovery-trigger-orchestrator + store adapter `mutateFreshStateForOrg` + audit trail | ⏳ next | TBD |
+| 008B | Findings + Dosar + Resolve (UI + API) — gestionare matură pentru riscuri emise de DPIA/ROPA/etc. | ⏳ | TBD |
+| 008C | DPIA + ROPA — drop-in pe fundație, cu findings + triggers + evidence + export | ⏳ | TBD |
+| 008D | Breach GDPR 72h (Art. 33) — slice DPO/AI; NIS2 full rămâne separat (Sprint 012) | ⏳ | TBD |
 | 009 | AI Data Discovery + PII Discovery + AI Exposure Report + AI Policy Pack | ⏳ | TBD |
 | 010 | Vendor AI Assessment + DPA review | ⏳ | TBD |
-| 011 | Findings + Dosar + Resolve + Audit-log structured | ⏳ | TBD |
-| 012 | DORA AI slice + NIS2 AI slice (selectiv) | ⏳ | TBD |
+| 011 | Audit-log structured (toate eventele într-un singur stream auditabil) | ⏳ | TBD |
+| 012 | DORA AI slice + NIS2 AI slice (selectiv, AI în critical infra + AI fintech) | ⏳ | TBD |
 | 013 | Approval queue + Calendar + Trust Center | ⏳ | TBD |
 | 014 | PDF generator + Onboarding emails (Resend) + Stripe billing | ⏳ | TBD |
+
+**Regulă executare 008A→D:** sub-sprinturi care merg în ordine strictă, NU în paralel. Foundation (008A) blochează tot ce vine după.
 
 ### Faza 2 — Role-aware UI (build new)
 | Sprint | Conținut | Status |

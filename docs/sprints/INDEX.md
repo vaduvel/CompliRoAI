@@ -32,16 +32,25 @@
 | QW-PRICING | Landing pricing 4 tiers | ✅ DONE | 9b9cdf5 | manual: Claude | _backfill_ |
 | 006.5 | Role-aware UI (3 modes) | ⏳ PLANNED | — | — | TBD |
 | 007 | DSAR full port (GDPR Art. 15-22) | ✅ DONE | e32827e | manual: Claude | [sprint-007-dsar-port.md](sprint-007-dsar-port.md) |
-| 008 | FRIA Generator (Art. 27) | ⏳ PLANNED | — | — | TBD |
-| 009 | Human Oversight Protocols (Art. 14) | ⏳ PLANNED | — | — | TBD |
-| 010 | Logging Evidence (Art. 12) | ⏳ PLANNED | — | — | TBD |
-| 011 | Post-Market Monitoring (Art. 72) | ⏳ PLANNED | — | — | TBD |
-| 012 | Incident Reporting (Art. 73) | ⏳ PLANNED | — | — | TBD |
-| 013 | QMS Workspace (Art. 17) | ⏳ PLANNED | — | — | TBD |
-| 014 | Auto-generation engine (preventive core) | ⏳ PLANNED | — | — | TBD |
-| 015 | Renewal Tracker + Change Log legislativ | ⏳ PLANNED | — | — | TBD |
-| 016 | API/SDK npm package pentru AI Builders | ⏳ PLANNED | — | — | TBD |
-| 017 | Stripe billing + checkout | ⏳ PLANNED | — | — | TBD |
+| **008A** | **Foundation Port: ComplianceState + findings + events + orchestrator + store adapter** | ⏳ NEXT | — | — | TBD |
+| 008B | Findings + Dosar + Resolve (UI + API peste fundație) | ⏳ PLANNED | — | — | TBD |
+| 008C | DPIA + ROPA (drop-in pe fundație) | ⏳ PLANNED | — | — | TBD |
+| 008D | Breach GDPR 72h (Art. 33, slice DPO/AI) | ⏳ PLANNED | — | — | TBD |
+| 009 | AI Data Discovery + PII Discovery + AI Exposure Report + AI Policy Pack | ⏳ PLANNED | — | — | TBD |
+| 010 | Vendor AI Assessment + DPA review | ⏳ PLANNED | — | — | TBD |
+| 011 | Audit-log structured (toate event-urile auditabile) | ⏳ PLANNED | — | — | TBD |
+| 012 | DORA AI slice + NIS2 AI slice (selectiv) | ⏳ PLANNED | — | — | TBD |
+| 013 | Approval queue + Calendar + Trust Center | ⏳ PLANNED | — | — | TBD |
+| 014 | PDF generator + Onboarding emails + Stripe | ⏳ PLANNED | — | — | TBD |
+| 015 | Role-aware UI (3 modes) build new | ⏳ PLANNED | — | — | TBD |
+| 016 | FRIA Generator (Art. 27) | ⏳ PLANNED | — | — | TBD |
+| 017 | Human Oversight Protocols (Art. 14) | ⏳ PLANNED | — | — | TBD |
+| 018 | Logging Evidence (Art. 12) | ⏳ PLANNED | — | — | TBD |
+| 019 | Post-Market Monitoring (Art. 72) | ⏳ PLANNED | — | — | TBD |
+| 020 | Incident Reporting AI (Art. 73) | ⏳ PLANNED | — | — | TBD |
+| 021 | QMS Workspace (Art. 17) | ⏳ PLANNED | — | — | TBD |
+| 022 | Auto-generation engine + Renewal Tracker + Change Log | ⏳ PLANNED | — | — | TBD |
+| 023 | API/SDK npm package pentru AI Builders | ⏳ PLANNED | — | — | TBD |
 
 ---
 
