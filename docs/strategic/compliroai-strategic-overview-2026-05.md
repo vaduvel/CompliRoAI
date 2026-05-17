@@ -24,6 +24,30 @@
 
 **Compounding moat:** cumpărător la €399/lună cabinet 2026 → €699 (DORA tier) 2027 → €999 (AI Act activated) 2028+. **LTV per cabinet 5 ani: €30-50k.**
 
+### ⭐ Sleep Peacefully — Done-For-You Tier (16 mai 2026 — major positioning update)
+
+**Două motiuni paralele de vânzare:**
+
+1. **Tool Tier (control-seekers):** €99-499/lună — IMM Builder + CTO + DPO intern care vor control. Self-serve, login, inventory, classify, export.
+
+2. **Sleep Peacefully Tier (peace-seekers):** €1.500-5.000/lună — IMM CEO + Cabinet care vor zero efort. Onboarding 5 min, motor auto-generează tot, customer doar semnează.
+
+**Mecanica Sleep Peacefully:**
+- Day 1: Customer setează CUI + sector + 3 întrebări basic
+- Day 1-2: Motor auto-generează Role Memo + Inventory + Annex IV + DPIA + Transparency + Literacy plan + Audit Pack
+- Day 2-7: Customer revede + semnează digital
+- Day 8+: Monthly digest "0 issues. Dormi în continuare."
+- Cand vine lege nouă/Omnibus: auto re-classification, email "Update aplicat automat. Dormi în continuare."
+
+**Cabinete = channel multiplicator pentru Sleep Peacefully:**
+- Cabinet plătește €399/lună platformă
+- Cabinet vinde "dosar complet AI Act + GDPR + NIS2" la 30 clienți la €100-300/lună
+- Cabinet câștigă €90-270k/lună revenue, margin 95%
+- Cabinet devine 225x mai eficient
+
+**Mantra Final:**
+> "CompliRoAI = liniștea ta de compliance. Plătești o dată. Dormi pentru totdeauna. Azi GDPR + NIS2 + DORA. Mâine AI Act enforcement. Poimâine CRA. Tu doar semnezi. Noi rulăm motorul."
+
 ### Principii De Bază
 
 1. **Law-first, not market-first** — legea dictează feature-urile, piața dictează doar ordinea de atac
