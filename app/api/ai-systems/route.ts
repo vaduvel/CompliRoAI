@@ -4,12 +4,47 @@ import { nanoid } from "nanoid"
 import { readState, writeState } from "@/lib/server/store"
 import { syncAIActObligationFindings } from "@/lib/server/obligation-sync"
 import { classifyAISystem, type AIActRiskLevel } from "@/lib/compliance/ai-act-classifier"
-import type { AISystemRecord, AISystemRiskLevel } from "@/lib/compliance/types"
+import { getOrgContext } from "@/lib/server/org-context"
+import { evaluateAndMergeNis2Findings } from "@/lib/server/ai-regulatory-scope-store"
+import type { ComplianceEventActorInput } from "@/lib/compliance/events"
+import type {
+  AISystemNis2Scope,
+  AISystemRecord,
+  AISystemRiskLevel,
+} from "@/lib/compliance/types"
 
 function mapRiskLevel(level: AIActRiskLevel): AISystemRiskLevel {
   if (level === "high_risk" || level === "prohibited") return "high"
   if (level === "limited_risk") return "limited"
   return "minimal"
+}
+
+function actorFromContext(ctx: {
+  userId: string
+  email: string
+}): ComplianceEventActorInput {
+  return {
+    id: ctx.userId,
+    label: ctx.email,
+    role: "compliance",
+    source: "session",
+  }
+}
+
+function normNis2Scope(raw: unknown): AISystemNis2Scope | undefined {
+  if (!raw || typeof raw !== "object") return undefined
+  const r = raw as Record<string, unknown>
+  if (typeof r.inScope !== "boolean") return undefined
+  return {
+    inScope: r.inScope,
+    service: typeof r.service === "string" ? r.service.trim() || undefined : undefined,
+    assessmentNote:
+      typeof r.assessmentNote === "string"
+        ? r.assessmentNote.trim() || undefined
+        : undefined,
+    evaluatedAtISO:
+      typeof r.evaluatedAtISO === "string" ? r.evaluatedAtISO : undefined,
+  }
 }
 
 export async function GET() {
@@ -33,6 +68,7 @@ export async function POST(request: Request) {
       makesAutomatedDecisions,
       impactsRights,
       hasHumanReview,
+      nis2EntityScope,
     } = body
 
     if (!name || !purpose) {
@@ -61,6 +97,7 @@ export async function POST(request: Request) {
       createdAtISO: nowISO,
       approvalStatus: "pending",
       policyAttestationStatus: "not-attested",
+      nis2EntityScope: normNis2Scope(nis2EntityScope),
     }
 
     const state = await readState()
@@ -69,6 +106,16 @@ export async function POST(request: Request) {
 
     // Sync obligation findings in background (async, best-effort)
     void syncAIActObligationFindings(system, nowISO).catch(() => {})
+
+    // Sprint 012 — wire NIS2 AI rules dacă sistemul e marcat in-scope.
+    if (system.nis2EntityScope?.inScope) {
+      try {
+        const ctx = await getOrgContext()
+        await evaluateAndMergeNis2Findings(ctx.orgId, system, actorFromContext(ctx))
+      } catch {
+        // Ne-fatal.
+      }
+    }
 
     return NextResponse.json({ system })
   } catch {
