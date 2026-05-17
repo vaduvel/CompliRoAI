@@ -336,6 +336,30 @@ Distribution:
 
 ---
 
+## 10.6 ⚠️ LECȚII ÎNVĂȚATE — Regula Default: Port
+
+**Greșeala strategică din sesiunea inițială (16 mai 2026):**
+- Am început CompliRoAI rebuilding multi-tenancy + magic links + white-label + audit pack ÎN LOC SĂ PORT direct din DPO-OS care le avea deja.
+- Cost: ~2 săptămâni de rebuild redundant.
+- Cauza: confuzie "standalone vs branded subset" + neverificarea exhaustivă a DPO-OS inventory.
+
+**Regula pentru viitor (NORMA INTERNĂ):**
+> "Înainte de a construi orice modul nou:
+> 1. **Verifică DPO-OS (v3-unified + fiscal-mature + dpo-claude-polish)** exhaustiv pentru cod existent
+> 2. **Default = PORT (1-2 zile per modul).** Build de la 0 doar dacă confirm că nu există în niciun donor branch
+> 3. **Dacă portezi:** adaptează branding (compliscan → compliroai), env vars, paths, dar PĂSTREAZĂ logica și schemele
+> 4. **Sub-agenții primesc INSTRUCȚIUNEA EXPLICITĂ** să caute primul în DPO-OS, abia apoi să build"
+
+**Beneficiu retrospectiv CompliRoAI:**
+- Codebase 100% curat v3 native (no legacy tech debt)
+- Identitate clară "CompliRoAI" vs confused "DPO-OS"
+- Vercel + GitHub setup curat (no v3-unified vs main drama)
+- Net: 1-2 săptămâni pierdute, dar long-term cleaner.
+
+**Acțiune corectivă activă:** Phase 2A (Sprint 8-13) = port AGRESIV frameworks din DPO-OS care lipsesc în CompliRoAI (GDPR + NIS2 + DORA + Whistleblowing + Fiscal + Vendor). Asta E corectarea greșelii inițiale.
+
+---
+
 ## 11. Open Decisions / Pending
 
 1. **Domeniu propriu** — `compliroai.ro` cumpărat? Migrare DNS?
