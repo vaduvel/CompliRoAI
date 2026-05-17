@@ -594,7 +594,140 @@ export type ApplicabilityResult = Record<string, unknown>
 export type OrgProfilePrefill = Record<string, unknown>
 export type DpoDiscoveryWorkshopRecord = Record<string, unknown>
 export type ClientIntakeSubmissionRecord = Record<string, unknown>
-export type AIDataMapRecord = Record<string, unknown>
+
+// ────────────────────────────────────────────────────────────────────────────
+//   AI Discovery — Wave 1 (Sprint 009)
+//
+//   Operationalizeaza AI Automation Library (compliroai-ai-automation-library
+//   -2026-05-17.md): user descrie tool-urile AI folosite -> CompliRoAI mapeaza
+//   la AIUseCaseCategory + AIRiskCandidate si emite findings (transparency,
+//   missing DPA, missing DPIA, third-country transfers, prohibited practices).
+//
+//   AIDataMapRecord (full type, inlocuieste placeholder-ul 008A).
+//   PIIDetection — output al PII scanner pe text/json/csv blobs.
+//   AIExposureReport — agregare client-facing pentru AI Data Map.
+//
+//   Mandate § 19 cere AIUseCaseCategory + AIRiskCandidate ca canonic.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type AIUseCaseCategory =
+  | "customer_support"
+  | "internal_copilot"
+  | "sales_marketing"
+  | "hr_workplace"
+  | "finance_credit_fraud"
+  | "medical_health"
+  | "education"
+  | "ecommerce_retail"
+  | "legal_professional"
+  | "ai_builder_agent"
+  | "cybersecurity"
+  | "public_sector_critical"
+  | "other"
+
+export type AIRiskCandidate =
+  | "prohibited_candidate"
+  | "high_risk_candidate"
+  | "transparency_limited"
+  | "minimal"
+  | "needs_human_review"
+
+export type AIDeploymentMode = "saas" | "self_hosted" | "api" | "embedded"
+
+export type AIVendorRegion = "EU" | "US" | "UK" | "other" | "unknown"
+
+export type AITrainingDataUsage =
+  | "no_training"
+  | "opt_out_available"
+  | "trains_on_data"
+  | "unknown"
+
+export type AIDataMapStatus = "draft" | "active" | "deprecated"
+
+export type AIDataMapRecord = {
+  id: string
+  orgId: string
+  // Identification
+  toolName: string                       // ex: ChatGPT, Copilot, custom GPT
+  vendor: string                         // ex: OpenAI, Microsoft
+  deploymentMode: AIDeploymentMode
+  useCaseCategory: AIUseCaseCategory
+  useCaseDescription: string
+  // Data flow
+  inputDataCategories: string[]          // ex: chat, documents, code, customer data
+  outputDataCategories: string[]
+  processesPersonalData: boolean
+  processesSpecialCategories: boolean
+  childrenData: boolean
+  // Vendor / governance
+  vendorRegion: AIVendorRegion
+  trainingDataUsage: AITrainingDataUsage
+  dpaSigned: boolean
+  dpaUrl?: string
+  subprocessorsDocumented: boolean
+  // Risk
+  riskCandidate: AIRiskCandidate
+  reasons: string[]                      // why this risk level
+  // Lifecycle
+  linkedFindingIds: string[]             // findings emise din acest record
+  linkedAISystemId?: string              // legatura optionala la AI inventory
+  status: AIDataMapStatus
+  notes?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+export type PIICategoryType =
+  | "email"
+  | "phone"
+  | "cnp"
+  | "iban"
+  | "card"
+  | "passport"
+  | "ip"
+  | "address"
+  | "name"
+  | "other"
+
+export type PIIConfidence = "high" | "medium" | "low"
+
+export type PIICategoryHit = {
+  type: PIICategoryType
+  count: number
+  confidence: PIIConfidence
+  sample?: string                        // primul sample masked
+}
+
+export type PIIDetection = {
+  id: string
+  orgId: string
+  sourceLabel: string                    // ex: "chat-log.json", "manual paste"
+  scannedAtISO: string
+  detectionCount: number
+  categories: PIICategoryHit[]
+  linkedFindingId?: string
+  notes?: string
+}
+
+export type AIExposureReportScope = {
+  aiToolCount: number
+  personalDataToolCount: number
+  specialCategoryToolCount: number
+  noDpaCount: number
+  nonEuVendorCount: number
+  highRiskCandidateCount: number
+  prohibitedCandidateCount: number
+}
+
+export type AIExposureReport = {
+  id: string
+  orgId: string
+  generatedAtISO: string
+  scope: AIExposureReportScope
+  topRisks: string[]                     // sorted risk summary
+  recommendedActions: string[]
+  markdown: string                       // full report
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 //   RoPA — Records of Processing Activities (GDPR Art. 30)
@@ -876,7 +1009,24 @@ export type ComplianceState = {
   dpiaRecords?: DpiaRecord[]
   ropaActivities?: RopaActivityRecord[]
   discoveryTriggers?: import("@/lib/compliance/discovery-trigger-orchestrator").DiscoveryTriggerRecord[]
+
+  /**
+   * AI Data Map records (Sprint 009 — Wave 1 AI Discovery).
+   * Fiecare entry mapeaza un tool AI folosit -> categorie + risc + governance.
+   */
   aiDataMapRecords?: AIDataMapRecord[]
+
+  /**
+   * PII Discovery scans (Sprint 009). Output al scanner-ului pe text/blobs;
+   * persistat pentru audit + linkage finding-uri.
+   */
+  piiDetections?: PIIDetection[]
+
+  /**
+   * AI Exposure Reports (Sprint 009). Snapshot agregat client-facing
+   * generat din state-ul AI Data Map curent.
+   */
+  aiExposureReports?: AIExposureReport[]
 
   /**
    * GDPR breach records (Sprint 008D — Art. 33 ANSPDCP 72h + Art. 34 data
