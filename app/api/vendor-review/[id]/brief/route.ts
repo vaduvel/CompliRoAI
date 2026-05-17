@@ -37,6 +37,27 @@ export async function GET(
       })
     }
 
+    // Sprint 014 — PDF format with white-label branding.
+    if (format === "pdf") {
+      const { generatePdfFromMarkdown } = await import("@/lib/server/pdf-generator")
+      const { getEffectiveBranding } = await import("@/lib/server/white-label")
+      const branding = await getEffectiveBranding(ctx.orgId).catch(() => null)
+      const pdf = await generatePdfFromMarkdown(markdown, {
+        orgName: ctx.orgName ?? "",
+        title: `Vendor Brief — ${id}`,
+        branding,
+        signerName: branding?.signerName ?? null,
+      })
+      return new NextResponse(new Uint8Array(pdf), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="vendor-brief-${id}.pdf"`,
+          "Cache-Control": "no-store",
+        },
+      })
+    }
+
     return NextResponse.json({ id, markdown })
   } catch {
     return NextResponse.json(

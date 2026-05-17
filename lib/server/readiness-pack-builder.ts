@@ -56,7 +56,7 @@ import {
 //   Tipuri publice
 // ────────────────────────────────────────────────────────────────────────────
 
-export type ReadinessPackFormat = "zip" | "markdown" | "html"
+export type ReadinessPackFormat = "zip" | "markdown" | "html" | "pdf"
 
 export type ReadinessPackRecord = {
   id: string
@@ -295,7 +295,7 @@ export async function buildReadinessPack(
     })
     mimeType = "application/zip"
     fileName = `${baseName}.zip`
-  } else if (format === "markdown") {
+  } else if (format === "markdown" || format === "pdf") {
     const combined = [
       `# AI Act Readiness Pack — ${orgName}`,
       ``,
@@ -309,9 +309,26 @@ export async function buildReadinessPack(
       ``,
       `Hash root: \`${hashRoot}\``,
     ].join("\n\n")
-    buffer = Buffer.from(combined, "utf8")
-    mimeType = "text/markdown; charset=utf-8"
-    fileName = `${baseName}.md`
+    if (format === "pdf") {
+      // Sprint 014 — wrap combined markdown în PDF cu branding cabinet aplicat.
+      const { generatePdfFromMarkdown } = await import("@/lib/server/pdf-generator")
+      buffer = await generatePdfFromMarkdown(combined, {
+        orgName,
+        title: `Readiness Pack — ${orgName}`,
+        branding: {
+          ...branding,
+          isCustom: branding.isCustom,
+        },
+        signerName: branding.signerName,
+        generatedAtISO,
+      })
+      mimeType = "application/pdf"
+      fileName = `${baseName}.pdf`
+    } else {
+      buffer = Buffer.from(combined, "utf8")
+      mimeType = "text/markdown; charset=utf-8"
+      fileName = `${baseName}.md`
+    }
   } else {
     // html
     buffer = Buffer.from(clientHtml, "utf8")
@@ -518,7 +535,9 @@ async function getEffectiveBrandingSafe(orgId: string): Promise<{
   signerName: string | null
   signerTitle: string | null
   contactEmail: string | null
+  address: string | null
   website: string | null
+  updatedAtISO: string | null
   isCustom: boolean
 }> {
   try {
@@ -532,7 +551,9 @@ async function getEffectiveBrandingSafe(orgId: string): Promise<{
       signerName: null,
       signerTitle: null,
       contactEmail: null,
+      address: null,
       website: null,
+      updatedAtISO: null,
       isCustom: false,
     }
   }

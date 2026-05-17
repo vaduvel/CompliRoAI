@@ -45,6 +45,28 @@ export async function GET(request: Request) {
       })
     }
 
+    // Sprint 014 — PDF format
+    if (format === "pdf") {
+      const md = await buildMarkdownForOrg(ctx.orgId, ctx.orgName)
+      const { generatePdfFromMarkdown } = await import("@/lib/server/pdf-generator")
+      const { getEffectiveBranding } = await import("@/lib/server/white-label")
+      const branding = await getEffectiveBranding(ctx.orgId).catch(() => null)
+      const pdf = await generatePdfFromMarkdown(md, {
+        orgName: ctx.orgName ?? "",
+        title: `RoPA — ${ctx.orgName ?? ""}`,
+        branding,
+        signerName: branding?.signerName ?? null,
+      })
+      return new NextResponse(new Uint8Array(pdf), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="${fileStem}.pdf"`,
+          "Cache-Control": "no-store",
+        },
+      })
+    }
+
     const json = await buildMachineReadableForOrg(ctx.orgId, ctx.orgName)
     return new NextResponse(JSON.stringify(json, null, 2), {
       status: 200,

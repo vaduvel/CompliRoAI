@@ -25,7 +25,7 @@ async function authorizeClientOrg(
 }
 
 function parseFormat(value: string | null | undefined): ReadinessPackFormat {
-  if (value === "markdown" || value === "html" || value === "zip") return value
+  if (value === "markdown" || value === "html" || value === "zip" || value === "pdf") return value
   return "zip"
 }
 

@@ -1481,7 +1481,7 @@ export type AIActReadinessPackRecord = {
   generatedAtISO: string
   generatedByUserId: string
   generatedByUserEmail?: string
-  format: "zip" | "markdown" | "html"
+  format: "zip" | "markdown" | "html" | "pdf"
   hashRoot: string
   contentsCount: number
   clientOrgId?: string

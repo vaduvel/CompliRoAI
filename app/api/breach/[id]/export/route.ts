@@ -29,7 +29,7 @@ function safeFileSegment(value: string): string {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -72,6 +72,29 @@ export async function GET(
         ),
       ]),
     }))
+
+    // Sprint 014 — ?format=pdf returns PDF with white-label branding.
+    const url = new URL(request.url)
+    const format = url.searchParams.get("format")
+    if (format === "pdf") {
+      const { generatePdfFromMarkdown } = await import("@/lib/server/pdf-generator")
+      const { getEffectiveBranding } = await import("@/lib/server/white-label")
+      const branding = await getEffectiveBranding(ctx.orgId).catch(() => null)
+      const pdf = await generatePdfFromMarkdown(markdown, {
+        orgName: ctx.orgName ?? "",
+        title: `Breach — ${record.title}`,
+        branding,
+        signerName: branding?.signerName ?? null,
+      })
+      return new NextResponse(new Uint8Array(pdf), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="${fileStem}.pdf"`,
+          "Cache-Control": "no-store",
+        },
+      })
+    }
 
     return new NextResponse(markdown, {
       status: 200,
