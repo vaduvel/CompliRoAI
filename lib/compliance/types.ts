@@ -1382,6 +1382,15 @@ export type ComplianceState = {
    * sunt linkate via `linkedFindingIds[]`.
    */
   friaRecords?: FriaRecord[]
+
+  /**
+   * Sprint 017 — Human Oversight Protocols per AI system (Art. 14 AI Act).
+   * Fiecare protocol documentează capacitățile Art. 14(3) acoperite, oamenii
+   * responsabili (Art. 26(2)), escaladarea, contestația și procedura de
+   * stop/fallback pentru un sistem AI high-risk. Findings sunt emise când
+   * protocolul este incomplet sau lipsește pentru un sistem high-risk.
+   */
+  humanOversightProtocols?: HumanOversightProtocol[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1713,6 +1722,175 @@ export type FriaRecord = {
   /** Markdown generat de evaluator pentru export. */
   generatedMarkdown?: string
   notes?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Human Oversight Protocols — Art. 14 AI Act
+//   Sprint 017 — BUILD NEW; protocol per high-risk AI system per Art. 14
+//
+//   Sursa legală:
+//     • Reg. (UE) 2024/1689 Art. 14 — supraveghere umană (5 capacități cerute
+//       la (3)(a)–(e); 4-eyes pentru biometric ID la (4))
+//     • Reg. (UE) 2024/1689 Art. 26(2) — deployer trebuie să atribuie
+//       responsabilitatea unei persoane cu competență, training, autoritate
+//       și suport
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Modelul de supraveghere umană implementat pe sistem.
+ *
+ * - `human_in_the_loop` (HITL): un uman aprobă fiecare output înainte de execuție
+ * - `human_on_the_loop` (HOTL): un uman monitorizează și poate interveni
+ * - `human_in_command` (HIC): un uman setează parametri + are override
+ * - `two_person_rule`: 4-eyes — Art. 14(4) pentru biometric ID
+ * - `hybrid`: combinație (ex: HOTL + escalare HITL pe risc înalt)
+ */
+export type OversightModel =
+  | "human_in_the_loop"
+  | "human_on_the_loop"
+  | "human_in_command"
+  | "two_person_rule"
+  | "hybrid"
+
+/**
+ * Cele 5 capacități obligatorii cerute de Art. 14(3):
+ *   (a) understand the relevant capacities + limitations of the system
+ *   (b) remain aware of automation bias
+ *   (c) correctly interpret the output of the system
+ *   (d) decide not to use the system OR override / disregard / reverse output
+ *   (e) intervene in the operation of the system OR interrupt via "stop" button
+ */
+export type OversightCapability =
+  | "understand_capabilities"
+  | "aware_of_automation_bias"
+  | "interpret_output_correctly"
+  | "decide_not_to_use"
+  | "intervene_or_stop"
+
+export type OversightProtocolStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "active"
+  | "obsolete"
+  | "rejected"
+
+export type OversightCompleteness = "incomplete" | "partial" | "complete"
+
+/**
+ * Persoana responsabilă cu oversight pentru un sistem AI (Art. 26(2)).
+ */
+export type OversightResponsibleHuman = {
+  email: string
+  name?: string
+  role: string                              // ex: "DPO", "Manager HR", "Operator"
+  competenceLevel: "basic" | "trained" | "expert"
+  trainingDocumentedAtISO?: string
+  hasAuthorityToOverride: boolean
+  hasSupportTeam: boolean
+}
+
+/**
+ * Pas de escaladare (când + către cine se ridică o decizie/situație).
+ */
+export type OversightEscalationStep = {
+  triggerCondition: string                  // ex: "Decizie impactează >100 candidați", "Risc >0.8"
+  escalateToEmail: string
+  escalateToRole: string
+  slaHours: number
+  notificationMethod: "email" | "sms" | "phone" | "slack" | "in_app"
+}
+
+/**
+ * Procedura prin care persoana afectată poate contesta o decizie automată.
+ */
+export type OversightContestationProcedure = {
+  channelDescription: string                // cum poate contesta (email/portal/telefon)
+  acknowledgementSlaHours: number           // răspuns inițial
+  resolutionSlaDays: number                 // decizie finală
+  reviewerRole: string
+  evidencePreservation: string              // cum păstrăm dovezile
+}
+
+/**
+ * Procedura de stop / fallback (Art. 14(3)(e) + Art. 14(4)(d)).
+ */
+export type OversightStopProcedure = {
+  stopButtonAvailable: boolean
+  stopButtonLocation: string                // ex: "Admin dashboard", "Operator panel"
+  fallbackMode:
+    | "manual_processing"
+    | "previous_model"
+    | "deny_all"
+    | "queue_for_review"
+    | "other"
+  fallbackDescription: string
+  testedAtISO?: string
+  testFrequency: "weekly" | "monthly" | "quarterly" | "annually"
+}
+
+/**
+ * Dovadă atașată protocolului (training, audit log, screenshot fallback test).
+ */
+export type OversightEvidenceItem = {
+  id: string
+  type:
+    | "log"
+    | "screenshot"
+    | "video"
+    | "audit_report"
+    | "training_record"
+    | "test_report"
+    | "other"
+  description: string
+  uploadedAtISO: string
+  uploadedByEmail: string
+  url?: string
+  fileName?: string
+}
+
+/**
+ * Înregistrarea completă a protocolului de oversight pentru un sistem AI.
+ *
+ * Fluxul:
+ *   1. draft   — creat de operator, capacități parțial bifate
+ *   2. in_review — DPO / responsabil verifică
+ *   3. approved — semnătură electronică DPO/manager
+ *   4. active   — în vigoare pentru utilizarea sistemului
+ *   5. obsolete — sistemul retras sau protocol înlocuit
+ *   6. rejected — review-ul a respins protocolul (motiv obligatoriu)
+ */
+export type HumanOversightProtocol = {
+  id: string
+  orgId: string
+  // Identification
+  title: string                             // ex: "Oversight Protocol — HR Screening AI"
+  linkedAISystemId: string
+  oversightModel: OversightModel
+  // Art. 14(3) capabilities — must check each
+  capabilitiesCovered: OversightCapability[]
+  // Responsible humans (Art. 26(2))
+  responsibleHumans: OversightResponsibleHuman[]
+  // Workflow
+  escalationSteps: OversightEscalationStep[]
+  contestationProcedure: OversightContestationProcedure
+  stopProcedure: OversightStopProcedure
+  // Evidence
+  evidenceChecklist: string[]               // human-defined items needed for audit
+  evidenceItems: OversightEvidenceItem[]
+  // Workflow status
+  status: OversightProtocolStatus
+  completeness: OversightCompleteness
+  approvedByEmail?: string
+  approvedAtISO?: string
+  rejectionReason?: string
+  nextReviewISO?: string                    // typically +6 months
+  // Lifecycle
+  linkedFindingIds: string[]
+  notes?: string
+  generatedMarkdown?: string
   createdAtISO: string
   updatedAtISO: string
 }
