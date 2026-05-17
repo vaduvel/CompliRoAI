@@ -24,29 +24,42 @@
 
 **Compounding moat:** cumpărător la €399/lună cabinet 2026 → €699 (DORA tier) 2027 → €999 (AI Act activated) 2028+. **LTV per cabinet 5 ani: €30-50k.**
 
-### ⭐ Sleep Peacefully — Done-For-You Tier (16 mai 2026 — major positioning update)
+### ⭐ Preventive Compliance Philosophy (16 mai 2026 — corection)
 
-**Două motiuni paralele de vânzare:**
+**NU 2 tieruri separate (Tool vs Sleep). UN produs, 3 segmente, philosophy unică:**
 
-1. **Tool Tier (control-seekers):** €99-499/lună — IMM Builder + CTO + DPO intern care vor control. Self-serve, login, inventory, classify, export.
+**Pitch unic:**
+> "Pornesc afacere cu AI. Vreau să dorm liniștit. Nu aștept amenda — fac prevenția din ziua 1.
+> CompliRoAI = motorul care îmi spune EXACT ce să fac. Generez dosarul. Execut singur sau cu specialistul meu. Dosar semnat în vault permanent."
 
-2. **Sleep Peacefully Tier (peace-seekers):** €1.500-5.000/lună — IMM CEO + Cabinet care vor zero efort. Onboarding 5 min, motor auto-generează tot, customer doar semnează.
+**3 segmente × 3 tieruri pricing (per scale, nu per "tip de cumpărător"):**
 
-**Mecanica Sleep Peacefully:**
-- Day 1: Customer setează CUI + sector + 3 întrebări basic
-- Day 1-2: Motor auto-generează Role Memo + Inventory + Annex IV + DPIA + Transparency + Literacy plan + Audit Pack
-- Day 2-7: Customer revede + semnează digital
-- Day 8+: Monthly digest "0 issues. Dormi în continuare."
-- Cand vine lege nouă/Omnibus: auto re-classification, email "Update aplicat automat. Dormi în continuare."
+| Segment | Sub-tier | Preț |
+|---|---|---|
+| **IMM Solo** | până la 50 angajați | €99-149/lună |
+| **IMM Mid** | 50-250 ang, sisteme AI multiple, posibil DORA | €249/lună |
+| **IMM Builder** | AI native (Zybots, fameloop type) | €399/lună (cu API/SDK) |
+| **Cabinet Solo** | până la 10 clienți | €399/lună |
+| **Cabinet Pro** | până la 50 clienți | €799/lună |
+| **Cabinet Enterprise** | 50+ clienți | €1.499+/lună |
+| **One-off Setup Pack** | dosar inițial complet | €500-1.500 |
 
-**Cabinete = channel multiplicator pentru Sleep Peacefully:**
-- Cabinet plătește €399/lună platformă
-- Cabinet vinde "dosar complet AI Act + GDPR + NIS2" la 30 clienți la €100-300/lună
-- Cabinet câștigă €90-270k/lună revenue, margin 95%
-- Cabinet devine 225x mai eficient
+**Mecanica universală (toate segmentele):**
+1. Subscribe (5 min onboarding)
+2. App spune EXACT obligațiile aplicabile (per rol + frameworks active)
+3. App generează dosarul (Role Memo + Inventory + Annex IV + DPIA + Transparency + Literacy + Audit Pack)
+4. Customer execute (singur sau trimite la specialist extern pentru semnătură finală)
+5. Dosar rămâne semnat în Evidence Vault permanent
+6. Monthly digest: "0 issues. Continui."
+7. Lege nouă/Omnibus: auto re-classification + email "Update aplicat. Continui."
+
+**De ce funcționează:**
+- IMM Implementing AI: app îi ghidează pas-cu-pas, scoate la specialist extern doar finalul
+- IMM Builder (AI native): app generează tag "verified compliant" pentru produsul lor
+- Cabinet: rulează clienții existenți prin motor, adăugă AI Act compliance automat, vinde upgrade la portofoliu
 
 **Mantra Final:**
-> "CompliRoAI = liniștea ta de compliance. Plătești o dată. Dormi pentru totdeauna. Azi GDPR + NIS2 + DORA. Mâine AI Act enforcement. Poimâine CRA. Tu doar semnezi. Noi rulăm motorul."
+> "Nu aștepți amenda. Faci prevenția. CompliRoAI = motorul care îți spune ce să faci, generează dosarul, te ține compliant pentru fiecare lege care vine."
 
 ### Principii De Bază
 
