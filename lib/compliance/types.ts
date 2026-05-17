@@ -1,5 +1,13 @@
 // EU AI Act compliance types — AI-related only
 
+/**
+ * Categoria de conformitate la care se referă un finding sau alertă.
+ * Folosit de constituție pentru inferarea principiilor și de UI pentru
+ * filtrare/iconuri. Sprint 008A: extras din DPO-OS pentru a deveni
+ * primitive partajate cu ScanFinding.
+ */
+export type FindingCategory = "EU_AI_ACT" | "GDPR" | "E_FACTURA" | "NIS2"
+
 export type AISystemPurpose =
   | "hr-screening"
   | "credit-scoring"
