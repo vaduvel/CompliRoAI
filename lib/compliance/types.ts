@@ -168,6 +168,64 @@ export type LiteracyRecord = {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+//   Audit Trail — ComplianceEvent (Sprint 008A port from DPO-OS v3-unified)
+//   Eveniment auditabil cu hash chain (SHA-256) pentru tamper-evidence.
+//   Folosit ca ledger central pentru toate modulele (DPIA, RoPA, Breach,
+//   AI Discovery, Vendor Review). Stocat în `ComplianceState.events`,
+//   newest-first, cap 200 înregistrări.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type ComplianceEventEntityType =
+  | "scan"
+  | "finding"
+  | "alert"
+  | "task"
+  | "integration"
+  | "system"
+  | "drift"
+
+export type ComplianceEventActorRole =
+  | "owner"
+  | "partner_manager"
+  | "compliance"
+  | "reviewer"
+  | "viewer"
+
+export type ComplianceEventActorSource = "session" | "workspace" | "system"
+
+export type ComplianceEvent = {
+  id: string
+  type: string
+  entityType: ComplianceEventEntityType
+  entityId: string
+  message: string
+  createdAtISO: string
+  actorId?: string
+  actorLabel?: string
+  actorRole?: ComplianceEventActorRole
+  actorSource?: ComplianceEventActorSource
+  metadata?: Record<string, string | number | boolean>
+  // S2B.3 — Hash chain end-to-end (tamper-evident events ledger).
+  // selfHash = SHA-256(prevHash + JSON.stringify(eventWithoutHashes)).
+  // prevHash = selfHash al evenimentului anterior (sau "GENESIS" pentru primul).
+  // Câmpurile lipsesc pe evenimente vechi (pre-S2B.3) — backward compatible.
+  prevHash?: string
+  selfHash?: string
+}
+
+/**
+ * Stub minimal pentru `ComplianceState` — extins în Sprint 008A-4 cu toate
+ * câmpurile AI-relevant. Aici ținem doar `events?` ca events.ts să poată
+ * type-checka standalone.
+ *
+ * NU folosi acest type direct în cod feature — folosește `AIActState` din
+ * `@/lib/server/store` (care, după 008A-7, va fi alias către `ComplianceState`).
+ */
+export type ComplianceState = {
+  events?: ComplianceEvent[]
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 //   GDPR — DSAR (Sprint 007 port from DPO-OS v3-unified)
 //   Data Subject Access Requests — GDPR Art. 15-22
 //   Tracking cereri persoane vizate cu deadline legal (30 zile, extensibil 60).
