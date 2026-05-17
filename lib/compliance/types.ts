@@ -697,10 +697,7 @@ export type ComplianceState = {
   // ── DPIA / RoPA / Discovery Triggers (Sprint 008C va aduce store-uri) ──────
   dpiaRecords?: DpiaRecord[]
   ropaActivities?: RopaActivityRecord[]
-  // discoveryTriggers: tipul vine din discovery-trigger-orchestrator.ts
-  // (portat în Sprint 008A-5, după acest commit). Folosim un placeholder
-  // pentru a păstra ComplianceState type-clean între commit-uri.
-  discoveryTriggers?: unknown[]
+  discoveryTriggers?: import("@/lib/compliance/discovery-trigger-orchestrator").DiscoveryTriggerRecord[]
   aiDataMapRecords?: AIDataMapRecord[]
 
   // ── Cabinet workspaces & client onboarding ─────────────────────────────────
