@@ -168,6 +168,33 @@ export type LiteracyRecord = {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+//   ScanFinding (Sprint 008A — stub minimal pentru org-knowledge, extins
+//   complet în 008A-4 cu toate câmpurile DPO-OS).
+//   NU folosi acest type direct în feature code până nu e finalizat în 008A-4.
+// ────────────────────────────────────────────────────────────────────────────
+
+import type {
+  CompliancePrinciple,
+  ComplianceSeverity,
+} from "@/lib/compliance/constitution"
+
+export type ScanFinding = {
+  id: string
+  title: string
+  detail: string
+  category: FindingCategory
+  severity: ComplianceSeverity
+  risk: "high" | "low"
+  principles: CompliancePrinciple[]
+  createdAtISO: string
+  sourceDocument: string
+  legalReference?: string
+  remediationHint?: string
+  findingStatus?: "open" | "confirmed" | "dismissed" | "resolved" | "under_monitoring"
+  reviewState?: "unreviewed" | "confirmed" | "evidence_attached" | "closed" | "monitoring"
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 //   Audit Trail — ComplianceEvent (Sprint 008A port from DPO-OS v3-unified)
 //   Eveniment auditabil cu hash chain (SHA-256) pentru tamper-evidence.
 //   Folosit ca ledger central pentru toate modulele (DPIA, RoPA, Breach,
