@@ -129,7 +129,16 @@ export function determineReviewStatus(
     return "approved"
   }
 
-  // 6. Default: in_review pana cand DPO confirma
+  // 6. Daca statusul anterior era un needs_* gap care s-a inchis intre timp,
+  //    demoteaza la in_review (gap-ul nu mai e prezent in cascada de mai sus).
+  const wasNeedsGap =
+    vendor.reviewStatus === "needs_dpa" ||
+    vendor.reviewStatus === "needs_transfer_review" ||
+    vendor.reviewStatus === "needs_security_review" ||
+    vendor.reviewStatus === "expired"
+  if (wasNeedsGap) return "in_review"
+
+  // 7. Default: in_review pana cand DPO confirma
   if (vendor.reviewStatus === "draft") return "in_review"
   return vendor.reviewStatus
 }
