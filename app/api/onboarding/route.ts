@@ -10,6 +10,7 @@ import {
   createSessionToken,
   getSessionCookieOptions,
   verifySessionToken,
+  type WorkspaceMode,
 } from "@/lib/server/auth"
 import { getOrgContext } from "@/lib/server/org-context"
 import { createClientOrg } from "@/lib/server/tenancy"
@@ -20,7 +21,18 @@ import type {
   LiteracyRecord,
 } from "@/lib/compliance/types"
 
-type OnboardingRole = "solo" | "cabinet"
+/**
+ * Sprint 015 — onboarding accepts 3 roles aligned with workspace modes:
+ *   - imm-classic (companies using AI internally/externally)
+ *   - ai-builder  (companies building AI)
+ *   - cabinet     (consultancy/DPO managing portfolios)
+ *
+ * Legacy "solo" is normalized to "imm-classic". The recorded
+ * `onboarding.role` keeps the legacy two-value enum ("solo" | "cabinet") for
+ * existing state-typed code paths; the new workspaceMode is stored in the
+ * session cookie + state.onboarding.workspaceMode.
+ */
+type OnboardingRole = "imm-classic" | "ai-builder" | "cabinet"
 
 function mapRiskLevel(level: AIActRiskLevel): AISystemRiskLevel {
   if (level === "high_risk" || level === "prohibited") return "high"
@@ -29,13 +41,35 @@ function mapRiskLevel(level: AIActRiskLevel): AISystemRiskLevel {
 }
 
 function isRole(value: unknown): value is OnboardingRole {
-  return value === "solo" || value === "cabinet"
+  return value === "imm-classic" || value === "ai-builder" || value === "cabinet" || value === "solo"
+}
+
+function normalizeRole(value: unknown): OnboardingRole {
+  if (value === "cabinet") return "cabinet"
+  if (value === "ai-builder") return "ai-builder"
+  // "solo" (legacy) + "imm-classic" + anything else → imm-classic.
+  return "imm-classic"
+}
+
+function workspaceModeFor(role: OnboardingRole): WorkspaceMode {
+  if (role === "cabinet") return "cabinet"
+  if (role === "ai-builder") return "ai-builder"
+  return "imm-classic"
+}
+
+function destinationFor(role: OnboardingRole): string {
+  if (role === "cabinet") return "/dashboard/portofoliu"
+  if (role === "ai-builder") return "/dashboard"
+  return "/dashboard/sisteme"
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const role: OnboardingRole = isRole(body?.role) ? body.role : "solo"
+    const inputRole = isRole(body?.role) ? body.role : "imm-classic"
+    const role = normalizeRole(inputRole)
+    const workspaceMode = workspaceModeFor(role)
+    const destination = destinationFor(role)
 
     const state = await readState()
     const nowISO = new Date().toISOString()
@@ -50,11 +84,11 @@ export async function POST(request: Request) {
           ? String(body.cabinetInfo.clientScale)
           : ""
 
-      // Cabinet onboarding: mark complete + stash partner workspace metadata.
       state.onboarding = {
         completed: true,
         completedAtISO: nowISO,
-        role,
+        role: "cabinet",
+        workspaceMode: "cabinet",
         cabinetInfo: {
           cabinetName,
           clientScale,
@@ -63,7 +97,6 @@ export async function POST(request: Request) {
       }
       await writeState(state)
 
-      // Optionally create first client org in same call.
       const firstClient = body?.firstClient
       const orgCtx = await getOrgContext()
       if (
@@ -82,44 +115,45 @@ export async function POST(request: Request) {
         }
       }
 
-      // Re-issue session cookie with workspaceMode=cabinet so middleware injects it.
-      const cookieStore = await cookies()
-      const sessionCookie = cookieStore.get(SESSION_COOKIE)
-      if (sessionCookie?.value) {
-        const session = verifySessionToken(sessionCookie.value)
-        if (session) {
-          const newToken = createSessionToken({
-            userId: session.userId,
-            orgId: session.orgId,
-            email: session.email,
-            orgName: session.orgName,
-            workspaceMode: "cabinet",
-          })
-          const response = NextResponse.json({
-            ok: true,
-            destination: "/dashboard/portofoliu",
-            workspaceMode: "cabinet",
-          })
-          response.cookies.set(SESSION_COOKIE, newToken, getSessionCookieOptions())
-          return response
-        }
-      }
-
-      return NextResponse.json({
-        ok: true,
-        destination: "/dashboard/portofoliu",
-        workspaceMode: "cabinet",
-      })
+      return reissueSessionAndRespond({ workspaceMode, destination })
     }
 
-    // SOLO flow (existing behaviour with `role: "solo"` recorded for analytics).
+    if (role === "ai-builder") {
+      const companyInfo = body?.companyInfo
+      const builderInfo = body?.builderInfo
+      state.onboarding = {
+        completed: true,
+        completedAtISO: nowISO,
+        role: "solo", // legacy enum still required by AIActOnboardingState
+        workspaceMode: "ai-builder",
+        companyInfo: companyInfo ?? undefined,
+        builderInfo: {
+          ctoEmail:
+            typeof builderInfo?.ctoEmail === "string" ? builderInfo.ctoEmail : undefined,
+          firstModelDeployed:
+            typeof builderInfo?.firstModelDeployed === "string"
+              ? builderInfo.firstModelDeployed
+              : undefined,
+          customerFacing:
+            typeof builderInfo?.customerFacing === "boolean"
+              ? builderInfo.customerFacing
+              : undefined,
+        },
+        currentStep: 4,
+      }
+      await writeState(state)
+      return reissueSessionAndRespond({ workspaceMode, destination })
+    }
+
+    // imm-classic flow (with optional first system + literacy)
     const { companyInfo, firstSystem, firstLiteracy } = body ?? {}
 
     state.onboarding = {
       completed: true,
       completedAtISO: nowISO,
       companyInfo: companyInfo ?? undefined,
-      role: "solo",
+      role: "solo", // legacy enum
+      workspaceMode: "imm-classic",
       currentStep: 4,
     }
 
@@ -176,8 +210,44 @@ export async function POST(request: Request) {
       void syncAIActObligationFindings(createdSystem, nowISO).catch(() => {})
     }
 
-    return NextResponse.json({ ok: true, destination: "/dashboard/sisteme", workspaceMode: "solo" })
+    return reissueSessionAndRespond({ workspaceMode, destination })
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
+}
+
+/**
+ * Re-issues the session cookie with the new workspaceMode so middleware sees
+ * the right value on the very next request (the dashboard layout reads it).
+ */
+async function reissueSessionAndRespond(args: {
+  workspaceMode: WorkspaceMode
+  destination: string
+}): Promise<NextResponse> {
+  const cookieStore = await cookies()
+  const sessionCookie = cookieStore.get(SESSION_COOKIE)
+
+  const baseBody = {
+    ok: true,
+    destination: args.destination,
+    workspaceMode: args.workspaceMode,
+  }
+
+  if (!sessionCookie?.value) {
+    return NextResponse.json(baseBody)
+  }
+  const session = verifySessionToken(sessionCookie.value)
+  if (!session) {
+    return NextResponse.json(baseBody)
+  }
+  const newToken = createSessionToken({
+    userId: session.userId,
+    orgId: session.orgId,
+    email: session.email,
+    orgName: session.orgName,
+    workspaceMode: args.workspaceMode,
+  })
+  const response = NextResponse.json(baseBody)
+  response.cookies.set(SESSION_COOKIE, newToken, getSessionCookieOptions())
+  return response
 }

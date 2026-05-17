@@ -10,7 +10,15 @@ import {
 } from "@/lib/compliance/ai-act-classifier"
 import type { AISystemPurpose, LiteracyRecord } from "@/lib/compliance/types"
 
-type OnboardingRole = "solo" | "cabinet"
+/**
+ * Sprint 015 — 3-mode onboarding aligned with mandate § 16:
+ *   - imm-classic: companies using AI internally/externally
+ *   - ai-builder : companies building AI
+ *   - cabinet    : DPOs / consultants / lawyers managing portfolios
+ *
+ * Legacy "solo" still flows server-side via normalizeWorkspaceMode().
+ */
+type OnboardingRole = "imm-classic" | "ai-builder" | "cabinet"
 
 type Sector =
   | "saas"
@@ -33,6 +41,12 @@ type CompanyInfo = {
 type CabinetInfo = {
   cabinetName: string
   clientScale: "1-5" | "5-20" | "20+" | ""
+}
+
+type BuilderInfo = {
+  ctoEmail: string
+  firstModelDeployed: string
+  customerFacing: boolean | null
 }
 
 type FirstSystem = {
@@ -86,12 +100,10 @@ function validCui(cui: string): boolean {
   return /^(RO)?\d{2,10}$/.test(clean)
 }
 
-// Step model:
-//   solo:    0 (role) → 1 (company) → 2 (system) → 3 (literacy) → 4 (recap)
-//   cabinet: 0 (role) → 1 (cabinet name + scale) → 2 (first client optional) → 3 (recap)
-type SoloStep = 0 | 1 | 2 | 3 | 4
-type CabinetStep = 0 | 1 | 2 | 3
-
+// Step model per role:
+//   imm-classic: 0 (role) → 1 (company) → 2 (system) → 3 (literacy) → 4 (recap) = 5 steps
+//   ai-builder : 0 (role) → 1 (company) → 2 (builder info) → 3 (recap) = 4 steps
+//   cabinet    : 0 (role) → 1 (cabinet name + scale) → 2 (first client) → 3 (recap) = 4 steps
 export default function OnboardingPage() {
   const router = useRouter()
 
@@ -109,6 +121,12 @@ export default function OnboardingPage() {
   const [cabinet, setCabinet] = useState<CabinetInfo>({
     cabinetName: "",
     clientScale: "",
+  })
+
+  const [builder, setBuilder] = useState<BuilderInfo>({
+    ctoEmail: "",
+    firstModelDeployed: "",
+    customerFacing: null,
   })
 
   const [firstClient, setFirstClient] = useState<{ name: string; cui: string; skipped: boolean }>({
@@ -137,25 +155,28 @@ export default function OnboardingPage() {
     return classifyAISystem(system.purpose)
   }, [system.purpose, system.skipped])
 
-  const isSolo = role === "solo"
+  const isImmClassic = role === "imm-classic"
   const isCabinet = role === "cabinet"
-  const totalSteps = isCabinet ? 4 : 5
+  const isAiBuilder = role === "ai-builder"
 
-  const canProceedRole = role === "solo" || role === "cabinet"
-  const canProceedStep1Solo =
+  const totalSteps = isImmClassic ? 5 : 4
+
+  const canProceedRole = role === "imm-classic" || role === "cabinet" || role === "ai-builder"
+  const canProceedStep1Imm =
     validCui(company.cui) && !!company.sector && !!company.employeeCount
   const canProceedStep1Cabinet =
     cabinet.cabinetName.trim().length > 1 && !!cabinet.clientScale
-  const canProceedStep2Solo =
+  const canProceedStep2Imm =
     system.skipped || (system.name.trim().length > 1 && !!system.purpose)
   const canProceedStep2Cabinet =
     firstClient.skipped ||
     (firstClient.name.trim().length > 1 && (firstClient.cui === "" || validCui(firstClient.cui)))
-  const canProceedStep3Solo =
+  const canProceedStep3Imm =
     literacy.skipped ||
     (literacy.employeeName.trim().length > 1 &&
       !!literacy.trainingDate &&
       literacy.durationHours > 0)
+  const canProceedStep2Builder = builder.customerFacing !== null
 
   async function handleFinish() {
     setSubmitting(true)
@@ -163,7 +184,7 @@ export default function OnboardingPage() {
     try {
       const payload: Record<string, unknown> = { role }
 
-      if (isSolo) {
+      if (isImmClassic) {
         payload.companyInfo = {
           cui: company.cui.trim().toUpperCase(),
           sector: company.sector || undefined,
@@ -183,6 +204,17 @@ export default function OnboardingPage() {
             trainingType: literacy.trainingType,
             durationHours: literacy.durationHours,
           }
+        }
+      } else if (isAiBuilder) {
+        payload.companyInfo = {
+          cui: company.cui.trim().toUpperCase(),
+          sector: company.sector || undefined,
+          employeeCount: company.employeeCount || undefined,
+        }
+        payload.builderInfo = {
+          ctoEmail: builder.ctoEmail.trim() || undefined,
+          firstModelDeployed: builder.firstModelDeployed.trim() || undefined,
+          customerFacing: builder.customerFacing,
         }
       } else if (isCabinet) {
         payload.cabinetInfo = {
@@ -214,7 +246,9 @@ export default function OnboardingPage() {
           ? data.destination
           : isCabinet
             ? "/dashboard/portofoliu"
-            : "/dashboard/sisteme"
+            : isAiBuilder
+              ? "/dashboard"
+              : "/dashboard/sisteme"
       router.push(destination)
       router.refresh()
     } catch {
@@ -225,10 +259,14 @@ export default function OnboardingPage() {
 
   function canProceedFor(currentStep: number): boolean {
     if (currentStep === 0) return canProceedRole
-    if (isSolo) {
-      if (currentStep === 1) return canProceedStep1Solo
-      if (currentStep === 2) return canProceedStep2Solo
-      if (currentStep === 3) return canProceedStep3Solo
+    if (isImmClassic) {
+      if (currentStep === 1) return canProceedStep1Imm
+      if (currentStep === 2) return canProceedStep2Imm
+      if (currentStep === 3) return canProceedStep3Imm
+    }
+    if (isAiBuilder) {
+      if (currentStep === 1) return canProceedStep1Imm // same company info shape
+      if (currentStep === 2) return canProceedStep2Builder
     }
     if (isCabinet) {
       if (currentStep === 1) return canProceedStep1Cabinet
@@ -292,13 +330,13 @@ export default function OnboardingPage() {
         <div style={{ marginTop: "28px", minHeight: "340px" }}>
           {step === 0 && <StepRole role={role} setRole={setRole} />}
 
-          {/* Solo flow */}
-          {isSolo && step === 1 && <Step1Solo company={company} setCompany={setCompany} />}
-          {isSolo && step === 2 && (
+          {/* IMM-classic flow */}
+          {isImmClassic && step === 1 && <Step1Company company={company} setCompany={setCompany} />}
+          {isImmClassic && step === 2 && (
             <Step2Solo system={system} setSystem={setSystem} classification={classification} />
           )}
-          {isSolo && step === 3 && <Step3Solo literacy={literacy} setLiteracy={setLiteracy} />}
-          {isSolo && step === 4 && (
+          {isImmClassic && step === 3 && <Step3Solo literacy={literacy} setLiteracy={setLiteracy} />}
+          {isImmClassic && step === 4 && (
             <Step4SoloRecap
               company={company}
               system={system}
@@ -306,6 +344,15 @@ export default function OnboardingPage() {
               classification={classification}
             />
           )}
+
+          {/* AI Builder flow */}
+          {isAiBuilder && step === 1 && (
+            <Step1Company company={company} setCompany={setCompany} hint="ai-builder" />
+          )}
+          {isAiBuilder && step === 2 && (
+            <Step2Builder builder={builder} setBuilder={setBuilder} />
+          )}
+          {isAiBuilder && step === 3 && <Step3BuilderRecap company={company} builder={builder} />}
 
           {/* Cabinet flow */}
           {isCabinet && step === 1 && (
@@ -475,18 +522,28 @@ function StepRole({
     value: OnboardingRole
     title: string
     description: string
+    examples: string
   }> = [
     {
-      value: "solo",
-      title: "Companie / IMM",
+      value: "imm-classic",
+      title: "IMM care folosește AI",
       description:
-        "Gestionez sistemele AI ale firmei mele și propria conformitate cu EU AI Act.",
+        "Compania mea folosește instrumente AI cumpărate sau externalizate (ChatGPT, Copilot, vendor SaaS) — vreau să respect AI Act + GDPR ca deployer.",
+      examples: "Ex: SRL, firmă consultanță, agenție, retailer cu chatbot, departament HR cu AI screening.",
+    },
+    {
+      value: "ai-builder",
+      title: "Companie care construiește AI",
+      description:
+        "Construim sisteme AI, agenți, automatizări sau SaaS AI pentru noi sau pentru clienți — vreau workflow provider (Annex IV, EU Database, FRIA, API/SDK).",
+      examples: "Ex: startup AI, agenție automatizări AI, dezvoltator chatbot/copilot, builder agenți.",
     },
     {
       value: "cabinet",
-      title: "Cabinet / Consultant",
+      title: "Cabinet / DPO / Consultant",
       description:
-        "Gestionez compliance EU AI Act + GDPR pentru mai mulți clienți. Vreau dashboard portofoliu.",
+        "Gestionez compliance AI + GDPR pentru mai mulți clienți — vreau portofoliu, magic links, audit pack-uri, trust center.",
+      examples: "Ex: cabinet avocatură, DPO independent, consultant GDPR/AI, contabil care livrează compliance.",
     },
   ]
 
@@ -504,7 +561,7 @@ function StepRole({
           Bun venit la CompliRoAI
         </div>
         <div style={{ fontSize: "13.5px", color: "var(--ink-dim)" }}>
-          Care e rolul tău? Asta determină cum arată dashboard-ul.
+          Care e rolul tău? Asta determină ce module vezi în dashboard.
         </div>
       </div>
 
@@ -557,6 +614,9 @@ function StepRole({
                 <span style={{ fontSize: "12.5px", color: "var(--ink-muted)", lineHeight: 1.5 }}>
                   {c.description}
                 </span>
+                <span style={{ fontSize: "11.5px", color: "var(--ink-dim)", lineHeight: 1.5, marginTop: "2px" }}>
+                  {c.examples}
+                </span>
               </span>
             </button>
           )
@@ -573,19 +633,21 @@ function StepRole({
           borderRadius: "6px",
         }}
       >
-        Poți schimba rolul mai târziu din setări. Cabinetul are același calculator AI Act,
-        plus un dashboard portofoliu cu toți clienții.
+        Poți schimba rolul mai târziu din setări. Fiecare workspace are același motor
+        de compliance, dar UI-ul se adaptează la fluxul tău.
       </div>
     </div>
   )
 }
 
-function Step1Solo({
+function Step1Company({
   company,
   setCompany,
+  hint = "imm-classic",
 }: {
   company: CompanyInfo
   setCompany: (c: CompanyInfo) => void
+  hint?: "imm-classic" | "ai-builder"
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -598,7 +660,7 @@ function Step1Solo({
             marginBottom: "4px",
           }}
         >
-          Despre firma ta
+          Despre {hint === "ai-builder" ? "compania ta de AI" : "firma ta"}
         </div>
         <div style={{ fontSize: "13px", color: "var(--ink-dim)" }}>
           Detalii de bază pentru a personaliza obligațiile.
@@ -676,8 +738,187 @@ function Step1Solo({
         }}
       >
         <strong style={{ color: "var(--ink)" }}>AI Act se aplică tuturor.</strong> Indiferent
-        de mărime, dacă folosești sisteme AI ai obligații. Limita SME pentru reduceri de
-        amenzi: 750 angajați + €150M cifră de afaceri (extinsă prin Omnibus, 7 mai 2026).
+        de mărime, dacă folosești sau construiești sisteme AI ai obligații. Limita SME pentru
+        reduceri de amenzi: 750 angajați + €150M cifră de afaceri (extinsă prin Omnibus,
+        7 mai 2026).
+      </div>
+    </div>
+  )
+}
+
+function Step2Builder({
+  builder,
+  setBuilder,
+}: {
+  builder: BuilderInfo
+  setBuilder: (b: BuilderInfo) => void
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      <div>
+        <div
+          style={{
+            fontSize: "18px",
+            fontWeight: 600,
+            color: "var(--ink)",
+            marginBottom: "4px",
+          }}
+        >
+          Detalii AI Builder
+        </div>
+        <div style={{ fontSize: "13px", color: "var(--ink-dim)", lineHeight: 1.5 }}>
+          Ai obligații duale: provider (Art. 16) + deployer (Art. 26). Câteva detalii
+          pentru a personaliza flow-ul.
+        </div>
+      </div>
+
+      <div>
+        <FieldLabel>Email CTO / responsabil tehnic (opțional)</FieldLabel>
+        <input
+          type="email"
+          value={builder.ctoEmail}
+          onChange={(e) => setBuilder({ ...builder, ctoEmail: e.target.value })}
+          placeholder="cto@startup.ro"
+          style={inputBase}
+        />
+      </div>
+
+      <div>
+        <FieldLabel>Primul model/sistem deployat (opțional)</FieldLabel>
+        <input
+          type="text"
+          value={builder.firstModelDeployed}
+          onChange={(e) => setBuilder({ ...builder, firstModelDeployed: e.target.value })}
+          placeholder="Ex: chatbot suport v1, agent calendar, model risc credit"
+          style={inputBase}
+        />
+      </div>
+
+      <div>
+        <FieldLabel>Sistemul tău interacționează direct cu utilizatori finali?</FieldLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          {[
+            { value: true, label: "Da (customer-facing)" },
+            { value: false, label: "Nu (intern / B2B middleware)" },
+          ].map((opt) => {
+            const active = builder.customerFacing === opt.value
+            return (
+              <button
+                type="button"
+                key={String(opt.value)}
+                onClick={() => setBuilder({ ...builder, customerFacing: opt.value })}
+                style={{
+                  padding: "12px 10px",
+                  borderRadius: "8px",
+                  border: active
+                    ? "1px solid var(--cobalt-500)"
+                    : "1px solid var(--border-strong)",
+                  background: active ? "var(--cobalt-soft)" : "var(--bg-hover)",
+                  color: active ? "var(--ink)" : "var(--ink-muted)",
+                  fontSize: "13px",
+                  fontWeight: active ? 600 : 400,
+                  cursor: "pointer",
+                }}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: "var(--cobalt-soft)",
+          border: "1px solid var(--cobalt-soft-strong)",
+          borderRadius: "8px",
+          padding: "12px 14px",
+          fontSize: "12.5px",
+          color: "var(--ink-muted)",
+          lineHeight: 1.5,
+        }}
+      >
+        Workspace-ul tău include automat: Annex IV, EU Database wizard, Conformity
+        Assessment, FRIA (Sprint 016), Oversight uman, Logging, PMM, Incidente AI, QMS,
+        API/SDK. Inventarul AI îl vei putea popula din dashboard.
+      </div>
+    </div>
+  )
+}
+
+function Step3BuilderRecap({
+  company,
+  builder,
+}: {
+  company: CompanyInfo
+  builder: BuilderInfo
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div>
+        <div
+          style={{
+            fontFamily: "var(--font-display-v3)",
+            fontSize: "24px",
+            fontWeight: 600,
+            color: "var(--ink)",
+            letterSpacing: "-0.02em",
+            marginBottom: "6px",
+          }}
+        >
+          Workspace AI Builder gata
+        </div>
+        <div style={{ fontSize: "13.5px", color: "var(--ink-dim)" }}>
+          Iată ce am configurat:
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: "var(--bg-elev)",
+          border: "1px solid var(--border-strong)",
+          borderRadius: "10px",
+          padding: "16px 18px",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "11px",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: "var(--ink-subtle)",
+            marginBottom: "8px",
+          }}
+        >
+          Sumar
+        </div>
+        <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "13.5px", color: "var(--ink)", lineHeight: 1.7 }}>
+          {company.cui && <li>CUI {company.cui.toUpperCase()} · {company.employeeCount || "-"} angajați</li>}
+          {builder.firstModelDeployed && <li>Primul sistem: {builder.firstModelDeployed}</li>}
+          <li>
+            Interacțiune cu utilizatori finali:{" "}
+            {builder.customerFacing === true ? "da" : builder.customerFacing === false ? "nu" : "—"}
+          </li>
+          <li>Module AI Builder activate: Annex IV, EU Database, Conformity, FRIA, Oversight, Logging, PMM, QMS, API/SDK</li>
+        </ul>
+      </div>
+
+      <div
+        style={{
+          background: "var(--cobalt-soft)",
+          border: "1px solid var(--cobalt-soft-strong)",
+          borderRadius: "10px",
+          padding: "14px 16px",
+        }}
+      >
+        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink)", marginBottom: "8px" }}>
+          Următorii pași
+        </div>
+        <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12.5px", color: "var(--ink-muted)", lineHeight: 1.7 }}>
+          <li>Adaugă primul tău sistem AI în Inventar AI</li>
+          <li>Rulează Role Assessment (provider + deployer dual)</li>
+          <li>Configurează Annex IV pentru sistemele high-risk</li>
+        </ul>
       </div>
     </div>
   )
