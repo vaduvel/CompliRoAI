@@ -238,11 +238,21 @@ OUTPUT:
 
 ---
 
-## 8. Regulă De Aur
+## 8. Reguli De Aur
 
+### Regula 1 — Port First
 > **"Default = PORT. Build nou doar dacă subagent confirmă că NU există în DPO-OS."**
 
-Toate sprinturile/sub-agenții următori primesc acest document ca brief obligatoriu.
+### Regula 2 — Sprint Log Obligatoriu (Jira Style)
+> **"FIECARE sprint (subagent sau manual) creează `docs/sprints/sprint-NNN-titlu.md` folosind `_TEMPLATE.md`. Commit log-ul în același commit cu codul. Fără log = sprint nu există."**
+
+Conține: status, files create/modified, tests, decisions, commits, concerns, dependencies, notes pentru următorul agent.
+
+### Regula 3 — Brief Obligatoriu
+Toate sprinturile/sub-agenții primesc:
+1. Acest document (implementation spec)
+2. `docs/sprints/INDEX.md` (pentru context istoric)
+3. `_TEMPLATE.md` (pentru output log)
 
 ---
 
