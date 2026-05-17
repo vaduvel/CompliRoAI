@@ -42,7 +42,7 @@
 | **012** | **DORA AI slice + NIS2 AI slice (org reg profile + 2 rules engines + aggregator + /dashboard/ai-regulatory-scope)** | ✅ DONE | 4b6f567+ | manual: Claude | [sprint-012-dora-nis2-ai-slices.md](sprint-012-dora-nis2-ai-slices.md) |
 | **013** | **Approval queue + Calendar + Trust Center (collaboration cabinet + 8-source deadline aggregator + RFC 5545 iCal + public white-labeled trust surface)** | ✅ DONE | 19ac0fa+ | manual: Claude | [sprint-013-approval-calendar-trust.md](sprint-013-approval-calendar-trust.md) |
 | **014** | **PDF generator + Onboarding emails + Stripe billing (commercially usable: PDF on all exports, 10 RO email templates with Resend, Stripe checkout/portal/webhook with 7 tiers locked, billing UI + pricing page)** | ✅ DONE | 52437ed+ | manual: Claude | [sprint-014-pdf-emails-stripe.md](sprint-014-pdf-emails-stripe.md) |
-| 015 | Role-aware UI (3 modes) build new | ⏳ PLANNED | — | — | TBD |
+| **015** | **Role-aware UI final (3 modes per-role nav with feature gates, 7 placeholder pages, 3 cabinet pages, per-role dashboard landing, onboarding 3-mode, trial banner)** | ✅ DONE | 512fa0d+ | manual: Claude | [sprint-015-role-aware-ui.md](sprint-015-role-aware-ui.md) |
 | 016 | FRIA Generator (Art. 27) | ⏳ PLANNED | — | — | TBD |
 | 017 | Human Oversight Protocols (Art. 14) | ⏳ PLANNED | — | — | TBD |
 | 018 | Logging Evidence (Art. 12) | ⏳ PLANNED | — | — | TBD |
