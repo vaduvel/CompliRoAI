@@ -32,7 +32,7 @@
 | QW-PRICING | Landing pricing 4 tiers | ✅ DONE | 9b9cdf5 | manual: Claude | _backfill_ |
 | 006.5 | Role-aware UI (3 modes) | ⏳ PLANNED | — | — | TBD |
 | 007 | DSAR full port (GDPR Art. 15-22) | ✅ DONE | e32827e | manual: Claude | [sprint-007-dsar-port.md](sprint-007-dsar-port.md) |
-| **008A** | **Foundation Port: ComplianceState + findings + events + orchestrator + store adapter** | ⏳ NEXT | — | — | TBD |
+| **008A** | **Foundation Port: ComplianceState + findings + events + orchestrator + store adapter** | ✅ DONE | 089b6c4 | manual: Claude | [sprint-008a-foundation-port.md](sprint-008a-foundation-port.md) |
 | 008B | Findings + Dosar + Resolve (UI + API peste fundație) | ⏳ PLANNED | — | — | TBD |
 | 008C | DPIA + ROPA (drop-in pe fundație) | ⏳ PLANNED | — | — | TBD |
 | 008D | Breach GDPR 72h (Art. 33, slice DPO/AI) | ⏳ PLANNED | — | — | TBD |
