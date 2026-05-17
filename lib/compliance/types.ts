@@ -1403,6 +1403,20 @@ export type ComplianceState = {
    * sau logs au expirat.
    */
   loggingEvidence?: LoggingConfig[]
+
+  /**
+   * Sprint 019 — Post-Market Monitoring plans per high-risk AI system (Art. 72
+   * AI Act). Fiecare plan documentează cum se colectează date despre
+   * performanța sistemului AI pe durata vieții (Art. 72(2)), cum se evaluează
+   * continua conformitate cu Capitolul III Sec. 2 (Art. 72(3)(b)) și ce
+   * mecanism de acțiune corectivă/preventivă există (Art. 72(3)(c)). Reviews
+   * periodice, version changes (substantial mod. Art. 43(4)) și anomalii
+   * detectate sunt stocate inline. Findings emise când planul lipsește pentru
+   * un sistem high-risk, când datele colectate sunt insuficiente, când
+   * review-ul este overdue, când o modificare substanțială rămâne fără
+   * re-evaluare risc sau când o anomalie critică rămâne nerezolvată.
+   */
+  pmmPlans?: PmmPlan[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2271,4 +2285,204 @@ export type TrustCenterPublicProfile = {
     confirmedAtISO: string
     legalReference: string
   }>
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Post-Market Monitoring — Art. 72 + Annex IV AI Act
+//   Sprint 019 — BUILD NEW; monitoring plan + reviews + version changes per high-risk AI system
+//
+//   Art. 72(1): Providers establish + document PMM system proportionate to nature + risk.
+//   Art. 72(2): PMM collects + documents data relevant to performance throughout lifetime.
+//   Art. 72(3): PMM based on plan covering (a) data collection methods, (b) continuous
+//               compliance evaluation, (c) corrective/preventive action identification.
+//   Art. 72(4): Provider analyzes data + uses results to inform updates/improvements.
+//   Art. 26(4): Deployers inform providers of malfunctioning + relevant data.
+//
+//   Art. 43(4): Substantial modification triggers re-evaluation of conformity assessment.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type PmmPlanStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "active"
+  | "obsolete"
+  | "rejected"
+
+export type PmmCompleteness = "incomplete" | "partial" | "complete"
+
+export type PmmFreshnessStatus =
+  | "fresh"          // last review within reviewCycleMonths
+  | "due_soon"       // < 30 days until next review
+  | "overdue"        // past next review date
+  | "no_reviews"     // no review ever recorded
+
+export type PmmReviewCycle = "monthly" | "quarterly" | "biannual" | "annual"
+
+export type PmmDataCollectionMethod =
+  | "system_logs"            // ties to Sprint 018 logging
+  | "user_feedback"          // ratings, complaints
+  | "performance_metrics"    // accuracy, latency, throughput
+  | "bias_metrics"           // fairness across demographics
+  | "drift_detection"        // distribution shift monitoring
+  | "incident_reports"       // ties to Sprint 020
+  | "external_audit"         // third-party
+  | "human_oversight_logs"   // ties to Sprint 017
+  | "other"
+
+/**
+ * Reviewing type — `scheduled` (cycle), `ad_hoc` (DPO request), `incident_triggered`
+ * (anomalie sau breach), `regulatory_request` (ANSPDCP / autoritate sectorială).
+ */
+export type PmmReviewType =
+  | "scheduled"
+  | "ad_hoc"
+  | "incident_triggered"
+  | "regulatory_request"
+
+export type PmmReviewRecord = {
+  id: string
+  reviewDateISO: string
+  reviewedByEmail: string
+  reviewType: PmmReviewType
+  /**
+   * Metricile de performanță observate la review (ex: { accuracy: 0.92,
+   * biasGapPct: 3.5, p95LatencyMs: 1200 }). Free-form mapping pentru a accepta
+   * orice metrici relevante per use case.
+   */
+  performanceMetrics: Record<string, number | string>
+  risksDetected: string[]
+  correctiveActions: string[]
+  preventiveActions: string[]
+  notes?: string
+  /**
+   * ISO al următoarei revizii (calculat automat din `reviewCycleMonths` sau
+   * override manual de reviewer dacă urgență cere review mai des).
+   */
+  nextReviewISO: string
+}
+
+export type PmmVersionChangeType =
+  | "model_retrain"
+  | "model_swap"
+  | "fine_tune"
+  | "config_update"
+  | "prompt_update"
+  | "data_source_change"
+  | "infrastructure"
+  | "other"
+
+export type PmmVersionChangeRecord = {
+  id: string
+  changedAtISO: string
+  changedByEmail: string
+  oldVersion: string
+  newVersion: string
+  changeType: PmmVersionChangeType
+  /**
+   * Marker Art. 43(4): dacă modificarea reprezintă o schimbare substanțială
+   * a sistemului AI, conformity assessment trebuie re-evaluat.
+   */
+  substantialModification: boolean
+  description: string
+  /**
+   * Dacă true, plus `substantialModification`, evaluator-ul emite finding
+   * CRITICAL când nu apare un review follow-up în următoarele 30 zile după
+   * changedAtISO (Art. 43(4)).
+   */
+  riskReassessmentRequired: boolean
+  approvedByEmail?: string
+  notes?: string
+}
+
+export type PmmAnomalySeverity = "low" | "medium" | "high" | "critical"
+
+export type PmmAnomalyCategory =
+  | "performance_drop"
+  | "bias_drift"
+  | "data_drift"
+  | "concept_drift"
+  | "system_error"
+  | "user_complaint"
+  | "security"
+  | "other"
+
+export type PmmAnomalyRecord = {
+  id: string
+  detectedAtISO: string
+  detectedByEmail?: string
+  severity: PmmAnomalySeverity
+  category: PmmAnomalyCategory
+  description: string
+  impactDescription: string
+  resolved: boolean
+  resolvedAtISO?: string
+  /**
+   * Marker: dacă a fost escalată spre AI Incident Reporting (Sprint 020,
+   * Art. 73). Când `true`, `linkedIncidentId` referențiază entitatea creată
+   * în registrul de incidente.
+   */
+  escalatedToIncident: boolean
+  linkedIncidentId?: string
+  notes?: string
+}
+
+export type PmmDataCollectionFrequency =
+  | "real_time"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+
+/**
+ * Plan de Post-Market Monitoring (Art. 72 AI Act). Per sistem AI high-risk,
+ * un singur plan activ; restul `obsolete` sau `rejected`.
+ *
+ * Lifecycle:
+ *   1. draft     — operator/DPO populează cele 5 secțiuni Art. 72(3)
+ *   2. in_review — DPO/responsabil verifică planul
+ *   3. approved  — semnat de DPO; nu este încă activ (warm-up)
+ *   4. active    — în vigoare; reviews/version changes/anomalies se atașează
+ *   5. obsolete  — sistemul retras sau înlocuit
+ *   6. rejected  — review a respins planul, trebuie rescris
+ */
+export type PmmPlan = {
+  id: string
+  orgId: string
+  title: string
+  linkedAISystemId: string
+  // ── Art. 72(3)(a) Data collection ──────────────────────────────────────────
+  dataCollectionMethods: PmmDataCollectionMethod[]
+  dataCollectionFrequency: PmmDataCollectionFrequency
+  dataCollectionDescription: string
+  // ── Art. 72(3)(b) Continuous compliance evaluation ─────────────────────────
+  /** Methodologii de evaluare (ex: "comparare rezultate AI vs ground truth lunar"). */
+  complianceEvaluationMethods: string[]
+  /** Metrici tracked pentru continua conformitate Cap III Sec 2. */
+  complianceMetricsTracked: string[]
+  // ── Art. 72(3)(c) Corrective + preventive action ───────────────────────────
+  correctiveActionProcess: string
+  preventiveActionProcess: string
+  // ── Review cycle ───────────────────────────────────────────────────────────
+  reviewCycle: PmmReviewCycle
+  reviewCycleMonths: number   // computed: 1 / 3 / 6 / 12
+  // ── Inline timelines ───────────────────────────────────────────────────────
+  reviews: PmmReviewRecord[]
+  versionChanges: PmmVersionChangeRecord[]
+  anomalies: PmmAnomalyRecord[]
+  // ── Workflow ───────────────────────────────────────────────────────────────
+  status: PmmPlanStatus
+  completeness: PmmCompleteness
+  freshnessStatus: PmmFreshnessStatus
+  approvedByEmail?: string
+  approvedAtISO?: string
+  rejectionReason?: string
+  lastReviewAtISO?: string
+  nextReviewISO?: string
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
+  linkedFindingIds: string[]
+  notes?: string
+  generatedMarkdown?: string
+  createdAtISO: string
+  updatedAtISO: string
 }
