@@ -453,7 +453,29 @@ export async function createBreach(
   })
 
   if (!createdRecord) throw new Error("createBreach: mutator did not produce a record")
-  return { record: createdRecord, linkedFindingId }
+  const record: BreachRecord = createdRecord
+
+  // Sprint 014 — send 72h alert email (fire-and-forget) când severitate high/critical.
+  if (record.severity === "high" || record.severity === "critical") {
+    const recipient = record.assignedToEmail || actor.label
+    if (recipient && recipient.includes("@")) {
+      import("./email-alerts")
+        .then(({ sendBreachAlertEmailAsync }) =>
+          sendBreachAlertEmailAsync({
+            toEmail: recipient,
+            breach: {
+              id: record.id,
+              title: record.title,
+              severity: record.severity,
+              discoveredAtISO: record.discoveredAtISO,
+            },
+          })
+        )
+        .catch((err) => console.warn("[breach-store] email alert import failed:", err))
+    }
+  }
+
+  return { record, linkedFindingId }
 }
 
 // ── Update (generic patch) ──────────────────────────────────────────────────

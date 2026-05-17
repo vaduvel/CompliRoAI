@@ -296,7 +296,31 @@ export async function createFinding(
   })
 
   if (!created) throw new Error("createFinding: mutator did not produce a finding")
-  return created
+  const finding: ScanFinding = created
+
+  // Sprint 014 — email alert pe finding critical (fire-and-forget).
+  if (finding.severity === "critical") {
+    const recipient = actor.label
+    if (recipient && recipient.includes("@")) {
+      import("./email-alerts")
+        .then(({ sendFindingCriticalEmailAsync }) =>
+          sendFindingCriticalEmailAsync({
+            toEmail: recipient,
+            finding: {
+              id: finding.id,
+              title: finding.title,
+              category: finding.category,
+              createdAtISO: finding.createdAtISO,
+            },
+          })
+        )
+        .catch((err) =>
+          console.warn("[findings-store] email alert import failed:", err)
+        )
+    }
+  }
+
+  return finding
 }
 
 // ── Update ───────────────────────────────────────────────────────────────────

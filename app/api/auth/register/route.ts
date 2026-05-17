@@ -6,6 +6,7 @@ import {
   getSessionCookieOptions,
   SESSION_COOKIE,
 } from "@/lib/server/auth"
+import { sendWelcomeEmailAsync } from "@/lib/server/onboarding-emails"
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +40,13 @@ export async function POST(request: Request) {
       email: user.email,
       orgName: user.orgName ?? "",
       workspaceMode: "imm-classic",
+    })
+
+    // Sprint 014 — trimite welcome email (fire-and-forget; nu blochează signup).
+    sendWelcomeEmailAsync({
+      toEmail: user.email,
+      userName: user.email.split("@")[0] ?? user.email,
+      orgName: user.orgName ?? "",
     })
 
     const response = NextResponse.json({
