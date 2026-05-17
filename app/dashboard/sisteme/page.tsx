@@ -6,6 +6,7 @@ import type {
   FriaRecord,
   HumanOversightProtocol,
   LoggingConfig,
+  PmmPlan,
 } from "@/lib/compliance/types"
 import { AIInventoryPanel } from "@/components/ai-act/ai-inventory-panel"
 import { AISystemsList } from "@/components/ai-act/ai-systems-list"
@@ -16,15 +17,17 @@ export default function SistemePage() {
   const [friaRecords, setFriaRecords] = useState<FriaRecord[]>([])
   const [oversightRecords, setOversightRecords] = useState<HumanOversightProtocol[]>([])
   const [loggingRecords, setLoggingRecords] = useState<LoggingConfig[]>([])
+  const [pmmRecords, setPmmRecords] = useState<PmmPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [workspaceMode, setWorkspaceMode] = useState<"imm-classic" | "ai-builder" | "cabinet">("imm-classic")
 
   const load = useCallback(async () => {
-    const [systemsRes, friaRes, ovRes, lgRes] = await Promise.all([
+    const [systemsRes, friaRes, ovRes, lgRes, pmmRes] = await Promise.all([
       fetch("/api/ai-systems"),
       fetch("/api/fria"),
       fetch("/api/oversight"),
       fetch("/api/logging-evidence"),
+      fetch("/api/pmm"),
     ])
     if (systemsRes.ok) {
       const data = await systemsRes.json()
@@ -41,6 +44,10 @@ export default function SistemePage() {
     if (lgRes.ok) {
       const data = await lgRes.json()
       setLoggingRecords((data.records ?? []) as LoggingConfig[])
+    }
+    if (pmmRes.ok) {
+      const data = await pmmRes.json()
+      setPmmRecords((data.records ?? []) as PmmPlan[])
     }
     setLoading(false)
   }, [])
@@ -107,6 +114,21 @@ export default function SistemePage() {
     return needs
   }, [systems, loggingRecords])
 
+  // Sprint 019 — sisteme care necesită PMM plan Art. 72 dar nu îl au.
+  // Aceleași criterii ca Logging + Oversight pentru consistență UX
+  // (high-risk OR biometric OR auto-decisions impacting rights).
+  const systemsRequiringPmmIds = useMemo(() => {
+    const pmmSystemIds = new Set(pmmRecords.map((r) => r.linkedAISystemId))
+    const needs = new Set<string>()
+    for (const s of systems) {
+      if (pmmSystemIds.has(s.id)) continue
+      if (s.riskLevel === "high") needs.add(s.id)
+      else if (s.purpose === "biometric-identification") needs.add(s.id)
+      else if (s.makesAutomatedDecisions && s.impactsRights) needs.add(s.id)
+    }
+    return needs
+  }, [systems, pmmRecords])
+
   return (
     <div style={{ padding: "32px", maxWidth: "900px", display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Header */}
@@ -168,6 +190,7 @@ export default function SistemePage() {
             systemsRequiringFriaIds={systemsRequiringFriaIds}
             systemsRequiringOversightIds={systemsRequiringOversightIds}
             systemsRequiringLoggingIds={systemsRequiringLoggingIds}
+            systemsRequiringPmmIds={systemsRequiringPmmIds}
           />
         )}
       </div>

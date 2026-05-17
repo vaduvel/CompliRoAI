@@ -63,6 +63,12 @@ interface AISystemsListProps {
    * impacting rights trigger the banner.
    */
   systemsRequiringLoggingIds?: Set<string>
+  /**
+   * Sprint 019 — set of system IDs that DO NOT yet have a PMM plan
+   * (Art. 72). High-risk + biometric ID + auto-decisions impacting rights
+   * trigger the banner.
+   */
+  systemsRequiringPmmIds?: Set<string>
 }
 
 export function AISystemsList({
@@ -72,6 +78,7 @@ export function AISystemsList({
   systemsRequiringFriaIds,
   systemsRequiringOversightIds,
   systemsRequiringLoggingIds,
+  systemsRequiringPmmIds,
 }: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -196,7 +203,8 @@ export function AISystemsList({
           systemsRequiringFriaIds?.has(system.id) === true
         const needsOversight = systemsRequiringOversightIds?.has(system.id) === true
         const needsLogging = systemsRequiringLoggingIds?.has(system.id) === true
-        const hasBanner = needsFria || needsOversight || needsLogging
+        const needsPmm = systemsRequiringPmmIds?.has(system.id) === true
+        const hasBanner = needsFria || needsOversight || needsLogging || needsPmm
 
         return (
           <div
@@ -281,7 +289,7 @@ export function AISystemsList({
                   borderRight: "1px solid rgba(251,191,36,0.25)",
                   borderTop:
                     needsFria || needsOversight ? "none" : "1px solid rgba(251,191,36,0.25)",
-                  borderBottom: "none",
+                  borderBottom: needsPmm ? "1px solid rgba(251,191,36,0.18)" : "none",
                   borderTopLeftRadius: needsFria || needsOversight ? "0" : "10px",
                   borderTopRightRadius: needsFria || needsOversight ? "0" : "10px",
                   fontSize: "11px",
@@ -301,6 +309,45 @@ export function AISystemsList({
                   }}
                 >
                   Creează config →
+                </Link>
+              </div>
+            )}
+            {needsPmm && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 12px",
+                  background: "var(--amber-soft)",
+                  borderLeft: "1px solid rgba(251,191,36,0.25)",
+                  borderRight: "1px solid rgba(251,191,36,0.25)",
+                  borderTop:
+                    needsFria || needsOversight || needsLogging
+                      ? "none"
+                      : "1px solid rgba(251,191,36,0.25)",
+                  borderBottom: "none",
+                  borderTopLeftRadius:
+                    needsFria || needsOversight || needsLogging ? "0" : "10px",
+                  borderTopRightRadius:
+                    needsFria || needsOversight || needsLogging ? "0" : "10px",
+                  fontSize: "11px",
+                  color: "#fbbf24",
+                }}
+              >
+                <ShieldAlert size={12} style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>
+                  Acest sistem necesită plan Post-Market Monitoring (Art. 72)
+                </span>
+                <Link
+                  href={`/dashboard/post-market-monitoring?systemId=${encodeURIComponent(system.id)}`}
+                  style={{
+                    color: "#fbbf24",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Pornește plan →
                 </Link>
               </div>
             )}
