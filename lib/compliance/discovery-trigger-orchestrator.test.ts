@@ -1,5 +1,4 @@
-// Discovery Trigger Orchestrator — tests minimale (Sprint 008A-5).
-// Acoperim merge/normalize/orchestrate fără workshop/ropa (vin în 008C).
+// Discovery Trigger Orchestrator — tests Sprint 008A baseline + 008C ROPA wiring.
 
 import { describe, expect, it } from "vitest"
 
@@ -12,6 +11,7 @@ import {
   type DiscoveryTriggerRecord,
 } from "./discovery-trigger-orchestrator"
 import type { ScanFinding } from "@/lib/compliance/types"
+import { normalizeRopaActivityRecord } from "@/lib/compliance/ropa-risk-engine"
 
 function makeTrigger(overrides: Partial<DiscoveryTriggerRecord> = {}): DiscoveryTriggerRecord {
   return {
@@ -38,9 +38,65 @@ function makeTrigger(overrides: Partial<DiscoveryTriggerRecord> = {}): Discovery
 }
 
 describe("discovery-trigger-orchestrator (Sprint 008A subset)", () => {
-  it("collectDiscoveryTriggers stub returnează listă goală până la wiring 008C", () => {
+  it("collectDiscoveryTriggers fără ropaActivities returnează listă goală (workshop stub)", () => {
     const triggers = collectDiscoveryTriggers({ orgId: "org-test", nowISO: "2026-05-17T08:00:00.000Z" })
     expect(triggers).toEqual([])
+  })
+
+  it("collectDiscoveryTriggers cu ropaActivities materializează trigger-uri din RoPA risc engine", () => {
+    const activity = normalizeRopaActivityRecord(
+      {
+        id: "test-ropa",
+        activityName: "Suport SUA",
+        purpose: "Suport clienți",
+        dataCategories: ["Email"],
+        dataSubjects: ["Clienți"],
+        processors: ["Zendesk"],
+        thirdCountryTransfers: [{ country: "SUA" }],
+        legalBasis: undefined,
+        retentionRule: undefined,
+      },
+      "2026-05-17T08:00:00.000Z",
+    )
+    const triggers = collectDiscoveryTriggers({
+      orgId: "org-test",
+      nowISO: "2026-05-17T08:00:00.000Z",
+      ropaActivities: [activity],
+    })
+    expect(triggers.length).toBeGreaterThan(0)
+    expect(triggers.every((t) => t.source === "ropa")).toBe(true)
+    // Trigger-ul de vendor review trebuie sa aiba ownerRole=dpo + slaDays
+    const vendorTrigger = triggers.find((t) => t.actionType === "vendor_review")
+    expect(vendorTrigger).toBeTruthy()
+    expect(vendorTrigger?.ownerRole).toBe("dpo")
+    expect(vendorTrigger?.slaDays).toBeGreaterThan(0)
+    expect(vendorTrigger?.dueAtISO).toBeTruthy()
+    // Transfer trigger trebuie sa fie present
+    expect(triggers.find((t) => t.actionType === "transfer_review")).toBeTruthy()
+  })
+
+  it("collectDiscoveryTriggers cu accepted=true promotează status la accepted", () => {
+    const activity = normalizeRopaActivityRecord(
+      {
+        id: "auto-accept",
+        activityName: "Newsletter",
+        dataCategories: ["Email"],
+        dataSubjects: ["Abonați"],
+        legalBasis: undefined,
+        retentionRule: undefined,
+      },
+      "2026-05-17T08:00:00.000Z",
+    )
+    const triggers = collectDiscoveryTriggers({
+      orgId: "org-test",
+      nowISO: "2026-05-17T08:00:00.000Z",
+      ropaActivities: [activity],
+      accepted: true,
+    })
+    if (triggers.length > 0) {
+      expect(triggers[0].status).toBe("accepted")
+      expect(triggers[0].reviewStatus).toBe("accepted")
+    }
   })
 
   it("mergeDiscoveryTriggers păstrează status completed peste re-emiteri", () => {

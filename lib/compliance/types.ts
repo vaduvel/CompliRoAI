@@ -593,9 +593,66 @@ export type OrgProfile = Record<string, unknown>
 export type ApplicabilityResult = Record<string, unknown>
 export type OrgProfilePrefill = Record<string, unknown>
 export type DpoDiscoveryWorkshopRecord = Record<string, unknown>
-export type RopaActivityRecord = Record<string, unknown>
 export type ClientIntakeSubmissionRecord = Record<string, unknown>
 export type AIDataMapRecord = Record<string, unknown>
+
+// ────────────────────────────────────────────────────────────────────────────
+//   RoPA — Records of Processing Activities (GDPR Art. 30)
+//   Port Sprint 008C — types extrase din donor `ropa-risk-engine.ts` ca sa
+//   poata fi referentiate din ComplianceState fara dep ciclica.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type RopaActivitySource =
+  | "workshop"
+  | "client-intake"
+  | "import"
+  | "manual"
+  | "website-scan"
+
+export type RopaActivityConfidence =
+  | "client_claim"
+  | "dpo_confirmed"
+  | "document_verified"
+
+export type RopaActivityStatus = "draft" | "needs_review" | "validated" | "stale"
+export type RopaRiskLevel = "low" | "medium" | "high"
+
+export type RopaThirdCountryTransfer = {
+  country: string
+  mechanism?: string
+}
+
+export type RopaActivityRecord = {
+  id: string
+  orgId?: string
+  department?: string
+  activityName: string
+  ownerName?: string
+  purpose: string
+  dataSubjects: string[]
+  dataCategories: string[]
+  specialCategories: string[]
+  legalBasis?: string
+  article9Condition?: string
+  recipients: string[]
+  processors: string[]
+  systems: string[]
+  thirdCountryTransfers: RopaThirdCountryTransfer[]
+  retentionRule?: string
+  securityMeasures: string[]
+  source: RopaActivitySource
+  confidence: RopaActivityConfidence
+  status: RopaActivityStatus
+  linkedFindings: string[]
+  linkedEvidence: string[]
+  linkedAISystemIds?: string[]
+  createdAtISO: string
+  updatedAtISO: string
+  lastReviewedAtISO?: string
+  riskLevel?: RopaRiskLevel
+  riskScore?: number
+  riskReasons?: string[]
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Client portal (cabinet ↔ client comments + uploads pe finding-uri).

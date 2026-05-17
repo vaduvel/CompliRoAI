@@ -4,17 +4,21 @@
 // Vendor, Site Scan, Workshop, Client Intake, DSAR, Breach, Training) și le
 // transformă în acțiuni concrete cu SLA, owner, evidence requirement.
 //
-// În Sprint 008A păstrăm:
-//  - mergeDiscoveryTriggers / mergeDiscoveryFindings (logică pură, fără I/O)
-//  - normalizeDiscoveryTriggers (defensive parsing pentru state vechi)
-//  - orchestrateDiscoveryTriggers (entry point pentru cockpit cu stats)
-//  - collectDiscoveryTriggers stub (signature păstrată, body gol — workshop
-//    și ropa coexistă cu acest orchestrator când vin în Sprint 008C).
+// Sprint 008A — implementate: mergeDiscoveryTriggers, mergeDiscoveryFindings,
+//   normalizeDiscoveryTriggers, orchestrateDiscoveryTriggers.
+// Sprint 008C — wire ROPA source. Workshop source ramane stub pana cand
+//   dpo-discovery-workshop este portat ulterior.
 //
-// Sursele `dpo-discovery-workshop` și `ropa-risk-engine` NU sunt importate
-// aici încă — se vor wire în Sprint 008C odată cu DPIA/RoPA.
+// `collectDiscoveryTriggers(state)` evalueaza state.ropaActivities prin
+// `evaluateRopaDataMap` si materializeaza fiecare RopaDataMapTriggerCandidate
+// ca DiscoveryTriggerRecord cu SLA, owner, evidence required.
 
 import type { ComplianceSeverity } from "@/lib/compliance/constitution"
+import {
+  evaluateRopaDataMap,
+  type RopaActivityRecord,
+  type RopaDataMapTriggerCandidate,
+} from "@/lib/compliance/ropa-risk-engine"
 import type { ScanFinding } from "@/lib/compliance/types"
 
 export type DiscoveryTriggerSource =
@@ -80,18 +84,79 @@ export type DiscoveryTriggerRun = {
 }
 
 /**
- * Stub Sprint 008A — adapter-ele workshop/ropa vor fi adăugate în 008C
- * când portăm dpo-discovery-workshop și ropa-risk-engine.
+ * Sprint 008C — collectDiscoveryTriggers materializeaza trigger-ele din
+ * ROPA (workshop ramane stub pana cand `dpo-discovery-workshop` e portat).
  *
- * Signature minimal: acceptă `orgId` și `nowISO`, returnează listă goală.
- * Codul caller (cockpit hook) trebuie să tolereze listă vidă fără să crape.
+ * Input:
+ *  - ropaActivities: state.ropaActivities (sau null/undefined)
+ *  - orgId, nowISO: meta pentru defaults
+ *
+ * Output: lista DiscoveryTriggerRecord normalizati, ready pentru
+ *   `orchestrateDiscoveryTriggers` (merge cu existing din state).
  */
-export function collectDiscoveryTriggers(_input: {
+export function collectDiscoveryTriggers(input: {
   orgId?: string
   nowISO?: string
   accepted?: boolean
+  ropaActivities?: RopaActivityRecord[]
 }): DiscoveryTriggerRecord[] {
-  return []
+  const nowISO = input.nowISO ?? new Date().toISOString()
+  const triggers: DiscoveryTriggerRecord[] = []
+
+  // ── ROPA source ──────────────────────────────────────────────────────────
+  if (input.ropaActivities && input.ropaActivities.length > 0) {
+    const evaluation = evaluateRopaDataMap({
+      activities: input.ropaActivities,
+      nowISO,
+    })
+    for (const candidate of evaluation.triggers) {
+      triggers.push(materializeRopaTrigger(candidate, input.orgId, nowISO, input.accepted))
+    }
+  }
+
+  // ── Workshop source — stub (portat in sprint ulterior) ───────────────────
+  // TODO Sprint future: cand `dpo-discovery-workshop` este portat, adauga aici.
+
+  return triggers
+}
+
+function materializeRopaTrigger(
+  candidate: RopaDataMapTriggerCandidate,
+  orgId: string | undefined,
+  nowISO: string,
+  accepted: boolean | undefined,
+): DiscoveryTriggerRecord {
+  const dueAtISO = candidate.dueDays
+    ? new Date(new Date(nowISO).getTime() + candidate.dueDays * 86_400_000).toISOString()
+    : undefined
+  const ownerRole: DiscoveryTriggerOwnerRole =
+    candidate.targetModule === "vendor-review"
+      ? "dpo"
+      : candidate.targetModule === "security"
+        ? "it"
+        : "dpo"
+  return {
+    id: candidate.id,
+    orgId,
+    source: "ropa",
+    sourceId: candidate.sourceActivityId,
+    sourceLabel: `RoPA — ${candidate.sourceActivityId}`,
+    conditionLabel: candidate.label,
+    actionType: candidate.type,
+    targetModule: candidate.targetModule,
+    severity: candidate.severity,
+    ownerRole,
+    slaDays: candidate.dueDays,
+    dueAtISO,
+    evidenceRequired: candidate.evidenceRequired,
+    reportImpact: "both",
+    findingIds: [],
+    status: accepted ? "accepted" : "candidate",
+    reviewStatus: accepted ? "accepted" : "needs_dpo_review",
+    confidence: "dpo_confirmed",
+    createdAtISO: nowISO,
+    updatedAtISO: nowISO,
+  }
 }
 
 export function orchestrateDiscoveryTriggers(input: {
