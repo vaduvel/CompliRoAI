@@ -1,6 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation"
-import { Cpu, FileCheck, BookOpen, LogOut, Users, Link2, Palette, ShieldCheck, Sparkles, Compass, MessageSquare, Mail, AlertCircle, History, ClipboardCheck, Database, ShieldAlert, Search, Package, FileSearch } from "lucide-react"
+import { Cpu, FileCheck, BookOpen, LogOut, Users, Link2, Palette, ShieldCheck, Sparkles, Compass, MessageSquare, Mail, AlertCircle, History, ClipboardCheck, Database, ShieldAlert, Search, Package, FileSearch, Landmark } from "lucide-react"
 import { NavItem } from "./nav-item"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 
@@ -8,7 +8,12 @@ interface Props {
   children: React.ReactNode
   userEmail?: string
   orgName?: string
-  workspaceMode?: "solo" | "cabinet"
+  /**
+   * Workspace mode — driven by `x-aiact-workspace-mode` header today (solo /
+   * cabinet). `ai-builder` is forward-compatible: Sprint 015 wires it in the
+   * layout. NavItems gated on `ai-builder` already account for it.
+   */
+  workspaceMode?: "solo" | "cabinet" | "ai-builder"
 }
 
 export function DashboardShell({ children, userEmail, orgName, workspaceMode = "solo" }: Props) {
@@ -20,6 +25,10 @@ export function DashboardShell({ children, userEmail, orgName, workspaceMode = "
   }
 
   const isCabinet = workspaceMode === "cabinet"
+  const isAiBuilder = workspaceMode === "ai-builder"
+  // Sprint 012 — DORA + NIS2 AI slice visible only for cabinet + ai-builder
+  // workspaces (solo IMM rarely needs DORA/NIS2 surface).
+  const showRegulatoryScope = isCabinet || isAiBuilder
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh", background: "var(--bg)" }}>
@@ -66,6 +75,9 @@ export function DashboardShell({ children, userEmail, orgName, workspaceMode = "
           <NavItem href="/dashboard/ropa" label="RoPA / Data Map" icon={<Database size={15} />} />
           <NavItem href="/dashboard/ai-discovery" label="AI Discovery" icon={<Search size={15} />} />
           <NavItem href="/dashboard/vendor-review" label="Vendor AI" icon={<Package size={15} />} />
+          {showRegulatoryScope && (
+            <NavItem href="/dashboard/ai-regulatory-scope" label="DORA + NIS2" icon={<Landmark size={15} />} />
+          )}
           <NavItem href="/dashboard/role-assessment" label="Role Assessment" icon={<Compass size={15} />} />
           <NavItem href="/dashboard/readiness-pack" label="Readiness Pack" icon={<Sparkles size={15} />} />
           <NavItem href="/dashboard/audit-pack" label="Audit Pack" icon={<ShieldCheck size={15} />} />
