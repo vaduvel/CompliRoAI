@@ -40,7 +40,7 @@ vi.mock("@/lib/server/org-context", () => ({
     userId: "u1",
     email: "u1@example.com",
     orgName: "ACME SRL",
-    workspaceMode: "solo",
+    workspaceMode: "imm-classic",
   })),
 }))
 
@@ -308,7 +308,7 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
 
@@ -349,7 +349,7 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
     expect(result.manifest.summary.findingsCount).toBe(1)
@@ -367,7 +367,7 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
     const zip = await JSZip.loadAsync(result.zipBuffer)
@@ -383,7 +383,7 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
     const zip = await JSZip.loadAsync(result.zipBuffer)
@@ -401,7 +401,7 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
     const verification = await verifyAuditPackZip(result.zipBuffer)
@@ -415,7 +415,7 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
     const zip = await JSZip.loadAsync(result.zipBuffer)
@@ -428,7 +428,7 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
     const zip = await JSZip.loadAsync(result.zipBuffer)
@@ -441,7 +441,7 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
     const zip = await JSZip.loadAsync(result.zipBuffer)
@@ -459,7 +459,7 @@ describe("audit-pack backward compat (Sprint 011)", () => {
     const result = await buildAuditPack("org-test-pack", {
       issuedByUserId: "u1",
       issuedByUserEmail: "u1@example.com",
-      workspaceMode: "solo",
+      workspaceMode: "imm-classic",
       currentOrgId: "org-test-pack",
     })
     const zip = await JSZip.loadAsync(result.zipBuffer)
