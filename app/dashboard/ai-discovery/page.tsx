@@ -177,7 +177,14 @@ export default function AIDiscoveryPage() {
         <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
           Înregistrează fiecare tool AI folosit, primește scor de risc EU AI Act + GDPR automat
           + findings emise în <strong>De rezolvat</strong>. Generează AI Exposure Report
-          client-facing și descarcă Policy Pack RO.
+          client-facing și descarcă Policy Pack RO. Pentru detecție PII în text/blob, deschide{" "}
+          <a
+            href="/dashboard/ai-discovery/pii-scan"
+            style={{ color: "var(--cobalt-600)", textDecoration: "underline" }}
+          >
+            PII Scan
+          </a>
+          .
         </p>
       </div>
 

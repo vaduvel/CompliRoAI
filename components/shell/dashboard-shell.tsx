@@ -1,6 +1,6 @@
 "use client"
 import { useRouter } from "next/navigation"
-import { Cpu, FileCheck, BookOpen, LogOut, Users, Link2, Palette, ShieldCheck, Sparkles, Compass, MessageSquare, Mail, AlertCircle, History, ClipboardCheck, Database, ShieldAlert } from "lucide-react"
+import { Cpu, FileCheck, BookOpen, LogOut, Users, Link2, Palette, ShieldCheck, Sparkles, Compass, MessageSquare, Mail, AlertCircle, History, ClipboardCheck, Database, ShieldAlert, Search } from "lucide-react"
 import { NavItem } from "./nav-item"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 
@@ -64,6 +64,7 @@ export function DashboardShell({ children, userEmail, orgName, workspaceMode = "
           <NavItem href="/dashboard/breach" label="Incident date personale" icon={<ShieldAlert size={15} />} />
           <NavItem href="/dashboard/dpia" label="DPIA" icon={<ClipboardCheck size={15} />} />
           <NavItem href="/dashboard/ropa" label="RoPA / Data Map" icon={<Database size={15} />} />
+          <NavItem href="/dashboard/ai-discovery" label="AI Discovery" icon={<Search size={15} />} />
           <NavItem href="/dashboard/role-assessment" label="Role Assessment" icon={<Compass size={15} />} />
           <NavItem href="/dashboard/readiness-pack" label="Readiness Pack" icon={<Sparkles size={15} />} />
           <NavItem href="/dashboard/audit-pack" label="Audit Pack" icon={<ShieldCheck size={15} />} />
