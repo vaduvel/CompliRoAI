@@ -51,6 +51,12 @@ interface AISystemsListProps {
    * deployer to start a FRIA evaluation.
    */
   systemsRequiringFriaIds?: Set<string>
+  /**
+   * Sprint 017 — set of system IDs that DO NOT yet have a Human Oversight
+   * Protocol (Art. 14). High-risk + biometric ID + auto-decisions impacting
+   * rights trigger the banner.
+   */
+  systemsRequiringOversightIds?: Set<string>
 }
 
 export function AISystemsList({
@@ -58,6 +64,7 @@ export function AISystemsList({
   onDelete,
   workspaceMode = "imm-classic",
   systemsRequiringFriaIds,
+  systemsRequiringOversightIds,
 }: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -180,6 +187,8 @@ export function AISystemsList({
         const needsFria =
           system.riskLevel === "high" &&
           systemsRequiringFriaIds?.has(system.id) === true
+        const needsOversight = systemsRequiringOversightIds?.has(system.id) === true
+        const hasBanner = needsFria || needsOversight
 
         return (
           <div
@@ -197,7 +206,7 @@ export function AISystemsList({
                   border: "1px solid rgba(251,191,36,0.25)",
                   borderTopLeftRadius: "10px",
                   borderTopRightRadius: "10px",
-                  borderBottom: "none",
+                  borderBottom: needsOversight ? "1px solid rgba(251,191,36,0.18)" : "none",
                   fontSize: "11px",
                   color: "#fbbf24",
                 }}
@@ -218,6 +227,40 @@ export function AISystemsList({
                 </Link>
               </div>
             )}
+            {needsOversight && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 12px",
+                  background: "var(--amber-soft)",
+                  borderLeft: "1px solid rgba(251,191,36,0.25)",
+                  borderRight: "1px solid rgba(251,191,36,0.25)",
+                  borderTop: needsFria ? "none" : "1px solid rgba(251,191,36,0.25)",
+                  borderBottom: "none",
+                  borderTopLeftRadius: needsFria ? "0" : "10px",
+                  borderTopRightRadius: needsFria ? "0" : "10px",
+                  fontSize: "11px",
+                  color: "#fbbf24",
+                }}
+              >
+                <ShieldAlert size={12} style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>
+                  Acest sistem necesită protocol Oversight (Art. 14)
+                </span>
+                <Link
+                  href={`/dashboard/human-oversight?systemId=${encodeURIComponent(system.id)}`}
+                  style={{
+                    color: "#fbbf24",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Creează protocol →
+                </Link>
+              </div>
+            )}
           <div
             style={{
               display: "flex",
@@ -226,11 +269,11 @@ export function AISystemsList({
               padding: "12px 16px",
               background: "var(--bg-raised)",
               border: "1px solid var(--border)",
-              borderTopLeftRadius: needsFria ? "0" : "10px",
-              borderTopRightRadius: needsFria ? "0" : "10px",
+              borderTopLeftRadius: hasBanner ? "0" : "10px",
+              borderTopRightRadius: hasBanner ? "0" : "10px",
               borderBottomLeftRadius: "10px",
               borderBottomRightRadius: "10px",
-              borderTop: needsFria ? "none" : "1px solid var(--border)",
+              borderTop: hasBanner ? "none" : "1px solid var(--border)",
             }}
           >
             {/* Main info */}

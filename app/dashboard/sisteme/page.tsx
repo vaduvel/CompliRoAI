@@ -1,7 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import type { AISystemRecord, FriaRecord } from "@/lib/compliance/types"
+import type {
+  AISystemRecord,
+  FriaRecord,
+  HumanOversightProtocol,
+} from "@/lib/compliance/types"
 import { AIInventoryPanel } from "@/components/ai-act/ai-inventory-panel"
 import { AISystemsList } from "@/components/ai-act/ai-systems-list"
 import { AlertTriangle } from "lucide-react"
@@ -9,13 +13,15 @@ import { AlertTriangle } from "lucide-react"
 export default function SistemePage() {
   const [systems, setSystems] = useState<AISystemRecord[]>([])
   const [friaRecords, setFriaRecords] = useState<FriaRecord[]>([])
+  const [oversightRecords, setOversightRecords] = useState<HumanOversightProtocol[]>([])
   const [loading, setLoading] = useState(true)
   const [workspaceMode, setWorkspaceMode] = useState<"imm-classic" | "ai-builder" | "cabinet">("imm-classic")
 
   const load = useCallback(async () => {
-    const [systemsRes, friaRes] = await Promise.all([
+    const [systemsRes, friaRes, ovRes] = await Promise.all([
       fetch("/api/ai-systems"),
       fetch("/api/fria"),
+      fetch("/api/oversight"),
     ])
     if (systemsRes.ok) {
       const data = await systemsRes.json()
@@ -24,6 +30,10 @@ export default function SistemePage() {
     if (friaRes.ok) {
       const data = await friaRes.json()
       setFriaRecords((data.records ?? []) as FriaRecord[])
+    }
+    if (ovRes.ok) {
+      const data = await ovRes.json()
+      setOversightRecords((data.records ?? []) as HumanOversightProtocol[])
     }
     setLoading(false)
   }, [])
@@ -57,6 +67,22 @@ export default function SistemePage() {
     }
     return needs
   }, [systems, friaRecords])
+
+  // Sprint 017 — sisteme care necesită protocol Art. 14 dar nu îl au:
+  // high-risk OR biometric ID OR makesAutomatedDecisions+impactsRights.
+  const systemsRequiringOversightIds = useMemo(() => {
+    const oversightSystemIds = new Set(
+      oversightRecords.map((r) => r.linkedAISystemId),
+    )
+    const needs = new Set<string>()
+    for (const s of systems) {
+      if (oversightSystemIds.has(s.id)) continue
+      if (s.riskLevel === "high") needs.add(s.id)
+      else if (s.purpose === "biometric-identification") needs.add(s.id)
+      else if (s.makesAutomatedDecisions && s.impactsRights) needs.add(s.id)
+    }
+    return needs
+  }, [systems, oversightRecords])
 
   return (
     <div style={{ padding: "32px", maxWidth: "900px", display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -117,6 +143,7 @@ export default function SistemePage() {
             onDelete={handleDelete}
             workspaceMode={workspaceMode}
             systemsRequiringFriaIds={systemsRequiringFriaIds}
+            systemsRequiringOversightIds={systemsRequiringOversightIds}
           />
         )}
       </div>
