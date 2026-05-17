@@ -133,6 +133,10 @@ export async function PATCH(
       reviewedByEmail:
         typeof body.reviewedByEmail === "string" ? body.reviewedByEmail : undefined,
       notes: typeof body.notes === "string" ? body.notes : undefined,
+      doraScope:
+        typeof body.doraScope === "object" && body.doraScope !== null
+          ? (body.doraScope as UpdateVendorPatch["doraScope"])
+          : undefined,
     }
 
     const record = await updateVendor(ctx.orgId, id, patch, actor)

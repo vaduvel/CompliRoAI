@@ -43,6 +43,7 @@ import type {
   AISystemRecord,
   DPAStatus,
   VendorAITerms,
+  VendorDoraScope,
   VendorRecord,
   VendorRegion,
   VendorReviewStatus,
@@ -50,6 +51,7 @@ import type {
   VendorSecurityEvidence,
   VendorTransferMechanism,
 } from "@/lib/compliance/types"
+import { evaluateAndMergeDoraFindings } from "@/lib/server/ai-regulatory-scope-store"
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,11 +90,28 @@ export type CreateVendorInput = {
   securityEvidence?: Partial<VendorSecurityEvidence>
   aiTerms?: Partial<VendorAITerms>
   notes?: string
+  /** Sprint 012 — DORA AI slice extension. */
+  doraScope?: VendorDoraScope
 }
 
 export type UpdateVendorPatch = Partial<CreateVendorInput> & {
   reviewStatus?: VendorReviewStatus
   reviewedByEmail?: string
+}
+
+// ── DORA scope helpers ──────────────────────────────────────────────────────
+
+function normDoraScope(
+  input: VendorDoraScope | undefined,
+  current?: VendorDoraScope,
+): VendorDoraScope | undefined {
+  if (input === undefined) return current
+  return {
+    material: !!input.material,
+    criticalForService: input.criticalForService?.trim() || undefined,
+    assessmentNote: input.assessmentNote?.trim() || undefined,
+    evaluatedAtISO: input.evaluatedAtISO ?? current?.evaluatedAtISO,
+  }
 }
 
 // ── Const ────────────────────────────────────────────────────────────────────
@@ -368,6 +387,7 @@ export async function createVendor(
     notes: input.notes?.trim() || undefined,
     createdAtISO: now,
     updatedAtISO: now,
+    doraScope: normDoraScope(input.doraScope),
   }
 
   // Evalueaza riscul + status pe baza state-ului curent (linked AI systems/maps)
@@ -450,7 +470,36 @@ export async function createVendor(
   })
 
   if (!createdRecord) throw new Error("createVendor: mutator did not produce a record")
-  return { record: createdRecord, linkedFindingIds }
+  const persistedRecord: VendorRecord = createdRecord
+
+  // Sprint 012 — wire DORA AI rules dacă vendorul e DORA-material.
+  // mergeStableFindings e idempotent; nu re-emite findings deja existente.
+  if (persistedRecord.doraScope?.material) {
+    try {
+      const dora = await evaluateAndMergeDoraFindings(orgId, persistedRecord, actor)
+      // Stamp evaluatedAtISO on the doraScope so UI shows latest evaluation time.
+      if (dora.added + dora.existing > 0 || dora.gaps.length === 0) {
+        await mutateFreshStateForOrg(orgId, (state) => {
+          const list = (state.vendorRecords ?? []) as VendorRecord[]
+          const idx = list.findIndex((v) => v.id === persistedRecord.id)
+          if (idx === -1) return state
+          const stamped: VendorRecord = {
+            ...list[idx],
+            doraScope: list[idx].doraScope
+              ? { ...list[idx].doraScope, evaluatedAtISO: nowISO() }
+              : list[idx].doraScope,
+          }
+          const next = [...list]
+          next[idx] = stamped
+          return { ...state, vendorRecords: next }
+        })
+      }
+    } catch {
+      // Ne-fatal: dacă DORA evaluation eșuează, nu blocăm vendor creation.
+    }
+  }
+
+  return { record: persistedRecord, linkedFindingIds }
 }
 
 // ── Update ───────────────────────────────────────────────────────────────────
@@ -540,6 +589,10 @@ export async function updateVendor(
         patch.reviewedByEmail && !current.reviewedByEmail ? now : current.reviewedAtISO,
       notes: patch.notes === undefined ? current.notes : (patch.notes?.trim() || undefined),
       updatedAtISO: now,
+      doraScope:
+        patch.doraScope === undefined
+          ? current.doraScope
+          : normDoraScope(patch.doraScope, current.doraScope),
     }
 
     // Re-evalueaza risc + status (using current state pentru linked records)
@@ -580,7 +633,19 @@ export async function updateVendor(
   })
 
   if (notFound) return null
-  return updated
+  if (!updated) return null
+  const persistedRecord: VendorRecord = updated
+
+  // Sprint 012 — re-evaluate DORA AI rules dacă vendorul e DORA-material.
+  if (persistedRecord.doraScope?.material) {
+    try {
+      await evaluateAndMergeDoraFindings(orgId, persistedRecord, actor)
+    } catch {
+      // Ne-fatal.
+    }
+  }
+
+  return persistedRecord
 }
 
 // ── Delete ───────────────────────────────────────────────────────────────────

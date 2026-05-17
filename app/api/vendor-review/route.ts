@@ -90,6 +90,10 @@ export async function POST(request: Request) {
           ? (body.aiTerms as CreateVendorInput["aiTerms"])
           : undefined,
       notes: typeof body.notes === "string" ? body.notes : undefined,
+      doraScope:
+        typeof body.doraScope === "object" && body.doraScope !== null
+          ? (body.doraScope as CreateVendorInput["doraScope"])
+          : undefined,
     }
 
     const { record, linkedFindingIds } = await createVendor(
