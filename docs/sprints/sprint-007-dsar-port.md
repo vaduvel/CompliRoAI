@@ -106,7 +106,7 @@ Portare end-to-end a modulului DSAR (Data Subject Access Requests, GDPR Art. 15-
 
 ## Commits
 
-- (pending) `feat(sprint-007): port DSAR module from DPO-OS — store + drafts + lifecycle + 3 API routes + UI + tests`
+- `e32827e` — feat(sprint-7): DSAR full port from DPO-OS (GDPR Art. 15-22) + Sprint 6.5 groundwork
 
 ## Live URL
 
