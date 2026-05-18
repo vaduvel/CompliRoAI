@@ -4,7 +4,7 @@
 //   - workspaceModes[] — which roles can see this item (mandate § 16)
 //   - requiredFeature  — optional feature flag (gated by feature-gates.ts)
 //   - section          — visual group label rendered in sidebar
-//   - badge            — "new", "coming-soon", "trial" for visual hint
+//   - badge            — "new", "trial" for visual hint
 //
 // `getNavForRole(workspaceMode, tier)` returns the filtered + grouped list.
 //
@@ -16,11 +16,10 @@ import type { BillingTier } from "@/lib/compliance/types"
 import type { WorkspaceMode } from "@/lib/server/auth"
 import {
   type Feature,
-  featureBelongsToWorkspace,
   hasFeature,
 } from "@/lib/server/feature-gates"
 
-export type NavBadge = "new" | "coming-soon" | "trial"
+export type NavBadge = "new" | "trial"
 
 export type NavSection =
   | "main"        // Home, primary workflows
@@ -426,8 +425,7 @@ export type NavSectionGroup = {
 /**
  * Returns the filtered + grouped nav for a (workspaceMode, tier) combination.
  * Sections with zero items are omitted. Items where `requiredFeature` resolves
- * to false (via feature-gates) are dropped, EXCEPT for placeholder items with
- * `badge: "coming-soon"` which always render so users understand what's planned.
+ * to false (via feature-gates) are dropped.
  */
 export function getNavForRole(
   workspaceMode: WorkspaceMode,
@@ -440,14 +438,7 @@ export function getNavForRole(
     // 2. If no feature required, item is always shown (Home, Calendar, Audit Log).
     if (!item.requiredFeature) return true
 
-    // 3. Coming-soon items: show even if locked, so user understands the roadmap.
-    //    They link to placeholder pages that explain the upcoming module.
-    if (item.badge === "coming-soon") {
-      // Still must belong to the workspace's workflow.
-      return featureBelongsToWorkspace(workspaceMode, item.requiredFeature)
-    }
-
-    // 4. Otherwise, require the feature gate to pass for current tier.
+    // 3. Otherwise, require the feature gate to pass for current tier.
     return hasFeature(workspaceMode, tier, item.requiredFeature)
   })
 

@@ -319,7 +319,7 @@ export function BrandingSettingsClient({
             Așa apare brandingul tău în documente și emailuri.
           </p>
 
-          {/* Email header mock */}
+          {/* Email header preview */}
           <div
             style={{
               border: "1px solid var(--border, #e2e8f0)",
@@ -407,7 +407,7 @@ export function BrandingSettingsClient({
             </div>
           </div>
 
-          {/* Document signature mock */}
+          {/* Document signature preview */}
           <div
             style={{
               border: "1px solid var(--border, #e2e8f0)",

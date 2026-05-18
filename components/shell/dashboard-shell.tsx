@@ -105,7 +105,6 @@ const BANNER_DISMISS_KEY = "compliroai_trial_banner_dismissed"
 
 function badgeStyleFor(badge: NavBadge | undefined) {
   if (!badge) return undefined
-  if (badge === "coming-soon") return "Curând"
   if (badge === "new") return "Nou"
   if (badge === "trial") return "Trial"
   return undefined
