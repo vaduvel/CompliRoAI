@@ -25,6 +25,7 @@ import { initialComplianceState } from "@/lib/compliance/engine"
 import { appendComplianceEvents } from "@/lib/compliance/events"
 import type {
   AIDataMapRecord,
+  AIIncident,
   BreachRecord,
   ComplianceEvent,
   DpiaRecord,
@@ -543,6 +544,47 @@ function buildSampleState(): AIActState {
     updatedAtISO: "2026-05-01T00:00:00.000Z",
   }
 
+  const aiIncident: AIIncident = {
+    id: "ai-inc-sample-1",
+    orgId: "org-test-pack",
+    title: "Incident discriminatoriu HR Screening",
+    description:
+      "Sistemul HR Screening AI a respins automat aplicații cu nume non-românesc; bias detectat la review intern.",
+    category: "fundamental_rights_infringement",
+    severity: "serious",
+    linkedAISystemId: "sys-hr-1",
+    affectedSubjectsCategories: ["candidați la angajare"],
+    affectedSubjectsCount: 47,
+    detectedAtISO: "2026-05-10T08:00:00.000Z",
+    reportingDeadlineISO: "2026-05-25T08:00:00.000Z",
+    reportingDeadlineDays: 15,
+    notifications: [
+      {
+        id: "ai-inc-notif-sample-1",
+        authorityName: "Market Surveillance Authority RO",
+        status: "submitted",
+        submittedAtISO: "2026-05-15T10:00:00.000Z",
+        referenceNumber: "MSA-RO-2026-0014",
+      },
+    ],
+    notificationRequired: true,
+    rootCause: {
+      identifiedAtISO: "2026-05-16T00:00:00.000Z",
+      identifiedByEmail: "ml@acme.ro",
+      rootCauseDescription:
+        "Training data was biased toward Romanian names due to historical hiring patterns.",
+      contributingFactors: ["dataset bias", "no bias audit before deploy"],
+      evidenceCollected: ["bias audit report"],
+      remediationActions: ["model rollback + retrain"],
+      preventionActions: ["bias audit lunar"],
+    },
+    linkedFindingIds: [],
+    status: "authority_notified",
+    assignedToEmail: "dpo@acme.ro",
+    createdAtISO: "2026-05-10T08:30:00.000Z",
+    updatedAtISO: "2026-05-16T00:00:00.000Z",
+  }
+
   base = {
     ...base,
     aiSystems: [aiSystem],
@@ -556,6 +598,7 @@ function buildSampleState(): AIActState {
     humanOversightProtocols: [oversight],
     loggingEvidence: [logging],
     pmmPlans: [pmm],
+    aiIncidents: [aiIncident],
   } as AIActState
   base.events = appendComplianceEvents(base, [event1, event2])
   return base
@@ -959,6 +1002,69 @@ describe("audit-pack-builder Sprint 011 upgrade", () => {
     expect(result.manifest.summary.pmmPlansCount).toBe(1)
   })
 
+  // ── Sprint 020 — AI Incidents Art. 73 in Audit Pack ───────────────────────
+  it("includes ai-incidents/registry.md + per-record markdown", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const paths = Object.keys(zip.files)
+    expect(paths).toContain("ai-incidents/registry.md")
+    expect(paths).toContain("ai-incidents/records/ai-inc-sample-1.md")
+  })
+
+  it("ai-incidents/registry.md contains title + Art. 73 + category + status", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip.file("ai-incidents/registry.md")!.async("string")
+    expect(md).toContain("Incident discriminatoriu HR Screening")
+    expect(md).toContain("Art. 73")
+    expect(md).toContain("HR Screening AI")
+  })
+
+  it("ai-incidents/records/<id>.md is full evaluator-generated markdown with sections + notifications + root cause", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip
+      .file("ai-incidents/records/ai-inc-sample-1.md")!
+      .async("string")
+    expect(md).toContain("# Incident AI — Incident discriminatoriu HR Screening")
+    expect(md).toContain("A. Identificare incident")
+    expect(md).toContain("B. Severitate + categorie Art. 73(2)")
+    expect(md).toContain("C. Cronologie (Art. 73(3))")
+    expect(md).toContain("Investigație cauză rădăcină (Art. 73(4))")
+    expect(md).toContain("Notificări către autoritatea de supraveghere")
+    expect(md).toContain("MSA-RO-2026-0014")
+    expect(md).toContain("Checklist Art. 73")
+  })
+
+  it("manifest summary includes aiIncidentsCount", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    expect(result.manifest.summary.aiIncidentsCount).toBe(1)
+  })
+
   it("FRIA inclusion preserves hash chain integrity", async () => {
     const { buildAuditPack, verifyAuditPackZip } = await import(
       "@/lib/server/audit-pack-builder"
@@ -997,6 +1103,7 @@ describe("audit-pack backward compat (Sprint 011)", () => {
     expect(paths).toContain("dsar/registry.md")
     expect(paths).toContain("audit-log/events.md")
     expect(paths).toContain("pmm/registry.md")
+    expect(paths).toContain("ai-incidents/registry.md")
     // Verify ok
     const { verifyAuditPackZip } = await import("@/lib/server/audit-pack-builder")
     const verification = await verifyAuditPackZip(result.zipBuffer)

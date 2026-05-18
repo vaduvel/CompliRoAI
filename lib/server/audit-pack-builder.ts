@@ -26,6 +26,7 @@ import JSZip from "jszip"
 import { classifyAISystem } from "@/lib/compliance/ai-act-classifier"
 import type {
   AIDataMapRecord,
+  AIIncident,
   AISystemRecord,
   BreachRecord,
   ComplianceEvent,
@@ -61,6 +62,11 @@ import {
 } from "@/lib/compliance/logging-schema"
 import { buildPmmMarkdown } from "@/lib/server/pmm-store"
 import { PMM_REVIEW_CYCLE_LABELS } from "@/lib/compliance/pmm-schema"
+import { buildIncidentMarkdown } from "@/lib/server/ai-incident-store"
+import {
+  AI_INCIDENT_CATEGORY_LABELS,
+  AI_INCIDENT_STATUS_LABELS,
+} from "@/lib/compliance/ai-incident-schema"
 import { DEPLOYER_TYPE_LABELS } from "@/lib/compliance/fria-schema"
 import { buildRopaMachineReadableExport } from "@/lib/compliance/ropa-risk-engine"
 import {
@@ -128,6 +134,8 @@ export type AuditPackManifest = {
     loggingConfigsCount?: number
     // Sprint 019 — PMM plans included in pack.
     pmmPlansCount?: number
+    // Sprint 020 — AI Incidents Art. 73 included in pack.
+    aiIncidentsCount?: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -305,6 +313,7 @@ export async function buildAuditPack(
       oversightProtocolsCount: (state.humanOversightProtocols ?? []).length,
       loggingConfigsCount: (state.loggingEvidence ?? []).length,
       pmmPlansCount: (state.pmmPlans ?? []).length,
+      aiIncidentsCount: (state.aiIncidents ?? []).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -740,6 +749,8 @@ function buildFileContents(input: {
   pushLoggingFiles(files, input.state, input.orgName)
   // ── Sprint 019: PMM plans per Art. 72 + Annex IV AI Act ─────────────────
   pushPmmFiles(files, input.state, input.orgName)
+  // ── Sprint 020: AI Incidents Art. 73 (distinct de Breach GDPR Art. 33) ──
+  pushAIIncidentFiles(files, input.state, input.orgName)
 
   return files
 }
@@ -1342,6 +1353,65 @@ function pushPmmFiles(
   void PMM_REVIEW_CYCLE_LABELS
 }
 
+/**
+ * Sprint 020 — AI Incident Reporting (Art. 73 AI Act, distinct de GDPR Art.
+ * 33 / Sprint 008D). Pattern identic: registry.md + records/{id}.md
+ * regenerat live via buildIncidentMarkdown. Records includ inline cronologie
+ * Art. 73(3), notifications timeline, investigația root cause Art. 73(4),
+ * linkages BreachRecord + PmmAnomalyRecord.
+ */
+function pushAIIncidentFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const records = (state.aiIncidents ?? []) as AIIncident[]
+  const aiSystems = (state.aiSystems ?? []) as AISystemRecord[]
+
+  const lines: string[] = [
+    `# AI Incidents — Art. 73 — ${orgName}`,
+    ``,
+    `**Total incidente:** ${records.length}`,
+    `**Cadru:** EU AI Act Art. 73 — incidente serioase pe sisteme AI high-risk (distinct de GDPR Art. 33 breach)`,
+    ``,
+  ]
+  if (records.length === 0) {
+    lines.push(`_Nu există incidente AI înregistrate._`)
+  } else {
+    lines.push(
+      `| ID | Titlu | Sistem AI | Categorie Art. 73(2) | Severitate | Status | Termen (zile) | Notificat | Root cause | Asignat |`,
+      `|---|---|---|---|---|---|---|---|---|---|`,
+    )
+    for (const r of records) {
+      const systemName =
+        aiSystems.find((s) => s.id === r.linkedAISystemId)?.name ??
+        r.linkedAISystemId
+      const notified = r.notifications.some(
+        (n) => n.status === "submitted" || n.status === "acknowledged",
+      )
+      lines.push(
+        `| ${r.id} | ${escapeMdCell(r.title)} | ${escapeMdCell(systemName)} | ${escapeMdCell(AI_INCIDENT_CATEGORY_LABELS[r.category])} | ${r.severity} | ${AI_INCIDENT_STATUS_LABELS[r.status]} | ${r.reportingDeadlineDays} | ${notified ? "DA" : "NU"} | ${r.rootCause ? "DA" : "NU"} | ${r.assignedToEmail ?? "—"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "ai-incidents/registry.md",
+    bytes: utf8(lines.join("\n") + "\n"),
+  })
+
+  for (const r of records) {
+    const systemName = aiSystems.find((s) => s.id === r.linkedAISystemId)?.name
+    files.push({
+      path: `ai-incidents/records/${slugify(r.id)}.md`,
+      bytes: utf8(buildIncidentMarkdown(r, orgName, systemName)),
+    })
+  }
+
+  // Suppress unused-import warnings (labels stay imported for type safety)
+  void AI_INCIDENT_CATEGORY_LABELS
+  void AI_INCIDENT_STATUS_LABELS
+}
+
 function pushDsarFiles(
   files: FileBytes[],
   state: AIActState,
@@ -1600,6 +1670,56 @@ function buildAuditTrailLog(input: {
     }
   }
 
+  // Sprint 020 — AI Incidents Art. 73
+  for (const inc of input.state.aiIncidents ?? []) {
+    push(
+      inc.createdAtISO,
+      input.issuedByUserEmail,
+      "AI_INCIDENT_CREATED",
+      `${inc.title} → system=${inc.linkedAISystemId} category=${inc.category} severity=${inc.severity} deadline=${inc.reportingDeadlineDays}d`,
+    )
+    for (const n of inc.notifications) {
+      push(
+        n.submittedAtISO ?? inc.updatedAtISO,
+        input.issuedByUserEmail,
+        "AI_INCIDENT_AUTHORITY_NOTIFIED",
+        `${inc.title} → ${n.authorityName} status=${n.status}${n.referenceNumber ? ` ref=${n.referenceNumber}` : ""}`,
+      )
+    }
+    if (inc.rootCause) {
+      push(
+        inc.rootCause.identifiedAtISO,
+        inc.rootCause.identifiedByEmail,
+        "AI_INCIDENT_ROOT_CAUSE_RECORDED",
+        `${inc.title} → ${inc.rootCause.contributingFactors.length} factori, ${inc.rootCause.remediationActions.length} corective`,
+      )
+    }
+    if (inc.closedAtISO) {
+      push(
+        inc.closedAtISO,
+        input.issuedByUserEmail,
+        "AI_INCIDENT_CLOSED",
+        `${inc.title}`,
+      )
+    }
+    if (inc.linkedPmmAnomalyId) {
+      push(
+        inc.createdAtISO,
+        input.issuedByUserEmail,
+        "AI_INCIDENT_LINKED_PMM_ANOMALY",
+        `${inc.title} ← anomaly=${inc.linkedPmmAnomalyId}`,
+      )
+    }
+    if (inc.linkedBreachId) {
+      push(
+        inc.createdAtISO,
+        input.issuedByUserEmail,
+        "AI_INCIDENT_LINKED_BREACH",
+        `${inc.title} ← breach=${inc.linkedBreachId}`,
+      )
+    }
+  }
+
   // Generation event itself
   push(input.generatedAt, input.issuedByUserEmail, "AUDIT_PACK_GENERATED", `org=${input.orgName}`)
 
@@ -1800,6 +1920,7 @@ function buildSignatureTxt(input: {
     `Oversight protocols (Art.14):${input.manifest.summary.oversightProtocolsCount ?? 0}`,
     `Logging configs (Art.12):${input.manifest.summary.loggingConfigsCount ?? 0}`,
     `PMM plans (Art.72):   ${input.manifest.summary.pmmPlansCount ?? 0}`,
+    `AI Incidents (Art.73):${input.manifest.summary.aiIncidentsCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",

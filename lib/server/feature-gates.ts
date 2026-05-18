@@ -145,6 +145,10 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     "logging_evidence",
     // Sprint 019 — cabinets prepare PMM plans (Art. 72).
     "post_market_monitoring",
+    // Sprint 020 — cabinets assist deployer clients with AI Incident
+    // Reporting (Art. 73 — serious incident notification to market
+    // surveillance authority).
+    "ai_incident_reporting",
   ]),
 }
 
@@ -295,6 +299,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "logging_evidence",
     // Sprint 019 — cabinet preparing PMM plans (Art. 72).
     "post_market_monitoring",
+    // Sprint 020 — cabinet assisting AI Incident Reporting (Art. 73).
+    "ai_incident_reporting",
   ]),
   cabinet_enterprise: new Set<Feature>([
     "ai_inventory",
@@ -328,6 +334,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "logging_evidence",
     // Sprint 019 — cabinet preparing PMM plans (Art. 72).
     "post_market_monitoring",
+    // Sprint 020 — cabinet assisting AI Incident Reporting (Art. 73).
+    "ai_incident_reporting",
   ]),
   one_off_audit: new Set<Feature>([
     "ai_inventory",

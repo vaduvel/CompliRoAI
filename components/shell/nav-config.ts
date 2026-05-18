@@ -202,13 +202,16 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     requiredFeature: "post_market_monitoring",
   },
   {
+    // Sprint 020 — AI Incident Reporting (Art. 73 AI Act). Cabinetele asistă
+    // clienții deployer la raportarea incidentelor serioase, similar cu FRIA
+    // + Oversight + Logging + PMM. Plasat în "compliance" pentru cabinet
+    // alignment.
     href: "/dashboard/ai-incidents",
     label: "Incidente AI",
     iconName: "Bell",
-    section: "builder",
-    workspaceModes: ["ai-builder"],
+    section: "compliance",
+    workspaceModes: ["ai-builder", "cabinet"],
     requiredFeature: "ai_incident_reporting",
-    badge: "coming-soon",
   },
   {
     href: "/dashboard/qms",

@@ -49,14 +49,15 @@ describe("feature-gates — workspaceMode visibility", () => {
     expect(featureBelongsToWorkspace("cabinet", "client_intake")).toBe(true)
   })
 
-  it("cabinet does NOT see ai-builder-only depth modules (Annex IV / EU DB), DOES see FRIA + Oversight + Logging + PMM (Sprint 016/017/018/019 — cabinets prepare pentru clienți deployer)", () => {
+  it("cabinet does NOT see ai-builder-only depth modules (Annex IV / EU DB), DOES see FRIA + Oversight + Logging + PMM + Incidents (Sprint 016/017/018/019/020 — cabinets prepare pentru clienți deployer)", () => {
     expect(featureBelongsToWorkspace("cabinet", "annex_iv_generator")).toBe(false)
     expect(featureBelongsToWorkspace("cabinet", "eu_database_wizard")).toBe(false)
-    // FRIA + Oversight + Logging + PMM shared cu cabinet per mandate § 16-20
+    // FRIA + Oversight + Logging + PMM + AI Incidents shared cu cabinet per mandate § 16-21
     expect(featureBelongsToWorkspace("cabinet", "fria_generator")).toBe(true)
     expect(featureBelongsToWorkspace("cabinet", "human_oversight_protocols")).toBe(true)
     expect(featureBelongsToWorkspace("cabinet", "logging_evidence")).toBe(true)
     expect(featureBelongsToWorkspace("cabinet", "post_market_monitoring")).toBe(true)
+    expect(featureBelongsToWorkspace("cabinet", "ai_incident_reporting")).toBe(true)
   })
 })
 
@@ -97,6 +98,13 @@ describe("feature-gates — tier unlocking", () => {
     expect(hasFeature("cabinet", "cabinet_pro", "trust_center")).toBe(true)
     expect(hasFeature("cabinet", "cabinet_pro", "white_label")).toBe(true)
     expect(hasFeature("cabinet", "cabinet_pro", "approval_queue")).toBe(true)
+  })
+
+  it("cabinet_pro + cabinet_enterprise unlock ai_incident_reporting (Sprint 020)", () => {
+    expect(hasFeature("cabinet", "cabinet_pro", "ai_incident_reporting")).toBe(true)
+    expect(hasFeature("cabinet", "cabinet_enterprise", "ai_incident_reporting")).toBe(true)
+    // cabinet_solo NU are AI Incident Reporting (mai degrabă pe pro+)
+    expect(hasFeature("cabinet", "cabinet_solo", "ai_incident_reporting")).toBe(false)
   })
 
   it("cabinet_enterprise unlocks SSO + DPA + SLA", () => {
