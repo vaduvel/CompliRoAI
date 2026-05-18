@@ -18,12 +18,16 @@ import {
 } from "./legislative-change-log"
 
 import type {
+  AIAdsCampaign,
+  AIAdsClaim,
+  AIAdsCreativeApproval,
   AIContentLabeledAsset,
   AIIncident,
   AISystemRecord,
   ApprovalRequest,
   BreachRecord,
   ComplianceState,
+  ConversionTrackingReview,
   DpiaRecord,
   DsarRequest,
   FriaRecord,
@@ -133,6 +137,16 @@ export function scanState(
   scanContentAssets(
     state.aiContentAssets ?? [],
     state.aiSystems ?? [],
+    nowISO,
+    actions,
+  )
+  // Sprint 024 — AI Ads / LLM Commerce (rules 21-25).
+  scanAIAds(
+    state.aiAdsCampaigns ?? [],
+    state.aiAdsClaims ?? [],
+    state.aiAdsCreativeApprovals ?? [],
+    state.conversionTrackingReviews ?? [],
+    state.vendorRecords ?? [],
     nowISO,
     actions,
   )
@@ -1069,5 +1083,215 @@ function scanLessonsRefresh(
       },
       nowISO,
     )
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 024 — AI Ads / LLM Commerce Compliance (rules 21-25)
+//
+//   Rule 21 — Claim evidence missing — campanie activă fără claims linkate
+//             SAU claims cu evidenceStatus=unsubstantiated/needs_review
+//             → MEDIUM (Directive 2005/29/EC + Law 363/2007)
+//
+//   Rule 22 — Creative approval missing — campanie activă fără aprobări
+//             SAU aprobări cu vreun gate (art5 / consumerLaw / IP) lipsă
+//             → HIGH (Art. 5 + Art. 50 EU AI Act + Law 363/2007)
+//
+//   Rule 23 — Conversion tracking review missing — campanie activă fără
+//             ConversionTrackingReview linkat → HIGH GDPR
+//             (Art. 5/13/14/44-49 + ePrivacy Art. 5(3))
+//
+//   Rule 24 — Vendor / platform terms review missing — campanie pe
+//             platformă AI majoră fără VendorRecord + DPA Art. 28
+//             → HIGH (GDPR Art. 28)
+//
+//   Rule 25 — Misleading AI claim risk — claim cu misleadingRisk
+//             ∈ {high, critical} încă activ → HIGH
+// ────────────────────────────────────────────────────────────────────────────
+
+const AI_ADS_PLATFORMS_REQUIRING_DPA = new Set<string>([
+  "chatgpt_ads",
+  "meta_ai_ads",
+  "google_ai_ads",
+  "perplexity_sponsored",
+  "anthropic_claude",
+  "ai_generated_creative_meta",
+  "ai_generated_creative_google",
+  "ai_generated_creative_linkedin",
+])
+
+const AI_ADS_ACTIVE_STATUSES = new Set<string>(["active", "in_review", "approved"])
+
+function scanAIAds(
+  campaigns: AIAdsCampaign[],
+  claims: AIAdsClaim[],
+  approvals: AIAdsCreativeApproval[],
+  trackingReviews: ConversionTrackingReview[],
+  vendors: VendorRecord[],
+  nowISO: string,
+  acc: PreventiveAction[],
+): void {
+  for (const c of campaigns) {
+    const isActiveOrInReview = AI_ADS_ACTIVE_STATUSES.has(c.status)
+
+    // Rule 21 — claim evidence missing
+    const linkedClaims = claims.filter(
+      (cl) => cl.campaignId === c.id || c.linkedClaimIds.includes(cl.id),
+    )
+    const noClaimsOnActive =
+      isActiveOrInReview && c.linkedClaimIds.length === 0 && linkedClaims.length === 0
+    const unsubstantiatedActive =
+      isActiveOrInReview &&
+      linkedClaims.some(
+        (cl) =>
+          cl.evidenceStatus === "unsubstantiated" || cl.evidenceStatus === "needs_review",
+      )
+    if (noClaimsOnActive || unsubstantiatedActive) {
+      pushAction(
+        acc,
+        {
+          idSuffix: c.id,
+          type: "ai_ads_claim_evidence_missing",
+          urgency: "due_soon",
+          entityType: "ai_ads_campaign",
+          entityId: c.id,
+          entityLabel: `Claim evidence lipsă — ${c.title}`,
+          recommendedAction:
+            "Înregistrează în Claims Registry fiecare afirmație folosită în creative și atașează o sursă verificabilă (audit terț / înregistrare publică / date interne).",
+          shouldEmitFinding: true,
+          shouldEmail: false,
+          notes:
+            noClaimsOnActive
+              ? "Nicio afirmație înregistrată pentru campanie."
+              : "Există afirmații nesubstanțiate / needs_review.",
+        },
+        nowISO,
+      )
+    }
+
+    // Rule 22 — creative approval missing / incomplete
+    const linkedApprovals = approvals.filter((a) => a.campaignId === c.id)
+    const incompleteApproval = linkedApprovals.find(
+      (a) => !a.art5Check || !a.consumerLawCheck || !a.ipRightsCheck,
+    )
+    if (isActiveOrInReview && linkedApprovals.length === 0) {
+      pushAction(
+        acc,
+        {
+          idSuffix: c.id,
+          type: "ai_ads_creative_approval_missing",
+          urgency: "overdue",
+          entityType: "ai_ads_campaign",
+          entityId: c.id,
+          entityLabel: `Creative approval trail lipsă — ${c.title}`,
+          recommendedAction:
+            "Înregistrează aprobarea creative cu 3 gate-uri (Art. 5 AI Act + Law 363/2007 + IP rights) în tab-ul Creative Approvals.",
+          shouldEmitFinding: true,
+          shouldEmail: true,
+          emailTemplate: "renewal-reminder",
+          notes: "Niciun creative approval pentru campanie activă.",
+        },
+        nowISO,
+      )
+    } else if (incompleteApproval) {
+      pushAction(
+        acc,
+        {
+          idSuffix: `${c.id}-${incompleteApproval.id}`,
+          type: "ai_ads_creative_approval_missing",
+          urgency: "due_soon",
+          entityType: "ai_ads_campaign",
+          entityId: c.id,
+          entityLabel: `Creative approval incomplet — ${c.title}`,
+          recommendedAction:
+            "Aprobarea creative existentă nu are toate cele 3 gate-uri marcate (Art. 5 / Law 363 / IP). Re-deschide și completează sau respinge.",
+          shouldEmitFinding: true,
+          shouldEmail: false,
+          notes: `Approval ${incompleteApproval.id} — art5:${incompleteApproval.art5Check} consumerLaw:${incompleteApproval.consumerLawCheck} ip:${incompleteApproval.ipRightsCheck}.`,
+        },
+        nowISO,
+      )
+    }
+
+    // Rule 23 — conversion tracking review missing (GDPR category)
+    const trackingLinked =
+      c.conversionTrackingReviewId
+        ? trackingReviews.find((t) => t.id === c.conversionTrackingReviewId)
+        : trackingReviews.find((t) => t.campaignId === c.id)
+    if (isActiveOrInReview && !trackingLinked) {
+      pushAction(
+        acc,
+        {
+          idSuffix: c.id,
+          type: "ai_ads_tracking_review_missing",
+          urgency: "overdue",
+          entityType: "ai_ads_campaign",
+          entityId: c.id,
+          entityLabel: `Conversion tracking GDPR review lipsă — ${c.title}`,
+          recommendedAction:
+            "Creează un ConversionTrackingReview și completează metode + consent + cookie list + pixel list + CRM + transferuri.",
+          shouldEmitFinding: true,
+          shouldEmail: true,
+          emailTemplate: "renewal-reminder",
+          notes: "Campanie activă fără tracking review GDPR.",
+        },
+        nowISO,
+      )
+    }
+
+    // Rule 24 — vendor / platform terms review missing
+    const needsVendor = AI_ADS_PLATFORMS_REQUIRING_DPA.has(c.platform)
+    const vendor = c.linkedVendorId
+      ? vendors.find((v) => v.id === c.linkedVendorId)
+      : undefined
+    if (
+      needsVendor &&
+      isActiveOrInReview &&
+      (!vendor || !c.platformTermsReviewed)
+    ) {
+      pushAction(
+        acc,
+        {
+          idSuffix: c.id,
+          type: "ai_ads_vendor_review_missing",
+          urgency: "due_soon",
+          entityType: "ai_ads_campaign",
+          entityId: c.id,
+          entityLabel: `Vendor/platform terms review lipsă — ${c.title}`,
+          recommendedAction:
+            "Creează vendor (VendorRecord) în /dashboard/vendor-review cu DPA Art. 28 semnat și marchează platformTermsReviewed=true.",
+          shouldEmitFinding: true,
+          shouldEmail: false,
+          notes: vendor
+            ? "Vendor există dar platformTermsReviewed=false."
+            : "Vendor lipsește pentru platformă AI majoră.",
+        },
+        nowISO,
+      )
+    }
+  }
+
+  // Rule 25 — misleading claim risk (independent of campaign loop)
+  for (const claim of claims) {
+    if (claim.misleadingRisk === "high" || claim.misleadingRisk === "critical") {
+      pushAction(
+        acc,
+        {
+          idSuffix: claim.id,
+          type: "ai_ads_misleading_claim_risk",
+          urgency: claim.misleadingRisk === "critical" ? "critical" : "due_soon",
+          entityType: "ai_ads_claim",
+          entityId: claim.id,
+          entityLabel: `Potential misleading AI claim — „${claim.claimText.slice(0, 60)}…”`,
+          recommendedAction:
+            "Atașează sursă verificabilă (audit terț / înregistrare publică) sau retrage afirmația până la substanțiere. Directive 2005/29/EC Art. 5.",
+          shouldEmitFinding: true,
+          shouldEmail: claim.misleadingRisk === "critical",
+          emailTemplate: "renewal-reminder",
+          notes: `Tip: ${claim.claimType}. Status dovadă: ${claim.evidenceStatus}.`,
+        },
+        nowISO,
+      )
+    }
   }
 }

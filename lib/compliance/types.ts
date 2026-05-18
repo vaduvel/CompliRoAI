@@ -1890,6 +1890,12 @@ export type PreventiveTriggerType =
   | "art50_synthetic_content_no_metadata"   // Art. 50(2) — HIGH
   | "art50_chatbot_no_runtime_disclosure"   // Art. 50(1) — MEDIUM/HIGH
   | "art50_public_interest_no_editorial_flag" // Art. 50(4)(b) — HIGH
+  // Sprint 024 — AI Ads / LLM Commerce Compliance (rules 21-25).
+  | "ai_ads_claim_evidence_missing"         // Directive 2005/29/EC + Law 363/2007 — MEDIUM
+  | "ai_ads_creative_approval_missing"      // Art. 5 + Art. 50 AI Act + Law 363/2007 — HIGH
+  | "ai_ads_tracking_review_missing"        // GDPR Art. 5/13/14/44-49 + ePrivacy — HIGH
+  | "ai_ads_vendor_review_missing"          // GDPR Art. 28 — HIGH
+  | "ai_ads_misleading_claim_risk"          // Directive 2005/29/EC Art. 5 — HIGH
 
 /**
  * Nivelul de urgență al unei acțiuni preventive.
@@ -1930,6 +1936,9 @@ export type PreventiveEntityType =
   // Sprint 023.7 — Art. 50 content asset (per-asset, distinct of `transparency`
   // which is per-system implementation).
   | "content_asset"
+  // Sprint 024 — AI Ads campaign + claim (per-campaign or per-claim).
+  | "ai_ads_campaign"
+  | "ai_ads_claim"
 
 /**
  * Acțiunea preventivă detectată. ID-ul este stabil per (entity + rule) ca

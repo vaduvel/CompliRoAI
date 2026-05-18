@@ -91,6 +91,15 @@ function triggerToCategory(t: PreventiveTriggerType): FindingCategory {
     case "art50_chatbot_no_runtime_disclosure":
     case "art50_public_interest_no_editorial_flag":
       return "EU_AI_ACT"
+    // Sprint 024 — AI Ads / LLM Commerce (rules 21-25).
+    // Tracking review = GDPR + ePrivacy. Vendor missing = GDPR (DPA Art. 28).
+    case "ai_ads_tracking_review_missing":
+    case "ai_ads_vendor_review_missing":
+      return "GDPR"
+    case "ai_ads_claim_evidence_missing":
+    case "ai_ads_creative_approval_missing":
+    case "ai_ads_misleading_claim_risk":
+      return "EU_AI_ACT"
   }
 }
 

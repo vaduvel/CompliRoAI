@@ -763,4 +763,192 @@ describe("preventive-scanner", () => {
       ),
     ).toBe(false)
   })
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //   Sprint 024 — AI Ads / LLM Commerce (rules 21-25)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it("Rule 21: campanie activă fără claims → ai_ads_claim_evidence_missing due_soon", () => {
+    const state = baseState({
+      aiAdsCampaigns: [
+        {
+          id: "aac-1",
+          orgId: "org",
+          title: "Campanie demo",
+          brandName: "Brand X",
+          platform: "other",
+          campaignType: "paid_placement",
+          linkedAssetIds: [],
+          linkedClaimIds: [],
+          status: "active",
+          targetsVulnerableCategories: false,
+          platformTermsReviewed: true,
+          approvalIds: [],
+          linkedFindingIds: [],
+          createdByEmail: "x@x.com",
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find((a) => a.type === "ai_ads_claim_evidence_missing")
+    expect(action).toBeTruthy()
+    expect(action?.urgency).toBe("due_soon")
+    expect(action?.shouldEmitFinding).toBe(true)
+  })
+
+  it("Rule 22: campanie activă fără approvals → ai_ads_creative_approval_missing overdue", () => {
+    const state = baseState({
+      aiAdsCampaigns: [
+        {
+          id: "aac-2",
+          orgId: "org",
+          title: "Camp2",
+          brandName: "Brand X",
+          platform: "other",
+          campaignType: "paid_placement",
+          linkedAssetIds: [],
+          linkedClaimIds: ["aacl-x"],
+          status: "active",
+          targetsVulnerableCategories: false,
+          platformTermsReviewed: true,
+          approvalIds: [],
+          linkedFindingIds: [],
+          createdByEmail: "x@x.com",
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find((a) => a.type === "ai_ads_creative_approval_missing")
+    expect(action).toBeTruthy()
+    expect(action?.urgency).toBe("overdue")
+    expect(action?.shouldEmail).toBe(true)
+  })
+
+  it("Rule 23: campanie activă fără tracking review → ai_ads_tracking_review_missing overdue", () => {
+    const state = baseState({
+      aiAdsCampaigns: [
+        {
+          id: "aac-3",
+          orgId: "org",
+          title: "Camp3",
+          brandName: "Brand X",
+          platform: "other",
+          campaignType: "paid_placement",
+          linkedAssetIds: [],
+          linkedClaimIds: ["aacl-x"],
+          status: "active",
+          targetsVulnerableCategories: false,
+          platformTermsReviewed: true,
+          approvalIds: ["aapr-x"],
+          linkedFindingIds: [],
+          createdByEmail: "x@x.com",
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find((a) => a.type === "ai_ads_tracking_review_missing")
+    expect(action).toBeTruthy()
+    expect(action?.urgency).toBe("overdue")
+    expect(action?.shouldEmail).toBe(true)
+  })
+
+  it("Rule 24: campanie meta_ai_ads fără vendor → ai_ads_vendor_review_missing due_soon", () => {
+    const state = baseState({
+      aiAdsCampaigns: [
+        {
+          id: "aac-4",
+          orgId: "org",
+          title: "Camp4",
+          brandName: "Brand X",
+          platform: "meta_ai_ads",
+          campaignType: "paid_placement",
+          linkedAssetIds: [],
+          linkedClaimIds: ["aacl-x"],
+          status: "active",
+          targetsVulnerableCategories: false,
+          platformTermsReviewed: false,
+          approvalIds: ["aapr-x"],
+          linkedFindingIds: [],
+          createdByEmail: "x@x.com",
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find((a) => a.type === "ai_ads_vendor_review_missing")
+    expect(action).toBeTruthy()
+    expect(action?.urgency).toBe("due_soon")
+    expect(action?.shouldEmitFinding).toBe(true)
+  })
+
+  it("Rule 25: claim cu misleadingRisk=high → ai_ads_misleading_claim_risk due_soon", () => {
+    const state = baseState({
+      aiAdsClaims: [
+        {
+          id: "aacl-1",
+          orgId: "org",
+          claimType: "performance_metric",
+          claimText: "10x mai rapid decât competiția",
+          contextDescription: "Hero",
+          evidenceStatus: "unsubstantiated",
+          misleadingRisk: "high",
+          riskReasons: ["unsubstantiated"],
+          linkedFindingIds: [],
+          createdByEmail: "x@x.com",
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find((a) => a.type === "ai_ads_misleading_claim_risk")
+    expect(action).toBeTruthy()
+    expect(action?.urgency).toBe("due_soon")
+    expect(action?.shouldEmitFinding).toBe(true)
+  })
+
+  it("Rule 25: claim cu misleadingRisk=critical → urgency critical + shouldEmail", () => {
+    const state = baseState({
+      aiAdsClaims: [
+        {
+          id: "aacl-2",
+          orgId: "org",
+          claimType: "compliance_claim",
+          claimText: "GDPR compliant",
+          contextDescription: "Hero",
+          evidenceStatus: "unsubstantiated",
+          misleadingRisk: "critical",
+          riskReasons: [],
+          linkedFindingIds: [],
+          createdByEmail: "x@x.com",
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find((a) => a.type === "ai_ads_misleading_claim_risk")
+    expect(action?.urgency).toBe("critical")
+    expect(action?.shouldEmail).toBe(true)
+  })
+
+  it("Rules 21-25: state fără AI Ads NU produce actions", () => {
+    const state = baseState({})
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const aiAdsRules = [
+      "ai_ads_claim_evidence_missing",
+      "ai_ads_creative_approval_missing",
+      "ai_ads_tracking_review_missing",
+      "ai_ads_vendor_review_missing",
+      "ai_ads_misleading_claim_risk",
+    ]
+    expect(actions.some((a) => aiAdsRules.includes(a.type))).toBe(false)
+  })
 })

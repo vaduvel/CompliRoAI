@@ -127,6 +127,14 @@ function isEntityStillPending(
       return Boolean(
         (state.aiContentAssets ?? []).find((x) => x.id === entityId),
       )
+    case "ai_ads_campaign":
+      return Boolean(
+        (state.aiAdsCampaigns ?? []).find((x) => x.id === entityId),
+      )
+    case "ai_ads_claim":
+      return Boolean(
+        (state.aiAdsClaims ?? []).find((x) => x.id === entityId),
+      )
   }
 }
 
@@ -203,6 +211,10 @@ function entityToUrl(
       return `${base}/dashboard/audit-pack`
     case "content_asset":
       return `${base}/dashboard/transparency?tab=content-register&asset=${id}`
+    case "ai_ads_campaign":
+      return `${base}/dashboard/ai-ads?tab=campaigns&campaign=${id}`
+    case "ai_ads_claim":
+      return `${base}/dashboard/ai-ads?tab=claims&claim=${id}`
   }
 }
 
