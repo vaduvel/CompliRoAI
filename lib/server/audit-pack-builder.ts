@@ -59,6 +59,10 @@ import {
   buildContentAssetMarkdown,
   buildContentRegisterMarkdown,
 } from "@/lib/server/transparency-content-store"
+import {
+  buildOrgAIAdsMarkdown,
+  generateAIAdsMarkdown,
+} from "@/lib/server/ai-ads-store"
 import { buildLoggingMarkdown } from "@/lib/server/logging-evidence-store"
 import {
   LOGGING_EVENT_CATEGORY_LABELS,
@@ -156,6 +160,11 @@ export type AuditPackManifest = {
     // Depth). Includes deepfake, synthetic image/video/audio/text,
     // public-interest text, chatbot interactions tracked individually.
     contentAssetsCount?: number
+    // Sprint 024 — AI Ads / LLM Commerce Compliance Pack.
+    aiAdsCampaignsCount?: number
+    aiAdsClaimsCount?: number
+    aiAdsApprovalsCount?: number
+    conversionTrackingReviewsCount?: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -338,6 +347,11 @@ export async function buildAuditPack(
       qmsCompleteness: state.qmsWorkspace?.completeness,
       // Sprint 023.7 — count of Art. 50 content assets (per-asset register).
       contentAssetsCount: (state.aiContentAssets ?? []).length,
+      // Sprint 024 — AI Ads / LLM Commerce.
+      aiAdsCampaignsCount: (state.aiAdsCampaigns ?? []).length,
+      aiAdsClaimsCount: (state.aiAdsClaims ?? []).length,
+      aiAdsApprovalsCount: (state.aiAdsCreativeApprovals ?? []).length,
+      conversionTrackingReviewsCount: (state.conversionTrackingReviews ?? []).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -783,6 +797,9 @@ function buildFileContents(input: {
   // ── Sprint 023.7: Art. 50 Content Register per-asset ──────────────────
   pushContentRegisterFiles(files, input.state, input.orgName)
 
+  // ── Sprint 024: AI Ads / LLM Commerce Compliance Pack ────────────────
+  pushAIAdsFiles(files, input.state, input.orgName)
+
   return files
 }
 
@@ -807,6 +824,162 @@ function pushContentRegisterFiles(
     files.push({
       path: `transparency/assets/${slugify(a.id)}.md`,
       bytes: utf8(buildContentAssetMarkdown(a)),
+    })
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 024 — AI Ads Compliance Pack section
+//
+//   ai-ads/campaigns.md            — top-level table of campaigns
+//   ai-ads/claims-registry.md      — claims registry full table
+//   ai-ads/creative-approval-log.md — chronological approval trail
+//   ai-ads/tracking-review.md      — per-review GDPR tracking
+//   ai-ads/per-campaign/{id}.md    — full per-campaign markdown
+// ────────────────────────────────────────────────────────────────────────────
+
+function pushAIAdsFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const campaigns = state.aiAdsCampaigns ?? []
+  const claims = state.aiAdsClaims ?? []
+  const approvals = state.aiAdsCreativeApprovals ?? []
+  const trackingReviews = state.conversionTrackingReviews ?? []
+
+  // Top-level campaigns.md
+  const campLines: string[] = []
+  campLines.push(`# AI Ads campanii — ${orgName}`)
+  campLines.push(``)
+  campLines.push(
+    `> AI Ads Compliance Pack: ce afirmă AI-ul despre brand, pe ce sursă, cine a aprobat, ce date au fost folosite și ce risc legal există.`,
+  )
+  campLines.push(``)
+  campLines.push(`**Total campanii:** ${campaigns.length}`)
+  campLines.push(``)
+  if (campaigns.length === 0) {
+    campLines.push(`_Nicio campanie înregistrată._`)
+  } else {
+    campLines.push(
+      `| Titlu | Brand | Platformă | Status | Vendor link | Claims | Approvals | Tracking |`,
+    )
+    campLines.push(`|---|---|---|---|---|---|---|---|`)
+    for (const c of campaigns) {
+      campLines.push(
+        `| ${c.title.replace(/\|/g, "\\|")} | ${c.brandName.replace(/\|/g, "\\|")} | ${c.platform} | ${c.status} | ${c.linkedVendorId ?? "—"} | ${c.linkedClaimIds.length} | ${c.approvalIds.length} | ${c.conversionTrackingReviewId ?? "—"} |`,
+      )
+    }
+  }
+  files.push({ path: "ai-ads/campaigns.md", bytes: utf8(campLines.join("\n") + "\n") })
+
+  // claims-registry.md
+  const claimLines: string[] = []
+  claimLines.push(`# Claims Registry — ${orgName}`)
+  claimLines.push(``)
+  claimLines.push(
+    `Fiecare afirmație despre brand mapează la o sursă verificabilă (Directive 2005/29/EC + RO Law 363/2007).`,
+  )
+  claimLines.push(``)
+  if (claims.length === 0) {
+    claimLines.push(`_Niciun claim înregistrat._`)
+  } else {
+    claimLines.push(
+      `| Claim | Tip | Status dovadă | Risc | Sursă | Campanie | Aprobat |`,
+    )
+    claimLines.push(`|---|---|---|---|---|---|---|`)
+    for (const cl of claims) {
+      claimLines.push(
+        `| ${cl.claimText.replace(/\|/g, "\\|").slice(0, 80)} | ${cl.claimType} | ${cl.evidenceStatus} | ${cl.misleadingRisk} | ${(cl.evidenceSource ?? "—").replace(/\|/g, "\\|").slice(0, 40)} | ${cl.campaignId ?? "—"} | ${cl.approvedByEmail ?? "—"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "ai-ads/claims-registry.md",
+    bytes: utf8(claimLines.join("\n") + "\n"),
+  })
+
+  // creative-approval-log.md
+  const apprLines: string[] = []
+  apprLines.push(`# Creative Approval Log — ${orgName}`)
+  apprLines.push(``)
+  apprLines.push(
+    `Trail of human approvals pe creative AI cu 3 gate-uri obligatorii (Art. 5 + Art. 50 AI Act + Law 363/2007 + IP).`,
+  )
+  apprLines.push(``)
+  const sortedApprovals = [...approvals].sort((a, b) =>
+    a.approvedAtISO.localeCompare(b.approvedAtISO),
+  )
+  if (sortedApprovals.length === 0) {
+    apprLines.push(`_Niciun creative approval._`)
+  } else {
+    apprLines.push(
+      `| Data | Campanie | Creative | Aprobator | Art. 5 | Law 363 | IP | Prohibited |`,
+    )
+    apprLines.push(`|---|---|---|---|---|---|---|---|`)
+    for (const a of sortedApprovals) {
+      apprLines.push(
+        `| ${a.approvedAtISO.slice(0, 10)} | ${a.campaignId} | ${a.creativeDescription.replace(/\|/g, "\\|").slice(0, 60)} | ${a.approvedByEmail} | ${a.art5Check ? "DA" : "NU"} | ${a.consumerLawCheck ? "DA" : "NU"} | ${a.ipRightsCheck ? "DA" : "NU"} | ${a.prohibitedContentChecked ? "DA" : "NU"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "ai-ads/creative-approval-log.md",
+    bytes: utf8(apprLines.join("\n") + "\n"),
+  })
+
+  // tracking-review.md
+  const trkLines: string[] = []
+  trkLines.push(`# Conversion Tracking Reviews — ${orgName}`)
+  trkLines.push(``)
+  trkLines.push(
+    `Per campanie: metode tracking + consent + cookie/pixel/CRM + transferuri (GDPR Art. 5/13/14/28/44-49 + ePrivacy Art. 5(3)).`,
+  )
+  trkLines.push(``)
+  if (trackingReviews.length === 0) {
+    trkLines.push(`_Niciun tracking review înregistrat._`)
+  } else {
+    for (const t of trackingReviews) {
+      trkLines.push(`## Review ${t.id}`)
+      trkLines.push(``)
+      trkLines.push(`- **Campanie:** ${t.campaignId ?? "—"}`)
+      trkLines.push(`- **Metode:** ${t.methods.join(", ")}`)
+      trkLines.push(`- **Consent necesar:** ${t.consentRequired ? "DA" : "NU"}`)
+      trkLines.push(`- **Cum se înregistrează:** ${t.consentRecordedHow || "—"}`)
+      trkLines.push(`- **Cookies:** ${t.cookieList.join(", ") || "—"}`)
+      trkLines.push(`- **Pixel-uri:** ${t.pixelList.join(", ") || "—"}`)
+      trkLines.push(
+        `- **CRM upload:** ${t.crmUploadUsed ? `DA (${t.crmDataCategoriesUploaded.join(", ") || "?"})` : "NU"}`,
+      )
+      trkLines.push(
+        `- **Transfer terță țară:** ${t.thirdCountryTransfer ? `DA (${t.transferMechanism ?? "—"})` : "NU"}`,
+      )
+      if (t.gaps.length > 0) {
+        trkLines.push(``)
+        trkLines.push(`**Gap-uri detectate:**`)
+        for (const g of t.gaps) trkLines.push(`- ${g}`)
+      }
+      trkLines.push(``)
+    }
+  }
+  files.push({
+    path: "ai-ads/tracking-review.md",
+    bytes: utf8(trkLines.join("\n") + "\n"),
+  })
+
+  // Per-campaign full markdown
+  for (const c of campaigns) {
+    const cClaims = claims.filter(
+      (cl) => cl.campaignId === c.id || c.linkedClaimIds.includes(cl.id),
+    )
+    const cApprovals = approvals.filter((a) => a.campaignId === c.id)
+    const tr =
+      trackingReviews.find((t) => t.id === c.conversionTrackingReviewId) ??
+      trackingReviews.find((t) => t.campaignId === c.id) ??
+      null
+    files.push({
+      path: `ai-ads/per-campaign/${slugify(c.id)}.md`,
+      bytes: utf8(generateAIAdsMarkdown(c, cClaims, cApprovals, tr)),
     })
   }
 }
@@ -2350,6 +2523,10 @@ function buildSignatureTxt(input: {
     `AI Incidents (Art.73):${input.manifest.summary.aiIncidentsCount ?? 0}`,
     `QMS Workspace (Art.17):${input.manifest.summary.qmsWorkspaceCount ?? 0} (${input.manifest.summary.qmsCompleteness ?? "—"})`,
     `Content assets (Art.50):${input.manifest.summary.contentAssetsCount ?? 0}`,
+    `AI Ads campanii:      ${input.manifest.summary.aiAdsCampaignsCount ?? 0}`,
+    `AI Ads claims:        ${input.manifest.summary.aiAdsClaimsCount ?? 0}`,
+    `AI Ads approvals:     ${input.manifest.summary.aiAdsApprovalsCount ?? 0}`,
+    `Tracking reviews:     ${input.manifest.summary.conversionTrackingReviewsCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",

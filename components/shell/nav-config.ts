@@ -236,6 +236,14 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
 
   // ── COMPLIANCE (GDPR / privacy) ─────────────────────────────────────────────
   {
+    href: "/dashboard/ai-ads",
+    label: "AI Ads & Claims",
+    iconName: "Megaphone",
+    section: "compliance",
+    workspaceModes: ["imm-classic", "ai-builder", "cabinet"],
+    requiredFeature: "ai_ads_pack",
+  },
+  {
     href: "/dashboard/dpia",
     label: "DPIA",
     iconName: "ClipboardCheck",

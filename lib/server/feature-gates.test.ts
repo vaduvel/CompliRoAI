@@ -174,4 +174,32 @@ describe("feature-gates — listUnlockedFeatures", () => {
     expect(features).toContain("white_label")
     expect(features).not.toContain("sso")
   })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  //   Sprint 024 — ai_ads_pack feature
+  // ──────────────────────────────────────────────────────────────────────────
+
+  it("ai_ads_pack este vizibil în toate cele 3 workspace modes pe free_trial", () => {
+    expect(hasFeature("imm-classic", "free_trial", "ai_ads_pack")).toBe(true)
+    expect(hasFeature("ai-builder", "free_trial", "ai_ads_pack")).toBe(true)
+    expect(hasFeature("cabinet", "free_trial", "ai_ads_pack")).toBe(true)
+  })
+
+  it("imm_solo NU unlock ai_ads_pack", () => {
+    expect(hasFeature("imm-classic", "imm_solo", "ai_ads_pack")).toBe(false)
+  })
+
+  it("imm_mid+ unlock ai_ads_pack", () => {
+    expect(hasFeature("imm-classic", "imm_mid", "ai_ads_pack")).toBe(true)
+  })
+
+  it("ai_builder tier unlock ai_ads_pack", () => {
+    expect(hasFeature("ai-builder", "ai_builder", "ai_ads_pack")).toBe(true)
+  })
+
+  it("cabinet tiers (solo/pro/enterprise) unlock ai_ads_pack", () => {
+    expect(hasFeature("cabinet", "cabinet_solo", "ai_ads_pack")).toBe(true)
+    expect(hasFeature("cabinet", "cabinet_pro", "ai_ads_pack")).toBe(true)
+    expect(hasFeature("cabinet", "cabinet_enterprise", "ai_ads_pack")).toBe(true)
+  })
 })

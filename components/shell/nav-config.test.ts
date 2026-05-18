@@ -224,3 +224,51 @@ describe("nav-config — every nav item points to a valid icon name", () => {
     }
   })
 })
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 024 — AI Ads & Claims visibility
+// ────────────────────────────────────────────────────────────────────────────
+
+describe("nav-config — AI Ads & Claims (Sprint 024)", () => {
+  it("imm-classic free_trial vede AI Ads & Claims", () => {
+    const labels = labelsForRole("imm-classic", "free_trial")
+    expect(labels).toContain("AI Ads & Claims")
+  })
+
+  it("ai-builder free_trial vede AI Ads & Claims", () => {
+    const labels = labelsForRole("ai-builder", "free_trial")
+    expect(labels).toContain("AI Ads & Claims")
+  })
+
+  it("cabinet free_trial vede AI Ads & Claims", () => {
+    const labels = labelsForRole("cabinet", "free_trial")
+    expect(labels).toContain("AI Ads & Claims")
+  })
+
+  it("imm-classic imm_solo NU vede AI Ads (tier nu unlock)", () => {
+    const labels = labelsForRole("imm-classic", "imm_solo")
+    expect(labels).not.toContain("AI Ads & Claims")
+  })
+
+  it("imm-classic imm_mid vede AI Ads", () => {
+    const labels = labelsForRole("imm-classic", "imm_mid")
+    expect(labels).toContain("AI Ads & Claims")
+  })
+
+  it("ai-builder pe ai_builder tier vede AI Ads", () => {
+    const labels = labelsForRole("ai-builder", "ai_builder")
+    expect(labels).toContain("AI Ads & Claims")
+  })
+
+  it("cabinet pe cabinet_solo vede AI Ads", () => {
+    const labels = labelsForRole("cabinet", "cabinet_solo")
+    expect(labels).toContain("AI Ads & Claims")
+  })
+
+  it("cabinet pe cabinet_pro + cabinet_enterprise vede AI Ads", () => {
+    expect(labelsForRole("cabinet", "cabinet_pro")).toContain("AI Ads & Claims")
+    expect(labelsForRole("cabinet", "cabinet_enterprise")).toContain(
+      "AI Ads & Claims",
+    )
+  })
+})

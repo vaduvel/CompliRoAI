@@ -53,6 +53,8 @@ export type Feature =
   | "trust_center"
   | "white_label"
   | "client_intake"
+  // ── Sprint 024 — AI Ads / LLM Commerce Compliance Pack ────────────────────
+  | "ai_ads_pack"
   // ── Premium / cross-cutting ────────────────────────────────────────────────
   | "audit_pack_signed"
   | "pdf_exports"
@@ -82,6 +84,7 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     "audit_pack_signed",
     "pdf_exports",
     "email_notifications",
+    "ai_ads_pack",
   ]),
   "ai-builder": new Set<Feature>([
     "ai_inventory",
@@ -109,6 +112,7 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     "ropa",
     "dsar",
     "breach_72h",
+    "ai_ads_pack",
   ]),
   cabinet: new Set<Feature>([
     "ai_inventory",
@@ -152,6 +156,8 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     // Sprint 021 — cabinets prepare QMS Workspace (Art. 17) pentru clientii
     // provider.
     "qms_workspace",
+    // Sprint 024 — cabinets review AI Ads claims + tracking pentru deployer clients.
+    "ai_ads_pack",
   ]),
 }
 
@@ -193,6 +199,7 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "client_intake",
     "pdf_exports",
     "email_notifications",
+    "ai_ads_pack",
   ]),
   imm_solo: new Set<Feature>([
     "ai_inventory",
@@ -225,6 +232,7 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "audit_pack_signed",
     "pdf_exports",
     "email_notifications",
+    "ai_ads_pack",
   ]),
   ai_builder: new Set<Feature>([
     "ai_inventory",
@@ -251,6 +259,7 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "post_market_monitoring",
     "ai_incident_reporting",
     "qms_workspace",
+    "ai_ads_pack",
   ]),
   cabinet_solo: new Set<Feature>([
     "ai_inventory",
@@ -271,6 +280,7 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "client_intake",
     "pdf_exports",
     "email_notifications",
+    "ai_ads_pack",
   ]),
   cabinet_pro: new Set<Feature>([
     "ai_inventory",
@@ -306,6 +316,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "ai_incident_reporting",
     // Sprint 021 — cabinet preparing QMS Workspace (Art. 17).
     "qms_workspace",
+    // Sprint 024 — cabinet reviewing AI Ads compliance for deployer clients.
+    "ai_ads_pack",
   ]),
   cabinet_enterprise: new Set<Feature>([
     "ai_inventory",
@@ -343,6 +355,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "ai_incident_reporting",
     // Sprint 021 — cabinet preparing QMS Workspace (Art. 17).
     "qms_workspace",
+    // Sprint 024 — cabinet reviewing AI Ads compliance for deployer clients.
+    "ai_ads_pack",
   ]),
   one_off_audit: new Set<Feature>([
     "ai_inventory",

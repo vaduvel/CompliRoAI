@@ -24,11 +24,15 @@ import JSZip from "jszip"
 import { initialComplianceState } from "@/lib/compliance/engine"
 import { appendComplianceEvents } from "@/lib/compliance/events"
 import type {
+  AIAdsCampaign,
+  AIAdsClaim,
+  AIAdsCreativeApproval,
   AIContentLabeledAsset,
   AIDataMapRecord,
   AIIncident,
   BreachRecord,
   ComplianceEvent,
+  ConversionTrackingReview,
   DpiaRecord,
   FriaRecord,
   HumanOversightProtocol,
@@ -586,6 +590,73 @@ function buildSampleState(): AIActState {
     updatedAtISO: "2026-05-16T00:00:00.000Z",
   }
 
+  // Sprint 024 — AI Ads / LLM Commerce fixture (campanie + claim + approval + tracking)
+  const adsCampaign: AIAdsCampaign = {
+    id: "aac-test-1",
+    orgId: "org-test-pack",
+    title: "Campanie demo audit pack",
+    brandName: "ACME Brand",
+    platform: "meta_ai_ads",
+    campaignType: "paid_placement",
+    linkedAssetIds: [],
+    linkedClaimIds: ["aacl-test-1"],
+    status: "active",
+    targetsVulnerableCategories: false,
+    platformTermsReviewed: true,
+    platformTermsReviewedByEmail: "legal@acme.ro",
+    platformTermsReviewedAtISO: "2026-05-15T10:00:00.000Z",
+    conversionTrackingReviewId: "aatr-test-1",
+    approvalIds: ["aapr-test-1"],
+    linkedFindingIds: [],
+    createdByEmail: "marketing@acme.ro",
+    createdAtISO: "2026-05-15T10:00:00.000Z",
+    updatedAtISO: "2026-05-15T10:00:00.000Z",
+  }
+  const adsClaim: AIAdsClaim = {
+    id: "aacl-test-1",
+    orgId: "org-test-pack",
+    campaignId: "aac-test-1",
+    claimType: "performance_metric",
+    claimText: "Cel mai rapid serviciu din piață",
+    contextDescription: "Banner Meta hero",
+    evidenceStatus: "third_party_audit",
+    evidenceSource: "https://audit.example.com/report",
+    misleadingRisk: "low",
+    riskReasons: [],
+    linkedFindingIds: [],
+    createdByEmail: "marketing@acme.ro",
+    createdAtISO: "2026-05-15T10:00:00.000Z",
+    updatedAtISO: "2026-05-15T10:00:00.000Z",
+  }
+  const adsApproval: AIAdsCreativeApproval = {
+    id: "aapr-test-1",
+    campaignId: "aac-test-1",
+    creativeDescription: "Banner Meta 1200x630",
+    approvedByEmail: "ceo@acme.ro",
+    approvedAtISO: "2026-05-15T11:00:00.000Z",
+    prohibitedContentChecked: true,
+    art5Check: true,
+    consumerLawCheck: true,
+    ipRightsCheck: true,
+  }
+  const adsTracking: ConversionTrackingReview = {
+    id: "aatr-test-1",
+    orgId: "org-test-pack",
+    campaignId: "aac-test-1",
+    methods: ["pixel_meta"],
+    consentRequired: true,
+    consentRecordedHow: "Cookiebot granular",
+    cookieList: ["_fbp"],
+    pixelList: ["fbq"],
+    crmUploadUsed: false,
+    crmDataCategoriesUploaded: [],
+    thirdCountryTransfer: false,
+    gaps: [],
+    linkedFindingIds: [],
+    createdAtISO: "2026-05-15T10:00:00.000Z",
+    updatedAtISO: "2026-05-15T10:00:00.000Z",
+  }
+
   // Sprint 023.7 — Add an AI Content Labeled Asset (deepfake fără disclosure)
   const contentAsset: AIContentLabeledAsset = {
     id: "asset-test-deepfake-1",
@@ -628,6 +699,10 @@ function buildSampleState(): AIActState {
     pmmPlans: [pmm],
     aiIncidents: [aiIncident],
     aiContentAssets: [contentAsset],
+    aiAdsCampaigns: [adsCampaign],
+    aiAdsClaims: [adsClaim],
+    aiAdsCreativeApprovals: [adsApproval],
+    conversionTrackingReviews: [adsTracking],
   } as AIActState
   base.events = appendComplianceEvents(base, [event1, event2])
   return base
@@ -1302,5 +1377,92 @@ describe("audit-pack backward compat (Sprint 011)", () => {
       currentOrgId: "org-test-pack",
     })
     expect(result.manifest.summary.contentAssetsCount).toBe(1)
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  //   Sprint 024 — AI Ads section in audit pack
+  // ──────────────────────────────────────────────────────────────────────────
+
+  it("audit pack ZIP contains ai-ads/ section with markdown files", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    expect(zip.file("ai-ads/campaigns.md")).toBeTruthy()
+    expect(zip.file("ai-ads/claims-registry.md")).toBeTruthy()
+    expect(zip.file("ai-ads/creative-approval-log.md")).toBeTruthy()
+    expect(zip.file("ai-ads/tracking-review.md")).toBeTruthy()
+    expect(zip.file("ai-ads/per-campaign/aac-test-1.md")).toBeTruthy()
+  })
+
+  it("ai-ads/campaigns.md conține positioning copy + tabel cu campania", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip.file("ai-ads/campaigns.md")!.async("string")
+    expect(md).toContain("AI Ads Compliance Pack")
+    expect(md).toContain("Campanie demo audit pack")
+    expect(md).toContain("meta_ai_ads")
+  })
+
+  it("ai-ads/per-campaign/<id>.md conține full record (claims + approvals + tracking)", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip.file("ai-ads/per-campaign/aac-test-1.md")!.async("string")
+    expect(md).toContain("# Campanie AI Ads — Campanie demo audit pack")
+    expect(md).toContain("Cel mai rapid serviciu din piață")
+    expect(md).toContain("ceo@acme.ro")
+    expect(md).toMatch(/Cookiebot|Metode/)
+    expect(md).toContain("Directive 2005/29/EC")
+  })
+
+  it("manifest summary includes aiAdsCampaignsCount + aiAdsClaimsCount + aiAdsApprovalsCount + conversionTrackingReviewsCount", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    expect(result.manifest.summary.aiAdsCampaignsCount).toBe(1)
+    expect(result.manifest.summary.aiAdsClaimsCount).toBe(1)
+    expect(result.manifest.summary.aiAdsApprovalsCount).toBe(1)
+    expect(result.manifest.summary.conversionTrackingReviewsCount).toBe(1)
+  })
+
+  it("hash chain rămâne valid cu fișierele AI Ads incluse", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    expect(result.manifest.hashChainRoot).toMatch(/^[0-9a-f]{64}$/)
+    expect(result.manifest.signature).toMatch(/^[0-9a-f]{64}$/)
+    // contents include entries for ai-ads files
+    const aiAdsEntries = result.manifest.contents.filter((c) =>
+      c.path.startsWith("ai-ads/"),
+    )
+    expect(aiAdsEntries.length).toBeGreaterThanOrEqual(5)
+    for (const entry of aiAdsEntries) {
+      expect(entry.sha256).toMatch(/^[0-9a-f]{64}$/)
+      expect(entry.chainHashAfter).toMatch(/^[0-9a-f]{64}$/)
+    }
   })
 })
