@@ -16,7 +16,17 @@ import { runPreventiveScan } from "@/lib/server/preventive-engine-runner"
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization")
   const cronSecret = process.env.CRON_SECRET
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Fail-closed: când CRON_SECRET nu este configurat, în production endpoint-ul
+  // rămâne închis (503) ca să nu permitem mutație de state neautentificată.
+  // În dev/test fără secret îl lăsăm deschis pentru iterație locală.
+  if (!cronSecret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Cron auth not configured." },
+        { status: 503 },
+      )
+    }
+  } else if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   try {

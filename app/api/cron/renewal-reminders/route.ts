@@ -13,7 +13,16 @@ import { dispatchScheduledReminders } from "@/lib/server/renewal-email-dispatche
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization")
   const cronSecret = process.env.CRON_SECRET
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Fail-closed: în production fără CRON_SECRET endpoint-ul rămâne închis
+  // (503). În dev/test fără secret îl lăsăm deschis pentru iterație locală.
+  if (!cronSecret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Cron auth not configured." },
+        { status: 503 },
+      )
+    }
+  } else if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   try {
