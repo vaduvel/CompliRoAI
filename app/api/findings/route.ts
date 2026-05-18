@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     }
     if (!isFindingCategory(category)) {
       return NextResponse.json(
-        { error: "Categorie invalida (EU_AI_ACT/GDPR/E_FACTURA/NIS2)." },
+        { error: "Categorie invalidă (EU_AI_ACT / GDPR / NIS2)." },
         { status: 400 },
       )
     }

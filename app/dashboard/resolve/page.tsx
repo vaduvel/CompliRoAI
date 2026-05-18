@@ -80,11 +80,13 @@ const SEVERITY_COLORS: Record<ComplianceSeverity, { bg: string; fg: string }> = 
   low: { bg: "rgba(96,165,250,0.10)", fg: "#60a5fa" },
 }
 
+// E_FACTURA: legacy union value preserved în types pentru migrare din state-uri
+// vechi CompliAI; nu mai apare în UI CompliRoAI (mandate Rule 3 — no fiscal).
 const CATEGORY_LABELS: Record<FindingCategory, string> = {
   EU_AI_ACT: "AI Act",
   GDPR: "GDPR",
   NIS2: "NIS2",
-  E_FACTURA: "e-Factura",
+  E_FACTURA: "Legacy",
 }
 
 type Stats = {
@@ -150,11 +152,10 @@ export default function ResolvePage() {
     void load()
   }, [load])
 
-  const hasEFacturaFindings = useMemo(
-    () => findings.some((f) => f.category === "E_FACTURA"),
-    [findings],
-  )
-
+  // Per mandate Rule 3 — no fiscal/e-Factura surface în UI. Categoria E_FACTURA
+  // rămâne în type union pentru migrare state legacy, dar nu se mai expune ca
+  // filter chip pentru utilizatori. Findings legacy E_FACTURA, dacă există,
+  // pot fi văzute selectând "Toate" și rezolvate normal.
   const filtered = useMemo(() => {
     return findings.filter((f) => {
       const status = (f.findingStatus ?? "open") as StatusKey
@@ -321,9 +322,6 @@ export default function ResolvePage() {
               { key: "EU_AI_ACT", label: CATEGORY_LABELS.EU_AI_ACT },
               { key: "GDPR", label: CATEGORY_LABELS.GDPR },
               { key: "NIS2", label: CATEGORY_LABELS.NIS2 },
-              ...(hasEFacturaFindings
-                ? [{ key: "E_FACTURA", label: CATEGORY_LABELS.E_FACTURA }]
-                : []),
             ]}
             value={categoryFilter}
             onChange={(v) => setCategoryFilter(v as "all" | FindingCategory)}

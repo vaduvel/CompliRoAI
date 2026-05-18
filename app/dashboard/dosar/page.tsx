@@ -69,11 +69,13 @@ const SEVERITY_COLORS: Record<ComplianceSeverity, { bg: string; fg: string }> = 
   low: { bg: "rgba(96,165,250,0.10)", fg: "#60a5fa" },
 }
 
+// E_FACTURA: legacy union value preserved în types pentru migrare state vechi;
+// nu mai apare în UI CompliRoAI (mandate Rule 3 — no fiscal).
 const CATEGORY_LABELS: Record<FindingCategory, string> = {
   EU_AI_ACT: "AI Act",
   GDPR: "GDPR",
   NIS2: "NIS2",
-  E_FACTURA: "e-Factura",
+  E_FACTURA: "Legacy",
 }
 
 type Tab = "closed" | "evidence" | "audit"
