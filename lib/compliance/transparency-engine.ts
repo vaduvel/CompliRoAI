@@ -16,7 +16,9 @@
 
 import type { AIActRole } from "@/lib/compliance/types"
 import type {
+  AIContentLabeledAsset,
   AISystemRecord,
+  ArtFiftyDutyType,
   TransparencyNoticeRequirement,
   TransparencyNoticeType,
 } from "@/lib/compliance/types"
@@ -234,6 +236,129 @@ export function analyzeAllSystems(
     systemName: sys.name,
     requirements: analyzeTransparencyObligations(sys, role, options),
   }))
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 023.7 — Art. 50 Content Labeling Depth (per-asset evaluation)
+//
+//   Reguli:
+//     - Art. 50(2): orice asset sintetic (image/video/audio/text_synthetic/
+//       deepfake) trebuie marcat machine-readable. Standard `none` → providerGap.
+//     - Art. 50(4)(a): deepfake fără disclosure vizibil → deployerGap CRITICAL.
+//     - Art. 50(4)(b): text public-interest fără editorial responsibility
+//       claim ȘI fără disclosure → editorialGap. Cu claim → derogare ok.
+//     - Art. 50(1): chatbot_interaction fără disclosure → deployerGap.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type ContentLabelingGap = {
+  /** Art. 50(2) — marcaj tehnic machine-readable lipsește. */
+  providerGap?: string
+  /** Art. 50(1)/(3)/(4) — disclosure vizibil lipsește. */
+  deployerGap?: string
+  /** Art. 50(4)(b) — text public-interest fără human review claim. */
+  editorialGap?: string
+}
+
+const SYNTHETIC_TYPES = new Set([
+  "image",
+  "video",
+  "audio",
+  "text_synthetic",
+  "deepfake",
+])
+
+/**
+ * Evaluează un AIContentLabeledAsset și returnează ce duty-uri Art. 50 nu
+ * sunt acoperite. Pure function (no IO) — folosit de transparency-content-store
+ * la create/update pentru emitere findings.
+ */
+export function evaluateContentLabelingGap(
+  asset: AIContentLabeledAsset,
+): ContentLabelingGap {
+  const gap: ContentLabelingGap = {}
+
+  // Provider duty (Art. 50(2)) — pentru orice asset sintetic.
+  if (
+    SYNTHETIC_TYPES.has(asset.assetType) &&
+    (asset.providerMarkingStandard === "none" || !asset.providerMarkingApplied)
+  ) {
+    gap.providerGap =
+      "Lipsește marcaj tehnic machine-readable (C2PA / IPTC / watermark) — Art. 50(2) EU AI Act."
+  }
+
+  // Deployer duty — variază în funcție de tipul asset-ului.
+  if (asset.assetType === "deepfake" && !asset.deployerDisclosureApplied) {
+    gap.deployerGap =
+      "Lipsește etichetă vizibilă deepfake pentru persoanele expuse — Art. 50(4)(a) EU AI Act."
+  } else if (
+    asset.assetType === "chatbot_interaction" &&
+    !asset.deployerDisclosureApplied
+  ) {
+    gap.deployerGap =
+      "Lipsește disclosure runtime că utilizatorul interacționează cu un AI — Art. 50(1) EU AI Act."
+  }
+
+  // Public-interest text (Art. 50(4)(b)) — derogare cu editorial review.
+  if (
+    asset.assetType === "public_interest_text" ||
+    asset.isPublicInterest === true
+  ) {
+    if (!asset.editorialResponsibilityClaim && !asset.deployerDisclosureApplied) {
+      gap.editorialGap =
+        "Text pe subiecte de interes public fără claim de editorial responsibility ȘI fără disclosure AI — Art. 50(4)(b) EU AI Act."
+    }
+  }
+
+  return gap
+}
+
+/**
+ * Determină duty-ul aplicabil pentru un asset, în funcție de rolul org-ului
+ * (provider / deployer / both) și tipul asset-ului. Folosit pentru helper UI
+ * + routing finding text.
+ */
+export function inferDutyTypeForAsset(
+  asset: AIContentLabeledAsset,
+  role?: AIActRole,
+): ArtFiftyDutyType {
+  // Asset sintetic + chatbot necesită deobicei BOTH duty-uri:
+  //   provider marchează tehnic, deployer informează vizibil.
+  if (SYNTHETIC_TYPES.has(asset.assetType)) {
+    if (role === "provider") return "provider_marking"
+    if (role === "deployer") return "deployer_disclosure"
+    return "both"
+  }
+  if (asset.assetType === "chatbot_interaction") {
+    return "deployer_disclosure"
+  }
+  if (
+    asset.assetType === "public_interest_text" ||
+    asset.isPublicInterest === true
+  ) {
+    return "deployer_disclosure"
+  }
+  return "deployer_disclosure"
+}
+
+/** Anotated wrapper folosit de UI + audit pack: combinăm asset cu gap. */
+export type AnnotatedContentAsset = AIContentLabeledAsset & {
+  gap: ContentLabelingGap
+  hasAnyGap: boolean
+  appliedDutyType: ArtFiftyDutyType
+}
+
+export function annotateContentAsset(
+  asset: AIContentLabeledAsset,
+  role?: AIActRole,
+): AnnotatedContentAsset {
+  const gap = evaluateContentLabelingGap(asset)
+  const hasAnyGap = Boolean(gap.providerGap || gap.deployerGap || gap.editorialGap)
+  return {
+    ...asset,
+    gap,
+    hasAnyGap,
+    appliedDutyType: inferDutyTypeForAsset(asset, role),
+  }
 }
 
 /** Numără câte sisteme au cel puțin un notice nimplementat. */

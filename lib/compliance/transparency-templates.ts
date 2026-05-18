@@ -95,6 +95,27 @@ const LIBRARY: Record<TransparencyNoticeType, TransparencyTemplate[]> = {
     },
     {
       language: "ro",
+      placement: "advertisement",
+      text:
+        "🤖 Asistentul AI ([SYSTEM_NAME]) răspunde live după click. Pentru operator uman, cere „operator”. Disclosure conform Art. 50(1) EU AI Act.",
+      shortText: "Chatbot AI după click — Art. 50(1)",
+    },
+    {
+      language: "ro",
+      placement: "social-post",
+      text:
+        "ℹ️ Acest cont folosește un asistent AI ([SYSTEM_NAME]) pentru DM-uri și răspunsuri rapide. Pentru contact uman: [CONTACT_EMAIL]. Disclosure Art. 50(1) EU AI Act.",
+      shortText: "AI răspunde la DM-uri (Art. 50(1))",
+    },
+    {
+      language: "ro",
+      placement: "broadcast",
+      text:
+        "Acest email/notificare poate iniția o conversație cu asistent AI ([SYSTEM_NAME]). Răspunsurile primite la întrebări sunt generate automat. Pentru operator uman: [CONTACT_EMAIL]. Conform Art. 50(1) EU AI Act.",
+      shortText: "Conversația continuă cu un AI (Art. 50(1))",
+    },
+    {
+      language: "ro",
       placement: "header",
       text:
         "Atenție: chat-ul folosește un sistem AI ([SYSTEM_NAME]). Răspunsurile pot fi generate automat (Art. 50 EU AI Act).",
@@ -120,6 +141,27 @@ const LIBRARY: Record<TransparencyNoticeType, TransparencyTemplate[]> = {
       text:
         "🤖 Powered by AI ([SYSTEM_NAME]) — Art. 50 EU AI Act. Human support: [CONTACT_EMAIL].",
       shortText: "AI-assisted (Art. 50)",
+    },
+    {
+      language: "en",
+      placement: "advertisement",
+      text:
+        "🤖 An AI assistant ([SYSTEM_NAME]) answers live after the click. Type “human” for a real operator. Disclosure under Art. 50(1) EU AI Act.",
+      shortText: "AI chatbot after click — Art. 50(1)",
+    },
+    {
+      language: "en",
+      placement: "social-post",
+      text:
+        "ℹ️ This account uses an AI assistant ([SYSTEM_NAME]) for DMs and quick replies. Human contact: [CONTACT_EMAIL]. Art. 50(1) EU AI Act disclosure.",
+      shortText: "AI replies to DMs (Art. 50(1))",
+    },
+    {
+      language: "en",
+      placement: "broadcast",
+      text:
+        "This email/notification may start a conversation with an AI assistant ([SYSTEM_NAME]). Replies you receive are generated automatically. Human operator: [CONTACT_EMAIL]. Per Art. 50(1) EU AI Act.",
+      shortText: "Conversation continues with an AI (Art. 50(1))",
     },
   ],
 
@@ -155,6 +197,48 @@ const LIBRARY: Record<TransparencyNoticeType, TransparencyTemplate[]> = {
       placement: "inline",
       text: "🪄 AI-generated ([MODEL_NAME], [DATE])",
       shortText: "AI-generated",
+    },
+    {
+      language: "ro",
+      placement: "advertisement",
+      text:
+        "🪄 Vizuale/copy generate cu AI ([MODEL_NAME]) — etichetare conform Art. 50(2) EU AI Act. Conținutul a fost revizuit de un editor uman înainte de publicare.",
+      shortText: "Reclamă cu vizuale AI · Art. 50(2)",
+    },
+    {
+      language: "ro",
+      placement: "social-post",
+      text:
+        "🪄 Conținut generat cu AI ([MODEL_NAME], [DATE]). Etichetare obligatorie conform Art. 50(2) EU AI Act.",
+      shortText: "Post AI-generat · Art. 50(2)",
+    },
+    {
+      language: "ro",
+      placement: "broadcast",
+      text:
+        "Notă: acest mesaj conține pasaje text sau vizuale generate cu AI ([MODEL_NAME]) și a fost finalizat la [DATE]. Etichetare conform Art. 50(2) EU AI Act.",
+      shortText: "Newsletter cu conținut AI · Art. 50(2)",
+    },
+    {
+      language: "en",
+      placement: "advertisement",
+      text:
+        "🪄 Visuals/copy generated with AI ([MODEL_NAME]) — labelled under Art. 50(2) EU AI Act. Reviewed by a human editor before publication.",
+      shortText: "Ad with AI visuals · Art. 50(2)",
+    },
+    {
+      language: "en",
+      placement: "social-post",
+      text:
+        "🪄 AI-generated content ([MODEL_NAME], [DATE]). Mandatory labelling per Art. 50(2) EU AI Act.",
+      shortText: "AI-generated post · Art. 50(2)",
+    },
+    {
+      language: "en",
+      placement: "broadcast",
+      text:
+        "Note: this message contains text or visuals generated with AI ([MODEL_NAME]); finalized on [DATE]. Labelled under Art. 50(2) EU AI Act.",
+      shortText: "Newsletter with AI content · Art. 50(2)",
     },
   ],
 
@@ -192,6 +276,48 @@ const LIBRARY: Record<TransparencyNoticeType, TransparencyTemplate[]> = {
       text:
         "This material is a deepfake — artificially generated or manipulated. Disclosure pursuant to Art. 50(4) EU AI Act.",
       shortText: "Deepfake — Art. 50(4)",
+    },
+    {
+      language: "ro",
+      placement: "advertisement",
+      text:
+        "⚠️ Reclamă cu deepfake: figurile/vocile prezentate sunt generate sau modificate artificial cu [SYSTEM_NAME]. Conform Art. 50(4)(a) EU AI Act, materialul nu reprezintă o filmare reală.",
+      shortText: "⚠️ Reclamă cu deepfake — Art. 50(4)(a)",
+    },
+    {
+      language: "ro",
+      placement: "social-post",
+      text:
+        "⚠️ Acest material conține un deepfake — imagine/audio modificat artificial cu [SYSTEM_NAME]. Disclosure conform Art. 50(4)(a) EU AI Act.",
+      shortText: "⚠️ Deepfake — Art. 50(4)(a)",
+    },
+    {
+      language: "ro",
+      placement: "broadcast",
+      text:
+        "Atenție: acest email/notificare conține un deepfake — imagine/audio modificat artificial cu [SYSTEM_NAME]. Materialul nu reprezintă o filmare reală. Disclosure conform Art. 50(4)(a) EU AI Act.",
+      shortText: "Newsletter cu deepfake — Art. 50(4)(a)",
+    },
+    {
+      language: "en",
+      placement: "advertisement",
+      text:
+        "⚠️ Deepfake ad: the faces/voices presented are artificially generated or manipulated with [SYSTEM_NAME]. Per Art. 50(4)(a) EU AI Act, this is not real footage.",
+      shortText: "⚠️ Deepfake ad — Art. 50(4)(a)",
+    },
+    {
+      language: "en",
+      placement: "social-post",
+      text:
+        "⚠️ This material is a deepfake — image/audio artificially manipulated with [SYSTEM_NAME]. Disclosure under Art. 50(4)(a) EU AI Act.",
+      shortText: "⚠️ Deepfake — Art. 50(4)(a)",
+    },
+    {
+      language: "en",
+      placement: "broadcast",
+      text:
+        "Notice: this email/notification contains a deepfake — image/audio artificially manipulated with [SYSTEM_NAME]. This is not real footage. Disclosure under Art. 50(4)(a) EU AI Act.",
+      shortText: "Newsletter with deepfake — Art. 50(4)(a)",
     },
   ],
 
