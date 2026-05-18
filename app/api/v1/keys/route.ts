@@ -25,33 +25,59 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
 }
 
-function requireSessionAuth(auth: Awaited<ReturnType<typeof resolveApiAuth>>) {
-  if (!auth.ok) {
-    return NextResponse.json(
-      { error: auth.message, code: auth.code, apiVersion: V1_API_VERSION },
-      { status: auth.status, headers: CORS_HEADERS },
-    )
-  }
-  if (auth.ctx.source !== "session") {
-    return NextResponse.json(
-      {
-        error:
-          "Managementul cheilor API necesită sesiune logată (cookie). Loghează-te în /dashboard/api-sdk.",
-        code: "SESSION_REQUIRED",
-        apiVersion: V1_API_VERSION,
-      },
-      { status: 401, headers: CORS_HEADERS },
-    )
-  }
-  return null
+type SessionCtx = {
+  orgId: string
+  userId: string
+  email: string
+  orgName: string
 }
 
-export async function GET(request: Request) {
+type SessionAuthResult =
+  | { ok: true; ctx: SessionCtx }
+  | { ok: false; response: NextResponse }
+
+function requireSessionAuth(
+  auth: Awaited<ReturnType<typeof resolveApiAuth>>,
+): SessionAuthResult {
+  if (!auth.ok) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: auth.message, code: auth.code, apiVersion: V1_API_VERSION },
+        { status: auth.status, headers: CORS_HEADERS },
+      ),
+    }
+  }
+  if (auth.ctx.source !== "session") {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          error:
+            "Managementul cheilor API necesită sesiune logată (cookie). Loghează-te în /dashboard/api-sdk.",
+          code: "SESSION_REQUIRED",
+          apiVersion: V1_API_VERSION,
+        },
+        { status: 401, headers: CORS_HEADERS },
+      ),
+    }
+  }
+  return {
+    ok: true,
+    ctx: {
+      orgId: auth.ctx.orgId,
+      userId: auth.ctx.userId,
+      email: auth.ctx.email,
+      orgName: auth.ctx.orgName,
+    },
+  }
+}
+
+export async function GET(request: Request): Promise<NextResponse> {
   const auth = await resolveApiAuth(request)
-  const fail = requireSessionAuth(auth)
-  if (fail) return fail
-  if (!auth.ok) return fail // narrow for TS
-  const ctx = auth.ctx
+  const session = requireSessionAuth(auth)
+  if (!session.ok) return session.response
+  const ctx = session.ctx
 
   const keys = await runWithOrgContext(synthCtx(ctx), () => listApiKeys(ctx.orgId))
   return NextResponse.json(
@@ -63,12 +89,11 @@ export async function GET(request: Request) {
   )
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   const auth = await resolveApiAuth(request)
-  const fail = requireSessionAuth(auth)
-  if (fail) return fail
-  if (!auth.ok) return fail
-  const ctx = auth.ctx
+  const session = requireSessionAuth(auth)
+  if (!session.ok) return session.response
+  const ctx = session.ctx
 
   let body: unknown
   try {
