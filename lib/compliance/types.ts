@@ -1613,6 +1613,25 @@ export type ComplianceState = {
    */
   apiKeys?: ApiKey[]
   apiCallLogs?: ApiCallLog[]
+
+  /**
+   * Sprint 024 — AI Ads / LLM Commerce Compliance Pack.
+   *
+   * Legal/evidence workflow for AI-mediated advertising, GEO/LLM visibility,
+   * LLM commerce recommendations and brand-claim substantiation. NOT a GEO tool
+   * și NICI un nou framework — extinde modulele existente (Vendors / Content
+   * Register Sprint 023.7 / Findings) cu cross-module references.
+   *
+   * Legal references:
+   *  - Directive 2005/29/EC (unfair commercial practices) + RO Law 363/2007
+   *  - GDPR Art. 5(1)(a) lawfulness + Art. 13/14 information + Art. 44-49 transfers
+   *  - Art. 5 EU AI Act (prohibited practices — vulnerable categories targeting)
+   *  - Art. 50(4) EU AI Act (AI-generated creative disclosure)
+   */
+  aiAdsCampaigns?: AIAdsCampaign[]
+  aiAdsClaims?: AIAdsClaim[]
+  aiAdsCreativeApprovals?: AIAdsCreativeApproval[]
+  conversionTrackingReviews?: ConversionTrackingReview[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -3532,3 +3551,219 @@ export type QmsWorkspace = {
   createdAtISO: string
   updatedAtISO: string
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 024 — AI Ads / LLM Commerce Compliance Pack
+//
+//   Legal/evidence workflow for AI-mediated advertising + brand-claim
+//   substantiation. NOT a GEO tool. NOT a protocol clone (CatyAI/Ahauros/NAP).
+//   Cross-module integration: links to existing VendorRecord (Sprint 010) +
+//   AIContentLabeledAsset (Sprint 023.7) — no duplicate registers.
+//
+//   Positioning (per mandate § 18.1):
+//     "AI Ads Compliance Pack: ce afirmă AI-ul despre brand, pe ce sursă, cine
+//      a aprobat, ce date au fost folosite și ce risc legal există."
+//
+//   Legal anchors:
+//     - Directive 2005/29/EC unfair commercial practices + RO Law 363/2007
+//     - GDPR Art. 5(1)(a)/13/14 + Art. 44-49 transfers
+//     - Art. 5 + Art. 50(4) EU AI Act
+//     - ePrivacy Directive 2002/58/EC (cookies + pixels)
+// ────────────────────────────────────────────────────────────────────────────
+
+export type AIAdsCampaignPlatform =
+  | "chatgpt_ads"                    // OpenAI AI Ads Manager (when public)
+  | "meta_ai_ads"                    // Meta AI placements
+  | "google_ai_ads"                  // Google AI-powered campaigns
+  | "perplexity_sponsored"           // Perplexity AI sponsored answers
+  | "anthropic_claude"               // future Anthropic ad surface
+  | "llm_recommendation_native"      // brand mentioned natively in LLM responses (organic LLM commerce)
+  | "ai_generated_creative_meta"     // Meta with AI-generated creative
+  | "ai_generated_creative_google"   // Google with AI-generated creative
+  | "ai_generated_creative_linkedin" // LinkedIn AI creative
+  | "other"
+
+export type AIAdsCampaignStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "active"
+  | "paused"
+  | "completed"
+  | "rejected"
+
+export type AIAdsCampaignType =
+  | "paid_placement"                 // sponsored placement in AI interface
+  | "llm_recommendation"             // organic LLM mentions (GEO/visibility)
+  | "ai_generated_creative"          // creative made with AI for traditional ads
+  | "ai_landing_page"                // AI-generated landing/copy
+  | "hybrid"
+
+export type AIClaimType =
+  | "performance_metric"             // ex: "10x mai rapid"
+  | "price_promise"                  // ex: "cel mai ieftin din piață"
+  | "guarantee"                      // ex: "garanție 5 ani"
+  | "certification"                  // ex: "ISO 27001 certified"
+  | "comparative"                    // ex: "mai bun decât competitor X"
+  | "endorsement"                    // ex: "recomandat de experți"
+  | "compliance_claim"               // ex: "GDPR compliant"
+  | "outcome_claim"                  // ex: "crește vânzările cu 30%"
+  | "other"
+
+export type AIClaimEvidenceStatus =
+  | "unsubstantiated"                // no source linked yet
+  | "internal_data"                  // internal metrics / studies
+  | "third_party_audit"              // external audit / certification
+  | "public_record"                  // public regulatory record
+  | "vendor_attestation"             // vendor's own claim (e.g. "GDPR compliant")
+  | "needs_review"
+  | "verified"
+
+export type AIClaimMisleadingRisk = "low" | "medium" | "high" | "critical"
+
+export type ConversionTrackingMethod =
+  | "first_party_cookie"
+  | "third_party_cookie"
+  | "server_side_tagging"
+  | "pixel_meta"
+  | "pixel_google"
+  | "pixel_linkedin"
+  | "audience_matching_crm_upload"
+  | "fingerprinting"
+  | "none"
+
+export type AIAdsTransferMechanism =
+  | "scc"
+  | "adequacy"
+  | "bcr"
+  | "derogation"
+  | "none"
+
+/**
+ * Claim registry — fiecare afirmație despre brand trebuie să mapeze la o
+ * sursă verificabilă (Directive 2005/29/EC + RO Law 363/2007). Evaluator
+ * heuristic stabilește `misleadingRisk` la creare/update.
+ */
+export type AIAdsClaim = {
+  id: string
+  orgId: string
+  campaignId?: string                // optional link to campaign
+  claimType: AIClaimType
+  claimText: string                  // the actual claim
+  contextDescription: string         // where + how the claim appears
+  // Evidence source
+  evidenceStatus: AIClaimEvidenceStatus
+  evidenceSource?: string            // URL or note describing the source
+  evidenceDocumentId?: string        // optional link to AIContentLabeledAsset.id
+  // Risk
+  misleadingRisk: AIClaimMisleadingRisk
+  riskReasons: string[]
+  // Approval
+  approvedByEmail?: string
+  approvedAtISO?: string
+  approvalComment?: string
+  // Lifecycle
+  linkedFindingIds: string[]
+  notes?: string
+  createdByEmail: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+/**
+ * Creative approval log entry. Fiecare aprobare confirmă că cele 3 gate-uri
+ * (Art. 5 AI Act prohibitions / consumer law / IP rights) au fost verificate
+ * și că un om identificabil își asumă semnătura.
+ */
+export type AIAdsCreativeApproval = {
+  id: string
+  campaignId: string
+  creativeAssetId?: string           // link to AIContentLabeledAsset.id (Sprint 023.7)
+  creativeDescription: string
+  approvedByEmail: string
+  approvedAtISO: string
+  comment?: string
+  // Prohibited content check
+  prohibitedContentChecked: boolean
+  prohibitedContentNotes?: string
+  // Compliance gates applied
+  art5Check: boolean                 // Art. 5 AI Act prohibitions
+  consumerLawCheck: boolean          // Law 363/2007 unfair commercial practices
+  ipRightsCheck: boolean             // IP / copyright clearance
+}
+
+/**
+ * GDPR review for conversion tracking infrastructure used by an AI Ads
+ * campaign — pixels, cookies, audience matching, third-country transfers.
+ * Evaluator auto-populează `gaps[]` la create/update.
+ */
+export type ConversionTrackingReview = {
+  id: string
+  orgId: string
+  campaignId?: string                // optional link
+  methods: ConversionTrackingMethod[]
+  // Consent + cookie
+  consentRequired: boolean
+  consentRecordedHow: string         // ex: "CMP banner Cookiebot, granular per category"
+  cookieList: string[]               // cookies set
+  pixelList: string[]                // pixels deployed
+  // CRM / audience
+  crmUploadUsed: boolean
+  crmDataCategoriesUploaded: string[] // ex: ["email hashed", "phone"]
+  audienceMatchingPlatform?: string
+  // Transfers (GDPR Art. 44-49)
+  thirdCountryTransfer: boolean
+  transferMechanism?: AIAdsTransferMechanism
+  // Review status
+  reviewedByEmail?: string
+  reviewedAtISO?: string
+  reviewNotes?: string
+  // GDPR gaps
+  gaps: string[]                     // auto-computed
+  linkedFindingIds: string[]
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+/**
+ * AI Ads campaign — top-level record. Cross-module links (no duplicate
+ * registers): linkedVendorId → VendorRecord (Sprint 010), linkedAssetIds[] →
+ * AIContentLabeledAsset (Sprint 023.7), linkedClaimIds[] → AIAdsClaim,
+ * approvalIds[] → AIAdsCreativeApproval, conversionTrackingReviewId →
+ * ConversionTrackingReview.
+ */
+export type AIAdsCampaign = {
+  id: string
+  orgId: string
+  // Identification
+  title: string
+  brandName: string                  // brand being advertised
+  platform: AIAdsCampaignPlatform
+  campaignType: AIAdsCampaignType
+  // Cross-module links (NO duplicate registers)
+  linkedVendorId?: string            // link to VendorRecord (Sprint 010)
+  linkedAssetIds: string[]           // link to AIContentLabeledAsset[] (Sprint 023.7)
+  linkedClaimIds: string[]           // link to AIAdsClaim[]
+  // Lifecycle
+  status: AIAdsCampaignStatus
+  startDateISO?: string
+  endDateISO?: string
+  budgetEUR?: number
+  targetAudienceDescription?: string
+  targetsVulnerableCategories: boolean // minors, sensitive profiles
+  // Platform terms review
+  platformTermsReviewed: boolean
+  platformTermsReviewedByEmail?: string
+  platformTermsReviewedAtISO?: string
+  // Tracking review
+  conversionTrackingReviewId?: string // link to ConversionTrackingReview
+  // Approvals
+  approvalIds: string[]              // link to AIAdsCreativeApproval[]
+  // Findings
+  linkedFindingIds: string[]
+  notes?: string
+  createdByEmail: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
