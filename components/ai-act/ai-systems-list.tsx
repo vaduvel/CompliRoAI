@@ -69,6 +69,13 @@ interface AISystemsListProps {
    * trigger the banner.
    */
   systemsRequiringPmmIds?: Set<string>
+  /**
+   * Sprint 020 — set of system IDs that have at least one OPEN AI Incident
+   * (Art. 73 — status NOT in {closed, not_reportable}). Renders subtle red
+   * badge inline on row (NOT an aggressive banner — incidents are reactive,
+   * not preventive obligations like FRIA/Oversight/Logging/PMM).
+   */
+  systemsWithOpenIncidentIds?: Set<string>
 }
 
 export function AISystemsList({
@@ -79,6 +86,7 @@ export function AISystemsList({
   systemsRequiringOversightIds,
   systemsRequiringLoggingIds,
   systemsRequiringPmmIds,
+  systemsWithOpenIncidentIds,
 }: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -204,6 +212,8 @@ export function AISystemsList({
         const needsOversight = systemsRequiringOversightIds?.has(system.id) === true
         const needsLogging = systemsRequiringLoggingIds?.has(system.id) === true
         const needsPmm = systemsRequiringPmmIds?.has(system.id) === true
+        const hasOpenIncident =
+          systemsWithOpenIncidentIds?.has(system.id) === true
         const hasBanner = needsFria || needsOversight || needsLogging || needsPmm
 
         return (
@@ -398,6 +408,31 @@ export function AISystemsList({
                 >
                   {riskLabel}
                 </span>
+
+                {/* Sprint 020 — subtle indicator for OPEN AI Incident Art. 73 */}
+                {hasOpenIncident && (
+                  <Link
+                    href={`/dashboard/ai-incidents?systemId=${encodeURIComponent(system.id)}`}
+                    title="Incident AI Art. 73 deschis pe acest sistem — deschide registrul"
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      padding: "2px 7px",
+                      borderRadius: "20px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      flexShrink: 0,
+                      background: "rgba(220,38,38,0.18)",
+                      color: "#dc2626",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    Incident AI
+                  </Link>
+                )}
               </div>
 
               <div

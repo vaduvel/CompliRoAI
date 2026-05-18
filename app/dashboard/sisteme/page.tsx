@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import type {
+  AIIncident,
   AISystemRecord,
   FriaRecord,
   HumanOversightProtocol,
@@ -18,16 +19,18 @@ export default function SistemePage() {
   const [oversightRecords, setOversightRecords] = useState<HumanOversightProtocol[]>([])
   const [loggingRecords, setLoggingRecords] = useState<LoggingConfig[]>([])
   const [pmmRecords, setPmmRecords] = useState<PmmPlan[]>([])
+  const [incidents, setIncidents] = useState<AIIncident[]>([])
   const [loading, setLoading] = useState(true)
   const [workspaceMode, setWorkspaceMode] = useState<"imm-classic" | "ai-builder" | "cabinet">("imm-classic")
 
   const load = useCallback(async () => {
-    const [systemsRes, friaRes, ovRes, lgRes, pmmRes] = await Promise.all([
+    const [systemsRes, friaRes, ovRes, lgRes, pmmRes, incRes] = await Promise.all([
       fetch("/api/ai-systems"),
       fetch("/api/fria"),
       fetch("/api/oversight"),
       fetch("/api/logging-evidence"),
       fetch("/api/pmm"),
+      fetch("/api/ai-incidents"),
     ])
     if (systemsRes.ok) {
       const data = await systemsRes.json()
@@ -48,6 +51,10 @@ export default function SistemePage() {
     if (pmmRes.ok) {
       const data = await pmmRes.json()
       setPmmRecords((data.records ?? []) as PmmPlan[])
+    }
+    if (incRes.ok) {
+      const data = await incRes.json()
+      setIncidents((data.records ?? []) as AIIncident[])
     }
     setLoading(false)
   }, [])
@@ -129,6 +136,17 @@ export default function SistemePage() {
     return needs
   }, [systems, pmmRecords])
 
+  // Sprint 020 — sisteme cu cel puțin un incident AI Art. 73 OPEN
+  // (status NOT closed / not_reportable). Subtle red badge inline pe row.
+  const systemsWithOpenIncidentIds = useMemo(() => {
+    const open = new Set<string>()
+    for (const inc of incidents) {
+      if (inc.status === "closed" || inc.status === "not_reportable") continue
+      open.add(inc.linkedAISystemId)
+    }
+    return open
+  }, [incidents])
+
   return (
     <div style={{ padding: "32px", maxWidth: "900px", display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Header */}
@@ -191,6 +209,7 @@ export default function SistemePage() {
             systemsRequiringOversightIds={systemsRequiringOversightIds}
             systemsRequiringLoggingIds={systemsRequiringLoggingIds}
             systemsRequiringPmmIds={systemsRequiringPmmIds}
+            systemsWithOpenIncidentIds={systemsWithOpenIncidentIds}
           />
         )}
       </div>
