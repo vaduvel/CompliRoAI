@@ -1462,6 +1462,15 @@ export type ComplianceState = {
   renewalReminders?: RenewalReminderRecord[]
   legislativeChangeAcknowledgments?: LegislativeChangeAcknowledgment[]
   preventiveEmailPreferences?: PreventiveEmailPreferences
+  /**
+   * Sprint 22 fix — Baseline ISO pentru rule 14 (legislative changes). Setat
+   * automat la prima rulare preventive-engine (first scan). Modificările
+   * legislative publicate ÎNAINTE de baseline sunt considerate parte din
+   * baseline-ul de conformitate al organizației (nu fire reminder pentru ele).
+   * Doar modificările publicate DUPĂ baseline fire — feature funcționează
+   * forward-looking, nu retroactively.
+   */
+  legislativeBaselineISO?: string
 }
 
 // ────────────────────────────────────────────────────────────────────────────

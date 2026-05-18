@@ -31,6 +31,7 @@ export type TemplateName =
   | "payment-failed"
   | "subscription-changed"
   | "trial-ending"
+  | "renewal-reminder"
 
 export type EmailTemplateDef = {
   /** Subject line (cu {{var}} placeholders). */
@@ -326,6 +327,33 @@ Preț nou: {{newPriceEUR}}€/lună
 Începe: {{effectiveDate}}
 
 Gestionează abonament: {{billingPortalUrl}}
+
+{{footer}}`,
+  },
+
+  "renewal-reminder": {
+    subject: "Reminder: {{entityLabel}} — {{daysLeft}} zile până la deadline",
+    requiredVars: ["entityLabel", "entityUrl", "deadlineDate", "daysLeft", "recommendedAction", "triggerType"],
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+<div style="background:#3b5bdb;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
+<h1 style="margin:0;font-size:18px">Reminder conformitate — {{entityLabel}}</h1>
+</div>
+<div style="border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 8px 8px">
+<p>Engine-ul preventiv {{brandName}} a detectat o acțiune cu deadline apropiat.</p>
+<p>Trigger: <strong>{{triggerType}}</strong></p>
+<p>Termen: <strong>{{deadlineDate}}</strong> ({{daysLeft}} zile rămase)</p>
+<p>Acțiune recomandată: {{recommendedAction}}</p>
+<p style="margin:24px 0"><a href="{{entityUrl}}" style="display:inline-block;padding:11px 20px;background:#3b5bdb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Deschide modulul</a></p>
+<hr style="margin:22px 0;border:none;border-top:1px solid #e2e8f0">
+<p style="color:#94a3b8;font-size:11px">{{footer}}</p>
+</div></body></html>`,
+    text: `Reminder conformitate — {{entityLabel}}
+
+Trigger: {{triggerType}}
+Termen: {{deadlineDate}} ({{daysLeft}} zile rămase)
+Acțiune recomandată: {{recommendedAction}}
+
+Deschide: {{entityUrl}}
 
 {{footer}}`,
   },

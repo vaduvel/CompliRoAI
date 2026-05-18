@@ -24,7 +24,7 @@ The product is sold to three role/workflow groups:
 - `ai-builder`: companies building AI automations, AI agents, SaaS AI, chatbots, or AI workflows for clients.
 - `cabinet`: DPOs, privacy consultants, AI compliance consultants, lawyers, and agencies managing multiple clients.
 
-Verticals such as chatbot, copilot, HR, credit, medical, e-commerce, and agentic automation are not separate products. They are use-case categories inside one general compliance OS.
+Verticals such as chatbot, copilot, HR, credit, medical, e-commerce, AI Ads / LLM commerce, and agentic automation are not separate products. They are use-case categories inside one general compliance OS.
 
 ---
 
@@ -473,8 +473,9 @@ The order is strict:
 16. Sprint 021 — QMS Workspace.
 17. Sprint 022 — Preventive engine + renewal/change log.
 18. Sprint 023 — API/SDK for AI builders.
+19. Sprint 024 — AI Ads / LLM Commerce compliance pack.
 
-Do not jump to AI depth before DPO foundation workflows are stable.
+Do not jump to AI depth or AI Ads/LLM commerce before DPO foundation workflows are stable.
 
 ### 6.2 What "port" means
 
@@ -1002,6 +1003,9 @@ Required:
 - contestation;
 - stop/fallback procedure;
 - evidence checklist.
+- decision governance matrix for systems that block, escalate, recommend, or auto-execute actions;
+- threshold register for block / human review / auto-execute gates;
+- override policy and reviewer responsibility.
 
 ### Sprint 018 — Logging Evidence
 
@@ -1012,6 +1016,10 @@ Required:
 - retention;
 - export;
 - finding if missing logs.
+- decision log for AI agents and decision engines;
+- rationale / reason code evidence;
+- model, prompt, workflow, and policy version captured at decision time;
+- override history linked to actor and event ledger.
 
 ### Sprint 019 — Post-Market Monitoring
 
@@ -1022,6 +1030,9 @@ Required:
 - version changes;
 - incidents;
 - periodic reminders.
+- outcome monitoring for automated or semi-automated decisions;
+- false positive / false negative review;
+- drift review when threshold, model, prompt, or workflow changes.
 
 ### Sprint 020 — AI Incident Reporting
 
@@ -1045,6 +1056,20 @@ Required:
 - testing/validation;
 - change management;
 - PMM linkage.
+- decision governance policy;
+- threshold approval workflow;
+- change control for internal scoring/gating formulas.
+
+### AI Decision Governance Pack note
+
+This pack is inspired by the market signal around runtime decision engines such as Ahauros/AEOS, but CompliRoAI must not copy private scoring formulas and must not claim that an internal score is itself EU AI Act compliance. The CompliRoAI value is auditability:
+
+- what decision was recommended or executed;
+- why it happened;
+- which threshold or policy applied;
+- who approved or overrode it;
+- which model/prompt/workflow version was active;
+- what downstream outcome was observed.
 
 ---
 
@@ -1070,6 +1095,43 @@ Required:
 - compliance gate response;
 - SDK docs in Romanian and English;
 - example CI flow.
+
+---
+
+## 18.1 Sprint 024 — AI Ads / LLM Commerce Compliance Pack
+
+### Goal
+
+Add AI Ads / LLM commerce as a use-case pack after the foundation and AI depth are stable. This is not a separate product and not a clone of CatyAI/Ahauros/NAP. It is CompliRoAI's legal/evidence workflow for AI-mediated advertising, GEO, LLM recommendations, and claim substantiation.
+
+### Why it exists
+
+Market signal: AI ads, ChatGPT Ads-style workflows, GEO/LLM visibility, and brand claim verification are emerging as a practical buyer pain for agencies, e-commerce, and AI builders. These workflows still need GDPR review, vendor review, claim evidence, audit trail, and human approval.
+
+### Required behavior
+
+- AI Ads campaign inventory.
+- LLM commerce / recommendation registry.
+- Claim evidence registry: every claim maps to a source.
+- Creative approval log.
+- Platform/vendor terms review.
+- GDPR conversion tracking review.
+- Consent/cookie/pixel/audience matching checklist.
+- Findings for missing claim evidence, missing approval, missing tracking review, missing vendor review, misleading claim risk.
+- Audit Pack section for AI Ads/LLM commerce.
+
+### Forbidden
+
+- Do not claim any private protocol is legally mandatory.
+- Do not implement NAP/Ahauros protocol unless explicitly requested later.
+- Do not reposition CompliRoAI as GEO tool.
+- Do not move this before Sprint 008B-023.
+
+### Product positioning
+
+```text
+AI Ads Compliance Pack: ce afirma AI-ul despre brand, pe ce sursa, cine a aprobat, ce date au fost folosite si ce risc legal exista.
+```
 
 ---
 
@@ -1323,4 +1385,3 @@ The target is not "some features ported".
 The target is:
 
 > **CompliRoAI: role-aware AI Compliance OS, with DPO-OS maturity, EU AI Act obligations, GDPR evidence, and zero unrelated framework pollution.**
-

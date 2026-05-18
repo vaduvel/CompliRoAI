@@ -316,6 +316,16 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     section: "exports",
     workspaceModes: ["cabinet"],
   },
+  {
+    // Sprint 022 — Preventive engine surface (runs + reminders + legislative
+    // changes + email preferences). Visible pentru all workspace modes
+    // (toate orgs au beneficiu din scanare preventivă).
+    href: "/dashboard/preventive",
+    label: "Engine preventiv",
+    iconName: "Radar",
+    section: "exports",
+    workspaceModes: ["imm-classic", "ai-builder", "cabinet"],
+  },
 
   // ── CABINET COLLABORATION ───────────────────────────────────────────────────
   {

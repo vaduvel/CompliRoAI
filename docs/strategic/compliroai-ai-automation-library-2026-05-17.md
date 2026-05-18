@@ -225,6 +225,8 @@ Aceste cazuri sunt de regula low/minimal, dar pot declansa GDPR/vendor obligatio
 | Churn prediction | prezice clienti care pleaca | Profiling/GDPR | data map, fairness check, human review |
 | Dynamic pricing | ajusteaza preturi | GDPR/consumer risk | profiling check, transparency, fairness review |
 | Ad targeting AI | segmenteaza audiente | GDPR high | consent/LI balancing, vendor DPA, transfer review |
+| ChatGPT Ads / AI Ads Manager / LLM ad placement | reclame generate, licitate sau recomandate in interfete AI | GDPR/consumer/ad compliance | claim evidence pack, creative audit log, consent/conversion tracking review, vendor/platform terms review |
+| GEO / LLM visibility optimization | brandul este optimizat pentru raspunsuri in LLM-uri | Minimal/consumer trust | source-of-truth registry, claim substantiation, audit trail pentru afirmatii, no misleading claims review |
 | Social listening AI | analizeaza comentarii | GDPR medium | public data basis, minimization, retention |
 
 **Intrebari intake:**
@@ -234,6 +236,9 @@ Aceste cazuri sunt de regula low/minimal, dar pot declansa GDPR/vendor obligatio
 - Exista decizii automate fara om?
 - Exista categorii sensibile inferate?
 - Datele vin din Meta/Google/CRM/website?
+- AI-ul face sau influenteaza reclame in ChatGPT/LLM-uri?
+- Puteti dovedi sursa fiecarei afirmatii despre produs/brand?
+- Exista tracking de conversie, cookie-uri, pixel sau audience matching?
 
 **Findings generate:**
 
@@ -242,6 +247,9 @@ Aceste cazuri sunt de regula low/minimal, dar pot declansa GDPR/vendor obligatio
 - "DPIA recomandata pentru scoring/personalization";
 - "Vendor ad-tech transfer review necesar";
 - "Consent mechanism neconectat la AI use".
+- "AI Ads claim evidence lipsa";
+- "Audit log creativ/campanie AI lipsa";
+- "Platform terms review lipsa pentru ChatGPT Ads/LLM commerce".
 
 ---
 
@@ -388,6 +396,55 @@ Aceste cazuri sunt de regula low/minimal, dar pot declansa GDPR/vendor obligatio
 
 ---
 
+### 3.8.1 AI Ads, LLM Commerce si Claim Evidence
+
+Acest use-case intra sub `sales_marketing` sau `ecommerce_retail`, nu devine produs separat. Semnal de piata: solutii precum CatyAI/Ahauros pozitioneaza protocoale de trust, GEO si claim verification pentru ChatGPT Ads / LLM visibility. CompliRoAI nu copiaza protocolul lor si nu promite ca un protocol devine "obligatoriu" legal. CompliRoAI trateaza zona ca pachet auditabil de compliance pentru reclame si afirmatii generate sau distribuite prin AI.
+
+| Automatizare | Exemple reale | Risc initial | Obligatii CompliRoAI |
+|---|---|---|---|
+| ChatGPT Ads / AI Ads Manager | campanii in interfete AI, recomandari sponsorizate | GDPR/consumer/ad compliance | registru campanii AI, vendor/platform review, creative approval, conversion tracking review |
+| LLM commerce recommendation | AI recomanda produsul in conversatie | Transparency/consumer trust | claim evidence, source registry, audit log al afirmatiilor |
+| GEO / LLM visibility | brand optimizat sa fie gasit de AI engines | Minimal/consumer trust | no misleading claims review, source-of-truth evidence, update log |
+| Claim verification / brand truth | fiecare afirmatie despre produs are sursa | Consumer/ad compliance | claim substantiation pack, reviewer approval, export pentru audit |
+| AI-generated landing/creative | texte si imagini de reclama generate cu AI | Transparency/IP/consumer risk | creative log, human approval, substantiation, prohibited content check |
+
+**Intrebari intake:**
+
+- Folositi sau planuiti campanii in ChatGPT Ads / AI Ads / LLM commerce?
+- AI-ul recomanda produse sau servicii utilizatorilor finali?
+- Ce afirmatii face AI-ul despre produs: pret, garantie, performanta, certificari, conformitate?
+- Exista sursa verificabila pentru fiecare afirmatie?
+- Cine aproba creative-ul generat de AI?
+- Aveti tracking de conversie, pixel, cookie-uri, audience matching sau CRM upload?
+- Datele de conversie ajung la un vendor extern?
+- Reclama poate targeta categorii vulnerabile, minori sau profiluri sensibile?
+
+**Findings generate:**
+
+- "Claim evidence lipsa pentru afirmatii AI Ads";
+- "Creative approval trail lipsa";
+- "Conversion tracking GDPR review lipsa";
+- "Vendor/platform terms review lipsa";
+- "Ad transparency evidence lipsa";
+- "GEO/LLM source registry lipsa";
+- "Potential misleading AI claim needs review".
+
+**Audit Pack trebuie sa includa:**
+
+- lista campaniilor AI/LLM;
+- claims registry;
+- sursa pentru fiecare afirmatie;
+- creative approval log;
+- platform/vendor review;
+- GDPR tracking review;
+- export cu schimbari de claims si creative.
+
+**Pozitionare comerciala:**
+
+> "Folosesti AI Ads sau vrei ca brandul tau sa fie recomandat corect de AI? CompliRoAI iti construieste dosarul de dovezi: ce ai afirmat, pe ce sursa, cine a aprobat, ce date ai folosit si ce risc legal exista."
+
+---
+
 ### 3.9 Legal, Accounting si Professional Services AI
 
 | Automatizare | Exemple reale | Risc initial | Obligatii CompliRoAI |
@@ -423,6 +480,7 @@ Aceste cazuri sunt de regula low/minimal, dar pot declansa GDPR/vendor obligatio
 | Workflow automation agent | trimite emailuri, update CRM, creeaza tickete | Medium/high contextual | action logs, human approval, fail-safe |
 | Autonomous sales agent | contacteaza leaduri | GDPR/profiling | lawful basis, transparency, opt-out |
 | AI agent cu API access | modifica date in sisteme | Security/high contextual | access control, logging, incident |
+| Decision governance engine | AI recomanda/blocheaza/aproba actiuni pe praguri interne | Medium/high contextual | decision log, approval gates, rationale, override history, outcome monitoring |
 | Model fine-tuned pentru client | model custom | Provider obligations | data governance, model docs, training data |
 | AI SaaS produs propriu | vandut pe piata | Provider | Annex IV, QMS, PMM, incident, EU DB if high-risk |
 | AI compliance pack embedded | vand automatizare + dovezi | Commercial differentiator | API/SDK CompliRoAI, audit pack per deployment |
@@ -434,12 +492,17 @@ Aceste cazuri sunt de regula low/minimal, dar pot declansa GDPR/vendor obligatio
 - Sistemul ia actiuni automat?
 - Aveti logs, changelog, rollback, human approval?
 - Aveti documentatie tehnica pentru client?
+- Sistemul foloseste praguri interne pentru blocare, human review sau executie automata?
+- Puteti arata de ce a fost luata o decizie si cine a suprascris-o?
 
 **Findings generate:**
 
 - "Provider/deployer split neclar";
 - "Technical documentation missing";
 - "Human approval gate missing for agent actions";
+- "Decision log lipsa pentru agent/engine";
+- "Override history lipsa";
+- "Outcome monitoring lipsa pentru decizii AI";
 - "Post-market monitoring missing";
 - "Incident reporting process missing";
 - "Client-facing AI compliance pack missing".
@@ -447,6 +510,53 @@ Aceste cazuri sunt de regula low/minimal, dar pot declansa GDPR/vendor obligatio
 **Mesaj comercial pentru acest rol:**
 
 > "Vinzi automatizari AI? Cu CompliRoAI le vinzi cu compliance pack inclus: clasificare AI Act, notice, vendor evidence, logs, human oversight si audit pack pentru client."
+
+---
+
+### 3.10.1 AI Decision Governance Pack
+
+Acest use-case este inspirat de piata de runtime/decision engines precum Ahauros/AEOS, dar CompliRoAI nu copiaza formule private de scoring si nu pretinde ca un scor intern este cerinta legala. Scopul nostru este sa dovedeasca auditabil cum un AI ia, recomanda, blocheaza sau escaladeaza decizii.
+
+| Control | Ce dovedeste | Modul CompliRoAI |
+|---|---|---|
+| Decision log | ce input/output a dus la recomandare sau actiune | Logging Evidence |
+| Human approval gates | cand intervine omul si ce poate opri | Human Oversight |
+| Rationale / reason codes | de ce s-a produs decizia | Technical docs + Audit Pack |
+| Override history | cine a schimbat decizia AI si de ce | Events + Audit log |
+| Threshold register | praguri interne pentru block/review/auto-execute | Risk management + QMS |
+| Outcome monitoring | efecte, erori, false positives, drift | Post-Market Monitoring |
+| Version/change log | model/prompt/workflow folosit la momentul deciziei | Logging + PMM |
+
+**Intrebari intake:**
+
+- AI-ul doar recomanda sau poate executa actiuni?
+- Exista praguri de tip block / human review / auto-execute?
+- Cine poate modifica pragurile?
+- Pragurile sunt documentate si aprobate?
+- Se pastreaza motivul deciziei?
+- Exista istoric de override uman?
+- Monitorizati rezultatele si erorile deciziilor?
+
+**Findings generate:**
+
+- "Decision governance nedocumentat";
+- "Human approval gate lipsa";
+- "Threshold register lipsa";
+- "Decision rationale lipsa";
+- "Override history lipsa";
+- "Outcome monitoring lipsa";
+- "Version/change log lipsa pentru decizii AI".
+
+**Audit Pack trebuie sa includa:**
+
+- policy de decizie;
+- registru praguri;
+- exemple de decizii si reason codes;
+- loguri;
+- aprobari;
+- override history;
+- monitoring plan;
+- lista versiunilor model/prompt/workflow.
 
 ---
 
@@ -525,9 +635,10 @@ De ce: acopera majoritatea leadurilor reale si toate riscurile comerciale majore
 
 1. Education/proctoring;
 2. E-commerce recommender/dynamic pricing;
-3. Legal/professional services AI;
-4. Cybersecurity/SOC AI;
-5. Public sector/critical infrastructure.
+3. AI Ads / LLM Commerce / Claim Evidence;
+4. Legal/professional services AI;
+5. Cybersecurity/SOC AI;
+6. Public sector/critical infrastructure.
 
 De ce: sunt importante, dar pot intra dupa foundation + classifier + AI Data Discovery.
 
@@ -558,6 +669,7 @@ type AIUseCaseCategory =
   | "medical_health"
   | "education"
   | "ecommerce_retail"
+  | "ai_ads_llm_commerce"
   | "legal_professional"
   | "ai_builder_agent"
   | "cybersecurity"
@@ -841,4 +953,3 @@ Biblioteca devine stratul de inteligenta practica dintre lege si produs:
 Directia corecta:
 
 > Full DPO-OS foundation + AI Act layer + biblioteca de automatizari AI = AI Compliance OS vandabil.
-

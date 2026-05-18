@@ -1295,7 +1295,12 @@ function CreateModal({
               <option value="EU_AI_ACT">{CATEGORY_LABELS.EU_AI_ACT}</option>
               <option value="GDPR">{CATEGORY_LABELS.GDPR}</option>
               <option value="NIS2">{CATEGORY_LABELS.NIS2}</option>
-              <option value="E_FACTURA">{CATEGORY_LABELS.E_FACTURA}</option>
+              {/* Sprint 22 cleanup — e-Factura nu apare în manual create
+                  pentru CompliRoAI (Rule 3 mandate § 19: NO fiscal/e-Factura
+                  surfaces). FindingCategory.E_FACTURA rămâne în type union
+                  pentru backward compat (state-uri legacy migrate din CompliAI)
+                  + filter chip auto-shown dacă există finding-uri legacy.
+                  Manual category select expune doar categoriile AI Compliance OS. */}
             </select>
           </Field>
           <Field label="Severitate">

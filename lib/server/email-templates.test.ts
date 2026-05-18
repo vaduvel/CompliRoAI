@@ -37,9 +37,9 @@ describe("interpolate", () => {
 })
 
 describe("listTemplates", () => {
-  it("returns all 10 expected templates", () => {
+  it("returns all 11 expected templates", () => {
     const names = listTemplates()
-    expect(names).toHaveLength(10)
+    expect(names).toHaveLength(11)
     expect(names).toEqual(
       expect.arrayContaining([
         "welcome",
@@ -52,6 +52,7 @@ describe("listTemplates", () => {
         "payment-failed",
         "subscription-changed",
         "trial-ending",
+        "renewal-reminder",
       ])
     )
   })
@@ -126,7 +127,7 @@ describe("renderTemplate", () => {
     expect(result.html).toContain("#dc2626")
   })
 
-  it("renders all 10 templates without crash (smoke)", () => {
+  it("renders all 11 templates without crash (smoke)", () => {
     const minimalVars: Record<TemplateName, Record<string, string>> = {
       welcome: { userName: "X", dashboardUrl: "https://x" },
       "breach-72h-alert": {
@@ -184,6 +185,14 @@ describe("renderTemplate", () => {
         daysLeft: "3",
         trialEndDate: "20 mai",
         checkoutUrl: "https://x",
+      },
+      "renewal-reminder": {
+        entityLabel: "FRIA HR",
+        entityUrl: "https://x",
+        deadlineDate: "1 iunie",
+        daysLeft: "15",
+        recommendedAction: "Revizuiește FRIA",
+        triggerType: "fria_review_overdue",
       },
     }
     for (const name of listTemplates()) {

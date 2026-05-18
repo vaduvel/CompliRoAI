@@ -453,7 +453,12 @@ function scanVendors(
             dueDateISO: v.dpaExpiresAtISO,
             daysUntilDue,
             shouldEmitFinding: urgency === "overdue",
-            shouldEmail: urgency === "due_soon" || urgency === "overdue",
+            // Sprint 22 fix — emit reminder also at "watch" (≤30 days). DPA
+            // renewal at 10 days needs early action; "watch" is the right gate.
+            shouldEmail:
+              urgency === "watch" ||
+              urgency === "due_soon" ||
+              urgency === "overdue",
             emailTemplate: "vendor-dpa-expiring",
           },
           nowISO,
@@ -772,9 +777,25 @@ function scanLegislativeChanges(
 ): void {
   const log = override ?? LEGISLATIVE_CHANGE_LOG
   const acks = state.legislativeChangeAcknowledgments ?? []
+  // Sprint 22 fix — baseline filter applies only to PRODUCTION log path
+  // (override undefined). Test injection (`override !== undefined`) bypasses
+  // baseline so test fixtures with old publishedAtISO still fire as designed.
+  // Production: baseline defaults to nowISO at first scan so historical
+  // legislation is treated as foundational, not as a backlog of overdue tasks.
+  // Runner sets state.legislativeBaselineISO = nowISO after first scan, so
+  // future scans only see changes published AFTER org adoption.
+  const applyBaseline = override === undefined
+  const baselineMs = applyBaseline
+    ? new Date(state.legislativeBaselineISO ?? nowISO).getTime()
+    : 0
   for (const change of log) {
     if (change.impact === "info_only" || change.impact === "low") continue
     if (isAcknowledged(acks, change.id)) continue
+    if (
+      applyBaseline &&
+      new Date(change.publishedAtISO).getTime() < baselineMs
+    )
+      continue
     const daysSincePublished = daysBetween(change.publishedAtISO, nowISO)
     if (daysSincePublished < 7) continue
     const urgency: PreventiveActionUrgency =
