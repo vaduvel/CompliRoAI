@@ -1428,6 +1428,18 @@ export type ComplianceState = {
    * când a fost escaladat dintr-o anomalie PMM critică.
    */
   aiIncidents?: AIIncident[]
+
+  /**
+   * Sprint 021 — QMS Workspace (Art. 17 AI Act umbrella module pentru
+   * providers of high-risk AI systems). Singular per org: o singură instanță
+   * cu 13 secțiuni Art. 17(1)(a)-(m), lessons learned aggregator (auto +
+   * manual) și per-system attestations. Cross-module references (DPIA + FRIA
+   * + PMM + Incidents + Logging) sunt auto-populate de evaluator. Art. 17(2)
+   * → implementare proporțională cu dimensiunea; Art. 17(3) → SME-urile pot
+   * folosi `simplifiedMode=true` care marchează secțiuni "advanced" drept
+   * opționale.
+   */
+  qmsWorkspace?: QmsWorkspace
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2681,6 +2693,208 @@ export type AIIncident = {
   assignedToEmail?: string
   closedAtISO?: string
   closureNotes?: string
+  notes?: string
+  /** Markdown live regenerat de evaluator pentru export. */
+  generatedMarkdown?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   QMS — Quality Management System (Art. 17 AI Act)
+//   Sprint 021 — umbrella module pentru providers of high-risk AI systems
+//
+//   Art. 17(1) cere providerului să stabilească un Sistem de Management al
+//   Calității în formă scrisă, cu cel puțin elementele (a)-(m):
+//     (a) strategie regulatory compliance + procedures conformity assessment +
+//         management of modifications
+//     (b) techniques + procedures + specifications design + design control +
+//         design verification
+//     (c) techniques + procedures + specifications development + quality
+//         control + quality assurance
+//     (d) examination, test, validation procedures (pre + post) + frecvență
+//     (e) specifications + standards aplicate
+//     (f) data management (collection, analysis, labeling, storage, filtration,
+//         mining, aggregation, retention) BEFORE + during placing on market
+//     (g) risk management system (Art. 9)
+//     (h) setting-up + implementation + maintenance of post-market monitoring
+//         (Art. 72)
+//     (i) procedures pentru reporting serious incidents (Art. 73)
+//     (j) handling communication cu autoritățile, notified bodies, customers,
+//         alți operatori, public
+//     (k) systems + procedures pentru record-keeping toate documentele
+//     (l) resource management incl. security-of-supply
+//     (m) accountability framework (responsabilități management + staff)
+//   Art. 17(2) — implementare proporțională cu dimensiunea providerului.
+//   Art. 17(3) — SME-urile pot folosi simplified QMS (documentație mai simplă).
+//   Art. 16(c) — providers păstrează documentație QMS conform Art. 18.
+//   Annex IV — QMS este inspectabil pentru conformity assessment.
+//
+//   Singular per org: o singură instanță QmsWorkspace per organizație.
+//   Per-system attestation = confirmare per sistem AI high-risk că QMS
+//   acoperă sistemul (Art. 17(1)(a) coverage).
+//
+//   Cross-module references auto-populate la evaluare:
+//     (f) → RoPA (Sprint 008C) + AI Data Map (Sprint 009)
+//     (g) → DPIA (Sprint 008C) + FRIA (Sprint 016) + findings (Sprint 008B)
+//     (h) → PMM plans (Sprint 019)
+//     (i) → AI Incidents (Sprint 020)
+//     (k) → Logging Evidence (Sprint 018) + Audit Pack (Sprint 011)
+// ────────────────────────────────────────────────────────────────────────────
+
+export type QmsSectionKey =
+  | "a_regulatory_compliance_strategy"
+  | "b_design_control_verification"
+  | "c_development_quality_assurance"
+  | "d_examination_test_validation"
+  | "e_technical_specifications_standards"
+  | "f_data_management_systems"
+  | "g_risk_management_system"
+  | "h_post_market_monitoring"
+  | "i_serious_incident_reporting"
+  | "j_communication_with_authorities"
+  | "k_record_keeping"
+  | "l_resource_management_security"
+  | "m_accountability_framework"
+
+export type QmsSectionStatus =
+  | "not_started"
+  | "in_progress"
+  | "documented"
+  | "approved"
+  | "needs_update"
+
+export type QmsDocumentReferenceType =
+  | "policy"
+  | "procedure"
+  | "standard"
+  | "specification"
+  | "template"
+  | "report"
+  | "audit_record"
+  | "other"
+
+export type QmsDocumentReference = {
+  id: string
+  type: QmsDocumentReferenceType
+  title: string
+  url?: string
+  fileName?: string
+  attachedAtISO: string
+  attachedByEmail: string
+  /** Ex: "v1.2 — 2026-05". Folosit pentru evidence layering în audit. */
+  versionLabel?: string
+  notes?: string
+}
+
+export type QmsSectionContent = {
+  key: QmsSectionKey
+  status: QmsSectionStatus
+  /** Descriere narativă a modului în care secțiunea este îndeplinită. */
+  description: string
+  /** Procedură step-by-step sau sumar de implementare. */
+  procedureSummary: string
+  /** Ex: "Head of AI Engineering", "DPO", "CISO". */
+  responsibleRole: string
+  responsibleEmail?: string
+  documentReferences: QmsDocumentReference[]
+  // ── Cross-module reference counts (populate de evaluator) ────────────────
+  /** Section (f) — RoPA. */
+  linkedRopaActivityCount?: number
+  /** Section (f) — AI Data Map records (Sprint 009). */
+  linkedAIDataMapCount?: number
+  /** Section (g) — DPIA records (Art. 9 risk management context). */
+  linkedDpiaCount?: number
+  /** Section (g) — FRIA records (Art. 9 + Art. 27). */
+  linkedFriaCount?: number
+  /** Section (g) — open findings care necesită mitigation. */
+  linkedFindingCount?: number
+  /** Section (h) — PMM plans (Art. 72). */
+  linkedPmmPlanCount?: number
+  /** Section (i) — AI Incidents (Art. 73). */
+  linkedAIIncidentCount?: number
+  /** Section (k) — Logging Evidence configs (Art. 12 + Art. 26(6)). */
+  linkedLoggingConfigCount?: number
+  reviewedAtISO?: string
+  approvedAtISO?: string
+  approvedByEmail?: string
+  notes?: string
+}
+
+export type QmsLessonSource =
+  | "ai_incident"
+  | "pmm_anomaly"
+  | "finding"
+  | "manual"
+
+export type QmsLessonLearned = {
+  id: string
+  source: QmsLessonSource
+  /** ID-ul entității sursă (incident id, anomaly id, finding id). */
+  sourceEntityId?: string
+  /** Titlu scurt sintetic (ex: "AI bias în HR screening — necesită calibrare quarterly"). */
+  title: string
+  rootCauseSummary: string
+  preventiveActionsTaken: string[]
+  resultingPolicyChange?: string
+  resultingProcessChange?: string
+  recordedAtISO: string
+  recordedByEmail: string
+  /** ID-uri sisteme AI cărora lecția li se aplică (din state.aiSystems). */
+  applicableToSystems: string[]
+  notes?: string
+}
+
+export type QmsSystemAttestation = {
+  /** ID-ul sistemului din state.aiSystems. */
+  systemId: string
+  attestedAtISO: string
+  attestedByEmail: string
+  /** Ex: "QMS v1.0 — 2026-05". */
+  qmsVersionLabel: string
+  /** Sectiunile QMS confirmate că acoperă sistemul. */
+  sectionsConfirmedCovered: QmsSectionKey[]
+  /** Gap-uri recunoscute (sectiuni neacoperite) — auditor-visible. */
+  gapsAcknowledged: string[]
+  notes?: string
+}
+
+export type QmsWorkspaceStatus = "draft" | "in_review" | "approved" | "obsolete"
+
+export type QmsCompleteness = "incomplete" | "partial" | "complete"
+
+export type QmsOrganizationSize = "sme" | "midsize" | "large"
+
+/**
+ * QMS Workspace — singular per org. Reflectă Art. 17(1)(a)-(m) ca 13 secțiuni
+ * documentate + lessons learned aggregator (din incidents + PMM anomalies) +
+ * per-system attestations.
+ */
+export type QmsWorkspace = {
+  id: string
+  orgId: string
+  // ── Profil organizație pentru Art. 17(2)/(3) ─────────────────────────────
+  organizationSize: QmsOrganizationSize
+  /** Art. 17(3) — SME-urile pot folosi documentație simplificată. */
+  simplifiedMode: boolean
+  // ── 13 secțiuni Art. 17(1)(a)-(m) ────────────────────────────────────────
+  sections: QmsSectionContent[]
+  // ── Lessons learned (auto + manual) ──────────────────────────────────────
+  lessonsLearned: QmsLessonLearned[]
+  // ── Per-system attestations ──────────────────────────────────────────────
+  systemAttestations: QmsSystemAttestation[]
+  // ── Workflow ─────────────────────────────────────────────────────────────
+  status: QmsWorkspaceStatus
+  completeness: QmsCompleteness
+  /** Ex: "v1.0 — 2026-05-18". Bumped manual la aprobare nouă. */
+  versionLabel: string
+  /** Typically CEO / Head of AI / Quality Manager. */
+  approvedByEmail?: string
+  approvedAtISO?: string
+  /** Typically approvedAtISO + 12 months. */
+  nextReviewISO?: string
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  linkedFindingIds: string[]
   notes?: string
   /** Markdown live regenerat de evaluator pentru export. */
   generatedMarkdown?: string
