@@ -40,6 +40,12 @@ describe("feature-gates — workspaceMode visibility", () => {
     expect(featureBelongsToWorkspace("ai-builder", "white_label")).toBe(false)
   })
 
+  it("Sprint 023 — api_sdk is ai-builder-only (imm-classic + cabinet do NOT see it)", () => {
+    expect(featureBelongsToWorkspace("ai-builder", "api_sdk")).toBe(true)
+    expect(featureBelongsToWorkspace("imm-classic", "api_sdk")).toBe(false)
+    expect(featureBelongsToWorkspace("cabinet", "api_sdk")).toBe(false)
+  })
+
   it("cabinet DOES see portfolio, magic links, approval queue, trust center, white-label", () => {
     expect(featureBelongsToWorkspace("cabinet", "multi_client_portfolio")).toBe(true)
     expect(featureBelongsToWorkspace("cabinet", "magic_links")).toBe(true)

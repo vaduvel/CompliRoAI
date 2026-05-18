@@ -767,8 +767,138 @@ function buildFileContents(input: {
   pushAIIncidentFiles(files, input.state, input.orgName)
   // ── Sprint 021: QMS Workspace Art. 17 (umbrella module) ────────────────
   pushQmsFiles(files, input.state, input.orgName)
+  // ── Sprint 023: API/SDK developer surface (api-sdk/) ──────────────────
+  pushApiSdkFiles(files, input.state, input.orgName, input.generatedAt)
 
   return files
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 023 — API/SDK section
+//
+//   Three markdown files surfacing the developer-facing API surface for the
+//   audit committee:
+//     api-keys-registry.md       — active keys (label + prefix only)
+//     recent-calls.md            — last 100 API calls
+//     compliance-gate-results.md — aggregated gate verdicts from logs
+// ────────────────────────────────────────────────────────────────────────────
+
+function pushApiSdkFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+  generatedAt: string,
+): void {
+  const keys = state.apiKeys ?? []
+  const logs = state.apiCallLogs ?? []
+
+  // api-keys-registry.md
+  const keyLines: string[] = [
+    `# Registru API keys — ${orgName}`,
+    ``,
+    `**Exportat:** ${generatedAt}`,
+    `**Total chei:** ${keys.length}`,
+    ``,
+    `Nicio cheie completă (full token) nu este stocată — doar SHA-256 hash + prefix de 8 caractere.`,
+    ``,
+  ]
+  if (keys.length === 0) {
+    keyLines.push(`_Nu există chei API generate._`)
+  } else {
+    keyLines.push(
+      `| Nume | Prefix | Scope-uri | Status | Creat | Folosit ultima dată |`,
+      `|---|---|---|---|---|---|`,
+    )
+    for (const k of keys) {
+      keyLines.push(
+        `| ${escapeMdCell(k.label)} | \`${k.prefix}…\` | ${k.scopes.join(", ")} | ${k.status} | ${k.createdAtISO} | ${k.lastUsedAtISO ?? "—"} |`,
+      )
+    }
+  }
+  files.push({
+    path: "api-sdk/api-keys-registry.md",
+    bytes: utf8(keyLines.join("\n") + "\n"),
+  })
+
+  // recent-calls.md
+  const recent = logs.slice(0, 100)
+  const callLines: string[] = [
+    `# API calls recente — ${orgName}`,
+    ``,
+    `**Exportat:** ${generatedAt}`,
+    `**Total în registru:** ${logs.length} (afișate ultimele ${recent.length})`,
+    ``,
+  ]
+  if (recent.length === 0) {
+    callLines.push(`_Nu există apeluri /api/v1/* înregistrate._`)
+  } else {
+    callLines.push(
+      `| Endpoint | Metodă | Status | Durată (ms) | Sumar | Când |`,
+      `|---|---|---|---|---|---|`,
+    )
+    for (const c of recent) {
+      callLines.push(
+        `| ${escapeMdCell(c.endpoint)} | ${c.method} | ${c.statusCode} | ${c.durationMs} | ${escapeMdCell(c.responseSummary)} | ${c.createdAtISO} |`,
+      )
+    }
+  }
+  files.push({
+    path: "api-sdk/recent-calls.md",
+    bytes: utf8(callLines.join("\n") + "\n"),
+  })
+
+  // compliance-gate-results.md — derive verdict aggregation from logs whose
+  // endpoint is /api/v1/gate or /api/v1/deployment and responseSummary contains
+  // "verdict=".
+  const gateLogs = logs.filter(
+    (c) =>
+      (c.endpoint === "/api/v1/gate" || c.endpoint === "/api/v1/deployment") &&
+      c.responseSummary.includes("verdict="),
+  )
+  const counts = { pass: 0, review_required: 0, blocked: 0, unknown: 0 }
+  const recentBlocked: typeof gateLogs = []
+  for (const c of gateLogs) {
+    const m = c.responseSummary.match(/verdict=(pass|review_required|blocked)/)
+    const v = m?.[1] as keyof typeof counts | undefined
+    if (v) counts[v]++
+    else counts.unknown++
+    if (v === "blocked") recentBlocked.push(c)
+  }
+  const gateLines: string[] = [
+    `# Compliance Gate — rezultate agregate — ${orgName}`,
+    ``,
+    `**Exportat:** ${generatedAt}`,
+    `**Total evaluări gate:** ${gateLogs.length}`,
+    ``,
+    `## Distribuție verdicte`,
+    ``,
+    `| Verdict | Număr |`,
+    `|---|---|`,
+    `| pass | ${counts.pass} |`,
+    `| review_required | ${counts.review_required} |`,
+    `| blocked | ${counts.blocked} |`,
+    `| necunoscut | ${counts.unknown} |`,
+    ``,
+    `## Ultimele 10 deploymenturi blocate`,
+    ``,
+  ]
+  if (recentBlocked.length === 0) {
+    gateLines.push(`_Nu există deploymenturi blocate în istoric._`)
+  } else {
+    gateLines.push(
+      `| Endpoint | Sumar | Când |`,
+      `|---|---|---|`,
+    )
+    for (const c of recentBlocked.slice(0, 10)) {
+      gateLines.push(
+        `| ${escapeMdCell(c.endpoint)} | ${escapeMdCell(c.responseSummary)} | ${c.createdAtISO} |`,
+      )
+    }
+  }
+  files.push({
+    path: "api-sdk/compliance-gate-results.md",
+    bytes: utf8(gateLines.join("\n") + "\n"),
+  })
 }
 
 // ────────────────────────────────────────────────────────────────────────────

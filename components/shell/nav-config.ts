@@ -232,7 +232,6 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     section: "builder",
     workspaceModes: ["ai-builder"],
     requiredFeature: "api_sdk",
-    badge: "coming-soon",
   },
 
   // ── COMPLIANCE (GDPR / privacy) ─────────────────────────────────────────────

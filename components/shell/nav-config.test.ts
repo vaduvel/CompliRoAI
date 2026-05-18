@@ -122,7 +122,7 @@ describe("nav-config — ai-builder exposes builder workflow", () => {
     expect(labels).not.toContain("Risc AI")
   })
 
-  it("ai-builder Sprint 016-021 modules sunt live pe ai_builder tier (FRIA + Oversight + Logging + PMM + Incidente + QMS); API/SDK ramane placeholder coming-soon", () => {
+  it("ai-builder Sprint 016-023 modules sunt live pe ai_builder tier (FRIA + Oversight + Logging + PMM + Incidente + QMS + API/SDK)", () => {
     const labels = labelsForRole("ai-builder", "ai_builder")
     // Sprint 016 + 017 + 018 + 019 + 020 + 021 — toate live in "compliance".
     expect(labels).toContain("FRIA")
@@ -131,7 +131,16 @@ describe("nav-config — ai-builder exposes builder workflow", () => {
     expect(labels).toContain("PMM")
     expect(labels).toContain("Incidente AI")
     expect(labels).toContain("QMS")
+    // Sprint 023 — API/SDK acum live (no longer coming-soon).
     expect(labels).toContain("API / SDK")
+  })
+
+  it("API / SDK nav item nu mai poartă badge 'coming-soon' după Sprint 023", () => {
+    const apiItem = ALL_NAV_ITEMS.find((it) => it.href === "/dashboard/api-sdk")
+    expect(apiItem).toBeDefined()
+    expect(apiItem?.badge).toBeUndefined()
+    expect(apiItem?.workspaceModes).toEqual(["ai-builder"])
+    expect(apiItem?.requiredFeature).toBe("api_sdk")
   })
 })
 
