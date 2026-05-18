@@ -1440,7 +1440,261 @@ export type ComplianceState = {
    * opționale.
    */
   qmsWorkspace?: QmsWorkspace
+
+  /**
+   * Sprint 022 — Preventive engine state.
+   *
+   * `preventiveLastRunAtISO` + `preventiveLastRunSummary` populate de
+   * `preventive-engine-runner.runPreventiveScan()`. Surfacate în
+   * /dashboard/setari/preventive ca "ultima rulare".
+   *
+   * `renewalReminders` — emailuri programate (renewal-email-dispatcher
+   * citește, marchează sent / skipped_already_resolved).
+   *
+   * `legislativeChangeAcknowledgments` — confirmări per org pentru
+   * evenimentele globale din `LEGISLATIVE_CHANGE_LOG`.
+   *
+   * `preventiveEmailPreferences` — config per org: enabled, recipients,
+   * digest frequency + per-rule toggle.
+   */
+  preventiveLastRunAtISO?: string
+  preventiveLastRunSummary?: PreventiveRunSummary
+  renewalReminders?: RenewalReminderRecord[]
+  legislativeChangeAcknowledgments?: LegislativeChangeAcknowledgment[]
+  preventiveEmailPreferences?: PreventiveEmailPreferences
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Preventive Engine — Sprint 022 (per mandate § 22)
+//
+//   Periodic scanning + reopen findings + renewal reminders + legislative
+//   drift. NU vrem ca utilizatorul să afle de un deadline cu o zi înainte;
+//   engine-ul rulează zilnic via Vercel Cron + manual via UI.
+//
+//   Scanner-ul e PURE FUNCTION (no IO). Runner-ul (în lib/server/) e cel
+//   care emite findings + queueing email.
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Tipul triggerului preventiv detectat de scanner. 16 reguli care
+ * acoperă toate modulele Sprint 008-021 cu deadlines / nextReview /
+ * retention / dpaExpiry / approval expiry.
+ */
+export type PreventiveTriggerType =
+  | "system_reclassification_needed"        // AI system purpose/vendor changed
+  | "fria_review_overdue"
+  | "dpia_review_overdue"
+  | "oversight_review_overdue"
+  | "logging_retention_expiring"
+  | "pmm_review_overdue"
+  | "vendor_dpa_expiring"
+  | "qms_annual_review_due"
+  | "transparency_notice_stale"
+  | "dsar_response_overdue"
+  | "breach_72h_expiring"
+  | "ai_incident_deadline_expiring"
+  | "approval_request_expired"
+  | "legislative_change_unacknowledged"
+  | "missing_audit_pack_recent"
+  | "lessons_refresh_due"
+
+/**
+ * Nivelul de urgență al unei acțiuni preventive.
+ *
+ *   info       — informativ, nimic critic (ex: review în > 60 zile)
+ *   watch      — atenție, deadline vine (30-60 zile)
+ *   due_soon   — urgent, deadline în 5-30 zile
+ *   overdue    — deadline depășit, acțiune necesară
+ *   critical   — overdue + impact mare (FRIA / Breach 72h / Incident <2z)
+ */
+export type PreventiveActionUrgency =
+  | "info"
+  | "watch"
+  | "due_soon"
+  | "overdue"
+  | "critical"
+
+/**
+ * Tipul de entitate scanată (mirror la entityType din ComplianceEvent
+ * dar specific preventive — include "legislative_change" + "audit_pack").
+ */
+export type PreventiveEntityType =
+  | "ai_system"
+  | "fria"
+  | "dpia"
+  | "oversight"
+  | "logging"
+  | "pmm"
+  | "vendor"
+  | "qms"
+  | "transparency"
+  | "dsar"
+  | "breach"
+  | "ai_incident"
+  | "approval"
+  | "legislative_change"
+  | "audit_pack"
+
+/**
+ * Acțiunea preventivă detectată. ID-ul este stabil per (entity + rule) ca
+ * runnerul să poată face dedup + auto-reopen al unui finding deja emis.
+ */
+export type PreventiveAction = {
+  id: string                                // stable per entity+rule
+  type: PreventiveTriggerType
+  urgency: PreventiveActionUrgency
+  // ── What triggered this ──────────────────────────────────────────────────
+  entityType: PreventiveEntityType
+  entityId: string
+  entityLabel: string                       // human readable RO
+  // ── What needs to happen ─────────────────────────────────────────────────
+  recommendedAction: string                 // RO
+  dueDateISO?: string                       // când devine overdue (dacă aplicabil)
+  daysUntilDue?: number                     // negative dacă deja overdue
+  // ── Outputs ──────────────────────────────────────────────────────────────
+  shouldEmitFinding: boolean                // engine emite ScanFinding
+  shouldEmail: boolean                      // engine queue email
+  emailTemplate?: string                    // ex: "fria-review-reminder"
+  emailRecipient?: string                   // resolved din state.org / responsible role
+  emailScheduledAtISO?: string
+  // ── Lifecycle ────────────────────────────────────────────────────────────
+  detectedAtISO: string
+  notes?: string
+}
+
+/**
+ * Sumarul unei rulări preventive — persistat în
+ * `state.preventiveLastRunSummary` pentru audit + display UI.
+ */
+export type PreventiveRunSummary = {
+  runId: string
+  startedAtISO: string
+  completedAtISO: string
+  durationMs: number
+  triggerSource: "cron" | "manual" | "webhook"
+  triggerByEmail?: string
+  // ── Stats ────────────────────────────────────────────────────────────────
+  actionsDetected: number
+  findingsEmitted: number                   // new + reopened
+  emailsQueued: number
+  errorsCount: number
+  errors: string[]
+  // ── Per-type breakdown ───────────────────────────────────────────────────
+  byType: Partial<Record<PreventiveTriggerType, number>>
+}
+
+/**
+ * Reminder programat de scanner / runner. Dispatcher-ul citește
+ * `scheduledForISO <= now` și trimite, marchează sent/skipped/failed.
+ */
+export type RenewalReminderRecord = {
+  id: string
+  triggerType: PreventiveTriggerType
+  entityType: PreventiveEntityType
+  entityId: string
+  recipientEmail: string
+  scheduledForISO: string                   // când să trimită
+  sentAtISO?: string
+  emailTemplate: string
+  resendIfNotActioned: boolean              // re-send 7 zile mai târziu dacă entitatea pending
+  status: "scheduled" | "sent" | "skipped_already_resolved" | "failed"
+  failureReason?: string
+}
+
+/**
+ * Preferințe de email per org pentru engine-ul preventiv.
+ */
+export type PreventiveEmailPreferences = {
+  enabled: boolean
+  recipientEmails: string[]
+  digestFrequency: "immediate" | "daily" | "weekly"
+  perRuleEnabled: Partial<Record<PreventiveTriggerType, boolean>>
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Legislative Change Log — Sprint 022
+//
+//   Registru global (NOT per-org) de amendamente / guidance / acte delegate
+//   publicate pentru AI Act + GDPR + DORA + NIS2 + reguli ANSPDCP. Permite
+//   consultantilor să rămână înaintea drift-ului regulatoriu.
+//
+//   Stocat ca `LEGISLATIVE_CHANGE_LOG: LegislativeChangeEvent[]` în
+//   `lib/compliance/legislative-change-log.ts` (static seed).
+//   Acknowledge-urile sunt per org în state.legislativeChangeAcknowledgments.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type LegislativeRegulation =
+  | "AI_ACT"
+  | "GDPR"
+  | "DORA"
+  | "NIS2"
+  | "ANSPDCP"
+  | "EDPB"
+  | "AI_OFFICE"
+  | "ROMANIAN_LAW"
+
+export type LegislativeChangeImpact =
+  | "high"
+  | "medium"
+  | "low"
+  | "info_only"
+
+/**
+ * Modulele CompliRoAI care pot fi afectate de o schimbare legislativă.
+ * Folosite pentru a sugera unde să adauge consultantul acțiuni.
+ */
+export type LegislativeAffectedModule =
+  | "role_assessment"
+  | "ai_inventory"
+  | "prohibited"
+  | "literacy"
+  | "transparency"
+  | "annex_iv"
+  | "eu_database"
+  | "conformity"
+  | "fria"
+  | "oversight"
+  | "logging"
+  | "pmm"
+  | "ai_incidents"
+  | "qms"
+  | "dpia"
+  | "ropa"
+  | "breach"
+  | "dsar"
+  | "vendor"
+  | "ai_discovery"
+
+export type LegislativeChangeEvent = {
+  id: string
+  publishedAtISO: string
+  effectiveFromISO?: string                 // când devine efectiv binding
+  regulation: LegislativeRegulation
+  articleReferences: string[]               // ex: ["Art. 50", "Annex III pt. 5(b)"]
+  title: string                             // RO
+  summary: string                           // RO 2-3 propoziții
+  fullTextUrl?: string                      // EUR-Lex / EC link
+  impact: LegislativeChangeImpact
+  affectedModules: LegislativeAffectedModule[]
+  recommendedActions: string[]              // RO list
+  source: "auto_imported" | "manual"
+}
+
+/**
+ * Confirmarea unei org că a luat la cunoștință o schimbare legislativă.
+ * Inclus în state.legislativeChangeAcknowledgments. Acțiunea = opțional
+ * un plan, opțional un closed timestamp.
+ */
+export type LegislativeChangeAcknowledgment = {
+  changeId: string
+  orgId: string
+  acknowledgedAtISO: string
+  acknowledgedByEmail: string
+  actionPlan?: string
+  completedAtISO?: string
+  notes?: string
+}
+
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Billing — Sprint 014
