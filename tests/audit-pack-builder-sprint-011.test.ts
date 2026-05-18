@@ -24,6 +24,7 @@ import JSZip from "jszip"
 import { initialComplianceState } from "@/lib/compliance/engine"
 import { appendComplianceEvents } from "@/lib/compliance/events"
 import type {
+  AIContentLabeledAsset,
   AIDataMapRecord,
   AIIncident,
   BreachRecord,
@@ -585,6 +586,33 @@ function buildSampleState(): AIActState {
     updatedAtISO: "2026-05-16T00:00:00.000Z",
   }
 
+  // Sprint 023.7 — Add an AI Content Labeled Asset (deepfake fără disclosure)
+  const contentAsset: AIContentLabeledAsset = {
+    id: "asset-test-deepfake-1",
+    orgId: "org-test-pack",
+    title: "Reclamă deepfake test",
+    assetType: "deepfake",
+    linkedAISystemId: "sys-hr-1",
+    distributionContext: ["TikTok Ads", "Instagram"],
+    audienceSize: 50000,
+    providerMarkingApplied: false,
+    providerMarkingStandard: "none",
+    deployerDisclosureApplied: false,
+    evidenceItems: [
+      {
+        id: "ev-1",
+        type: "screenshot",
+        description: "Screenshot ad placement TikTok",
+        uploadedAtISO: "2026-05-18T10:00:00.000Z",
+        uploadedByEmail: "ops@acme.ro",
+      },
+    ],
+    linkedFindingIds: [],
+    notes: "Test fixture pentru audit pack.",
+    createdAtISO: "2026-05-18T09:00:00.000Z",
+    updatedAtISO: "2026-05-18T10:00:00.000Z",
+  }
+
   base = {
     ...base,
     aiSystems: [aiSystem],
@@ -599,6 +627,7 @@ function buildSampleState(): AIActState {
     loggingEvidence: [logging],
     pmmPlans: [pmm],
     aiIncidents: [aiIncident],
+    aiContentAssets: [contentAsset],
   } as AIActState
   base.events = appendComplianceEvents(base, [event1, event2])
   return base
@@ -1211,5 +1240,67 @@ describe("audit-pack backward compat (Sprint 011)", () => {
     const { verifyAuditPackZip } = await import("@/lib/server/audit-pack-builder")
     const verification = await verifyAuditPackZip(result.zipBuffer)
     expect(verification.valid).toBe(true)
+  })
+
+  // ── Sprint 023.7 — Content Register in Audit Pack ─────────────────────────
+  it("includes transparency/content-register.md + transparency/assets/<id>.md", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const paths = Object.keys(zip.files)
+    expect(paths).toContain("transparency/content-register.md")
+    expect(paths).toContain("transparency/assets/asset-test-deepfake-1.md")
+  })
+
+  it("transparency/content-register.md contains title + Art. 50 reference", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip
+      .file("transparency/content-register.md")!
+      .async("string")
+    expect(md).toContain("Content Register Art. 50")
+    expect(md).toContain("Reclamă deepfake test")
+    expect(md).toContain("Total assets:")
+  })
+
+  it("transparency/assets/<id>.md contains gap warning + Art. 50(4)(a)", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const md = await zip
+      .file("transparency/assets/asset-test-deepfake-1.md")!
+      .async("string")
+    expect(md).toContain("# Asset Art. 50 — Reclamă deepfake test")
+    expect(md).toContain("## A. Provider duty (Art. 50(2))")
+    expect(md).toContain("## B. Deployer duty (Art. 50(1)/(3)/(4))")
+    expect(md).toContain("Art. 50(4)(a)")
+    expect(md).toContain("⚠️")
+  })
+
+  it("manifest summary includes contentAssetsCount", async () => {
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "imm-classic",
+      currentOrgId: "org-test-pack",
+    })
+    expect(result.manifest.summary.contentAssetsCount).toBe(1)
   })
 })

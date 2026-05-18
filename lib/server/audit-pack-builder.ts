@@ -55,6 +55,10 @@ import { buildDpiaMarkdownForRecord, type DpiaRecordWithLink } from "@/lib/serve
 import { buildBreachMarkdown } from "@/lib/server/breach-store"
 import { buildFriaMarkdown } from "@/lib/server/fria-store"
 import { buildOversightMarkdown } from "@/lib/server/oversight-store"
+import {
+  buildContentAssetMarkdown,
+  buildContentRegisterMarkdown,
+} from "@/lib/server/transparency-content-store"
 import { buildLoggingMarkdown } from "@/lib/server/logging-evidence-store"
 import {
   LOGGING_EVENT_CATEGORY_LABELS,
@@ -148,6 +152,10 @@ export type AuditPackManifest = {
     // exista, 0 daca neinitializat).
     qmsWorkspaceCount?: number
     qmsCompleteness?: "incomplete" | "partial" | "complete"
+    // Sprint 023.7 — Art. 50 Content Register (per-asset Content Labeling
+    // Depth). Includes deepfake, synthetic image/video/audio/text,
+    // public-interest text, chatbot interactions tracked individually.
+    contentAssetsCount?: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -328,6 +336,8 @@ export async function buildAuditPack(
       aiIncidentsCount: (state.aiIncidents ?? []).length,
       qmsWorkspaceCount: state.qmsWorkspace ? 1 : 0,
       qmsCompleteness: state.qmsWorkspace?.completeness,
+      // Sprint 023.7 — count of Art. 50 content assets (per-asset register).
+      contentAssetsCount: (state.aiContentAssets ?? []).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -770,7 +780,35 @@ function buildFileContents(input: {
   // ── Sprint 023: API/SDK developer surface (api-sdk/) ──────────────────
   pushApiSdkFiles(files, input.state, input.orgName, input.generatedAt)
 
+  // ── Sprint 023.7: Art. 50 Content Register per-asset ──────────────────
+  pushContentRegisterFiles(files, input.state, input.orgName)
+
   return files
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 023.7 — Art. 50 Content Register section
+//
+//   transparency/content-register.md           — top-level register
+//   transparency/assets/{id}.md                — per-asset full record
+// ────────────────────────────────────────────────────────────────────────────
+
+function pushContentRegisterFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const assets = state.aiContentAssets ?? []
+  files.push({
+    path: "transparency/content-register.md",
+    bytes: utf8(buildContentRegisterMarkdown(assets, orgName)),
+  })
+  for (const a of assets) {
+    files.push({
+      path: `transparency/assets/${slugify(a.id)}.md`,
+      bytes: utf8(buildContentAssetMarkdown(a)),
+    })
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2311,6 +2349,7 @@ function buildSignatureTxt(input: {
     `PMM plans (Art.72):   ${input.manifest.summary.pmmPlansCount ?? 0}`,
     `AI Incidents (Art.73):${input.manifest.summary.aiIncidentsCount ?? 0}`,
     `QMS Workspace (Art.17):${input.manifest.summary.qmsWorkspaceCount ?? 0} (${input.manifest.summary.qmsCompleteness ?? "—"})`,
+    `Content assets (Art.50):${input.manifest.summary.contentAssetsCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",
