@@ -358,4 +358,8 @@ export const PLACEMENT_LABELS: Record<TransparencyPlacement, string> = {
   "email-signature": "Semnătură email",
   "video-overlay": "Overlay video",
   inline: "Inline / badge",
+  // Sprint 023.7 — placements asset-level Art. 50
+  advertisement: "Reclamă plătită",
+  "social-post": "Post social media",
+  broadcast: "Email broadcast / newsletter / push",
 }

@@ -123,6 +123,10 @@ function isEntityStillPending(
     }
     case "audit_pack":
       return true
+    case "content_asset":
+      return Boolean(
+        (state.aiContentAssets ?? []).find((x) => x.id === entityId),
+      )
   }
 }
 
@@ -197,6 +201,8 @@ function entityToUrl(
       return `${base}/dashboard/sisteme`
     case "audit_pack":
       return `${base}/dashboard/audit-pack`
+    case "content_asset":
+      return `${base}/dashboard/transparency?tab=content-register&asset=${id}`
   }
 }
 

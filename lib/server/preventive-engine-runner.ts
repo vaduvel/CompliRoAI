@@ -85,6 +85,12 @@ function triggerToCategory(t: PreventiveTriggerType): FindingCategory {
       return "EU_AI_ACT"
     case "approval_request_expired":
       return "EU_AI_ACT"
+    // Sprint 023.7 — Art. 50 content labeling depth (per-asset).
+    case "art50_deepfake_no_watermark":
+    case "art50_synthetic_content_no_metadata":
+    case "art50_chatbot_no_runtime_disclosure":
+    case "art50_public_interest_no_editorial_flag":
+      return "EU_AI_ACT"
   }
 }
 

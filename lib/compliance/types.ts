@@ -120,6 +120,11 @@ export type TransparencyPlacement =
   | "email-signature"
   | "video-overlay"
   | "inline"
+  // Sprint 023.7 — placements pentru asset-level Art. 50 disclosure în reclame
+  // plătite, social media și broadcast (email newsletter / push notification).
+  | "advertisement"
+  | "social-post"
+  | "broadcast"
 
 export type TransparencyLanguage = "ro" | "en"
 
@@ -157,6 +162,111 @@ export type TransparencyImplementation = {
   implementedAtISO: string
   implementedByEmail: string
   notes?: string
+  /**
+   * Sprint 023.7 — Art. 50 split provider vs deployer duty.
+   * - `provider_marking` (Art. 50(2)) — providerul aplică marcaj tehnic
+   *   machine-readable (C2PA / IPTC / watermark) pe output-ul AI generat.
+   * - `deployer_disclosure` (Art. 50(1)/(3)/(4)) — deployerul informează
+   *   vizibil persoanele expuse (chatbot info, deepfake label, public-interest
+   *   editorial flag, emotion recognition notice).
+   * - `both` — aceeași entitate este provider ȘI deployer (build + use).
+   * Default backward-compatible: "deployer_disclosure".
+   */
+  dutyType?: ArtFiftyDutyType
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Art. 50 Content Labeling Depth — Sprint 023.7
+//
+//   Per-asset register (distinct de TransparencyImplementation care e
+//   per-system). Asset-level tracking permite:
+//     - dovada provider duty (Art. 50(2)) — marcaj tehnic machine-readable;
+//     - dovada deployer duty (Art. 50(1)/(3)/(4)) — disclosure vizibil;
+//     - claim editorial responsibility pentru public-interest text
+//       (Art. 50(4)(b) — derogare condiționată de human review).
+//
+//   Standardele de referință (industry de-facto pentru "machine-readable
+//   format" cerut de Art. 50(2)):
+//     - C2PA (Coalition for Content Provenance and Authenticity)
+//     - IPTC PhotoMetadata
+//     - SynthID / invisible AI watermark
+//     - visible watermark (legacy fallback)
+// ────────────────────────────────────────────────────────────────────────────
+
+export type ArtFiftyDutyType =
+  | "provider_marking"               // Art. 50(2) — mark technically (watermark, metadata)
+  | "deployer_disclosure"            // Art. 50(1)/(3)/(4) — disclose visibly to humans
+  | "both"                           // same entity is provider AND deployer
+
+export type ContentLabelingStandard =
+  | "c2pa"                           // Coalition for Content Provenance and Authenticity
+  | "iptc_photo_metadata"            // IPTC PhotoMetadata standard
+  | "watermark_visible"              // human-visible watermark
+  | "watermark_invisible"            // invisible AI watermark (SynthID, etc.)
+  | "metadata_only"                  // generic metadata, non-standard
+  | "none"                           // no machine-readable marking
+
+export type AIContentAssetType =
+  | "image"
+  | "video"
+  | "audio"
+  | "text_synthetic"                 // synthetic text content (LLM output published)
+  | "deepfake"                       // deepfake content (Art. 50(4)(a))
+  | "public_interest_text"           // Art. 50(4)(b) — text on matters of public interest
+  | "chatbot_interaction"            // Art. 50(1)
+  | "other"
+
+export type AIContentEvidenceType =
+  | "screenshot"
+  | "sample_file"
+  | "metadata_proof"
+  | "editorial_log"
+  | "watermark_test"
+  | "other"
+
+export type AIContentEvidenceItem = {
+  id: string
+  type: AIContentEvidenceType
+  description: string
+  uploadedAtISO: string
+  uploadedByEmail: string
+  url?: string
+  fileName?: string
+  fileHash?: string                  // SHA-256 for tamper detection
+}
+
+export type AIContentLabeledAsset = {
+  id: string
+  orgId: string
+  // ── Identification ───────────────────────────────────────────────────────
+  title: string                      // ex: "Banner reclamă produs X — generat Midjourney"
+  assetType: AIContentAssetType
+  linkedAISystemId?: string          // optional link to AISystemRecord
+  // ── Distribution ─────────────────────────────────────────────────────────
+  publishedAtISO?: string
+  distributionContext: string[]      // ex: ["LinkedIn ads", "Website hero", "Email newsletter"]
+  audienceSize?: number              // estimated reach
+  // ── Provider duty (Art. 50(2)) ───────────────────────────────────────────
+  providerMarkingApplied: boolean
+  providerMarkingStandard: ContentLabelingStandard
+  providerMarkingProof?: string      // URL or note describing technical mark
+  // ── Deployer duty (Art. 50(1)/(3)/(4)) ───────────────────────────────────
+  deployerDisclosureApplied: boolean
+  deployerDisclosurePlacement?: TransparencyPlacement
+  deployerDisclosureText?: string    // actual visible text shown to humans
+  deployerDisclosureLanguage?: TransparencyLanguage
+  // ── Public-interest editorial review (Art. 50(4)(b) exception) ───────────
+  isPublicInterest?: boolean
+  editorialReviewBy?: string         // email of editor who reviewed
+  editorialReviewAtISO?: string
+  editorialResponsibilityClaim?: boolean   // org claims editorial responsibility (exempts from Art. 50(4)(b))
+  // ── Evidence ─────────────────────────────────────────────────────────────
+  evidenceItems: AIContentEvidenceItem[]
+  // ── Lifecycle ────────────────────────────────────────────────────────────
+  linkedFindingIds: string[]
+  notes?: string
+  createdAtISO: string
+  updatedAtISO: string
 }
 
 export type LiteracyRecord = {
@@ -1352,6 +1462,24 @@ export type ComplianceState = {
   readinessPacks?: AIActReadinessPackRecord[]
   roleAssessment?: RoleAssessment
   transparencyImplementations?: TransparencyImplementation[]
+
+  /**
+   * Sprint 023.7 — Art. 50 Content Labeling Register (per-asset).
+   * Distinct from TransparencyImplementation (per-system) — assets are
+   * concrete pieces of AI-generated content (image / video / audio / text /
+   * deepfake / public-interest text / chatbot session) tracked individually
+   * for provider duty (Art. 50(2) machine-readable marking) + deployer duty
+   * (Art. 50(1)/(3)/(4) visible disclosure) evidence.
+   *
+   * Findings emise automat de transparency-content-store atunci când:
+   *   - asset deepfake fără deployer disclosure (Art. 50(4)(a) — CRITICAL);
+   *   - asset sintetic image/video/audio/text fără provider marking (Art. 50(2) — HIGH);
+   *   - chatbot interaction fără runtime disclosure (Art. 50(1) — HIGH);
+   *   - public-interest text fără editorial responsibility claim ȘI fără
+   *     deployer disclosure (Art. 50(4)(b) — HIGH).
+   */
+  aiContentAssets?: AIContentLabeledAsset[]
+
   dsarRequests?: DsarRequest[]
 
   /**
@@ -1738,6 +1866,11 @@ export type PreventiveTriggerType =
   | "legislative_change_unacknowledged"
   | "missing_audit_pack_recent"
   | "lessons_refresh_due"
+  // Sprint 023.7 — Art. 50 Content Labeling Depth (rules 17-20).
+  | "art50_deepfake_no_watermark"           // Art. 50(4)(a) — CRITICAL
+  | "art50_synthetic_content_no_metadata"   // Art. 50(2) — HIGH
+  | "art50_chatbot_no_runtime_disclosure"   // Art. 50(1) — MEDIUM/HIGH
+  | "art50_public_interest_no_editorial_flag" // Art. 50(4)(b) — HIGH
 
 /**
  * Nivelul de urgență al unei acțiuni preventive.
@@ -1775,6 +1908,9 @@ export type PreventiveEntityType =
   | "approval"
   | "legislative_change"
   | "audit_pack"
+  // Sprint 023.7 — Art. 50 content asset (per-asset, distinct of `transparency`
+  // which is per-system implementation).
+  | "content_asset"
 
 /**
  * Acțiunea preventivă detectată. ID-ul este stabil per (entity + rule) ca

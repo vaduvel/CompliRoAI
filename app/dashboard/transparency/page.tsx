@@ -65,6 +65,9 @@ const PLACEMENT_LABELS: Record<TransparencyPlacement, string> = {
   "email-signature": "Semnătură email",
   "video-overlay": "Overlay video",
   inline: "Inline / badge",
+  advertisement: "Reclamă plătită",
+  "social-post": "Post social media",
+  broadcast: "Email broadcast",
 }
 
 const ALL_PLACEMENTS: TransparencyPlacement[] = [
@@ -74,6 +77,9 @@ const ALL_PLACEMENTS: TransparencyPlacement[] = [
   "email-signature",
   "video-overlay",
   "inline",
+  "advertisement",
+  "social-post",
+  "broadcast",
 ]
 
 const ALL_LANGUAGES: TransparencyLanguage[] = ["ro", "en"]
