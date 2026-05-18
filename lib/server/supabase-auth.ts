@@ -17,7 +17,11 @@ export function hasSupabaseAuthConfig(): boolean {
 
 export function shouldUseSupabaseAuth(): boolean {
   if (!hasSupabaseAuthConfig()) return false
-  const backend = process.env.COMPLISCAN_AUTH_BACKEND?.trim().toLowerCase()
+  // Preferă AIACT_AUTH_BACKEND (mandate § 20 — env prefix AIACT_*), cu fallback
+  // pe COMPLISCAN_AUTH_BACKEND pentru deploy-uri legacy.
+  const raw =
+    process.env.AIACT_AUTH_BACKEND ?? process.env.COMPLISCAN_AUTH_BACKEND
+  const backend = raw?.trim().toLowerCase()
   return backend === "supabase" || backend === "hybrid"
 }
 

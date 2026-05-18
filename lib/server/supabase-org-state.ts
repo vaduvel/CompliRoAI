@@ -11,7 +11,11 @@ type OrgStateRow<T> = {
 }
 
 export function getConfiguredDataBackend(): "local" | "supabase" | "hybrid" {
-  const value = process.env.COMPLISCAN_DATA_BACKEND?.trim().toLowerCase()
+  // Preferă AIACT_DATA_BACKEND (mandate § 20 — env prefix AIACT_*), cu fallback
+  // pe COMPLISCAN_DATA_BACKEND pentru deploy-uri legacy.
+  const raw =
+    process.env.AIACT_DATA_BACKEND ?? process.env.COMPLISCAN_DATA_BACKEND
+  const value = raw?.trim().toLowerCase()
   if (value === "supabase") return "supabase"
   if (value === "hybrid") return "hybrid"
   return "local"
