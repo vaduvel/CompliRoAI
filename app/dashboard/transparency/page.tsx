@@ -4,14 +4,30 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Copy,
   ExternalLink,
+  FileText,
+  Image as ImageIcon,
   Loader2,
   MessageSquare,
+  Music,
+  Plus,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  Upload,
+  Video,
   X,
 } from "lucide-react"
 
 import type {
+  AIContentAssetType,
+  AIContentEvidenceItem,
+  AIContentEvidenceType,
+  AIContentLabeledAsset,
+  ContentLabelingStandard,
   TransparencyImplementation,
   TransparencyLanguage,
   TransparencyNoticeRequirement,
@@ -104,7 +120,10 @@ function severityColor(severity: "critical" | "high" | "medium"): {
 //   Page
 // ────────────────────────────────────────────────────────────────────────────
 
+type TabKey = "notices" | "content-register"
+
 export default function TransparencyPage() {
+  const [activeTab, setActiveTab] = useState<TabKey>("notices")
   const [data, setData] = useState<AllRequiredResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -173,10 +192,58 @@ export default function TransparencyPage() {
         </h1>
         <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
           Generează notice-uri de transparență RO + EN gata de copy-paste pentru sistemele AI care
-          interacționează cu persoane fizice sau produc conținut sintetic.
+          interacționează cu persoane fizice sau produc conținut sintetic. În tabul „Content
+          Register” poți înregistra individual fiecare piesă de conținut AI (imagine, video,
+          deepfake, text public-interest, chatbot) cu dovada provider + deployer duty.
         </p>
       </div>
 
+      {/* Tab switcher */}
+      <div
+        role="tablist"
+        aria-label="Tabs transparency"
+        style={{
+          display: "flex",
+          gap: "4px",
+          borderBottom: "1px solid var(--border-soft)",
+          paddingBottom: "0",
+        }}
+      >
+        {([
+          { key: "notices" as TabKey, label: "Notice-uri per sistem" },
+          { key: "content-register" as TabKey, label: "Content Register (per asset)" },
+        ]).map((tab) => {
+          const isActive = activeTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: "10px 16px",
+                background: "transparent",
+                border: "none",
+                borderBottom: isActive
+                  ? "2px solid var(--cobalt-600)"
+                  : "2px solid transparent",
+                color: isActive ? "var(--ink)" : "var(--ink-muted)",
+                fontWeight: isActive ? 600 : 500,
+                fontSize: "13px",
+                cursor: "pointer",
+                marginBottom: "-1px",
+              }}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {activeTab === "content-register" && <ContentRegisterTab />}
+
+      {activeTab === "notices" && (
+      <>
       {/* Deadline banner */}
       <div
         role="status"
@@ -452,6 +519,8 @@ export default function TransparencyPage() {
           onClose={() => setOpenSystemId(null)}
           onChanged={load}
         />
+      )}
+      </>
       )}
 
       <style jsx global>{`
@@ -1234,6 +1303,1932 @@ function NoticeDetail({
       <span style={{ display: "none" }}>
         <MessageSquare size={1} />
       </span>
+    </div>
+  )
+}
+
+// ============================================================================
+//   Sprint 023.7 — Content Register tab (per-asset Art. 50)
+// ============================================================================
+
+type AnnotatedAsset = AIContentLabeledAsset & {
+  gap: { providerGap?: string; deployerGap?: string; editorialGap?: string }
+  hasAnyGap: boolean
+  appliedDutyType: "provider_marking" | "deployer_disclosure" | "both"
+}
+
+type ContentRegisterResponse = {
+  assets: AnnotatedAsset[]
+  summary: {
+    total: number
+    withProviderMarking: number
+    withDeployerDisclosure: number
+    publicInterestReviewed: number
+    unresolvedGaps: number
+    byType: Partial<Record<AIContentAssetType, number>>
+  }
+  schema: {
+    version: string
+    assetTypes: AIContentAssetType[]
+    standards: ContentLabelingStandard[]
+    placements: TransparencyPlacement[]
+    languages: TransparencyLanguage[]
+  }
+}
+
+const ASSET_TYPE_LABELS: Record<AIContentAssetType, string> = {
+  image: "Imagine sintetică",
+  video: "Video sintetic",
+  audio: "Audio sintetic",
+  text_synthetic: "Text sintetic",
+  deepfake: "Deepfake (Art. 50(4)(a))",
+  public_interest_text: "Text public-interest (Art. 50(4)(b))",
+  chatbot_interaction: "Sesiune chatbot (Art. 50(1))",
+  other: "Altul",
+}
+
+const STANDARD_LABELS: Record<ContentLabelingStandard, string> = {
+  c2pa: "C2PA",
+  iptc_photo_metadata: "IPTC PhotoMetadata",
+  watermark_visible: "Watermark vizibil",
+  watermark_invisible: "Watermark invizibil (SynthID etc.)",
+  metadata_only: "Metadata generică",
+  none: "— niciunul —",
+}
+
+const PLACEMENT_LABELS_FULL: Record<TransparencyPlacement, string> = {
+  popup: "Popup / modal",
+  footer: "Footer pagină",
+  header: "Banner header",
+  "email-signature": "Semnătură email",
+  "video-overlay": "Overlay video",
+  inline: "Inline / badge",
+  advertisement: "Reclamă plătită",
+  "social-post": "Post social media",
+  broadcast: "Email broadcast / newsletter / push",
+}
+
+const EVIDENCE_TYPE_LABELS: Record<AIContentEvidenceType, string> = {
+  screenshot: "Screenshot disclosure",
+  sample_file: "Fișier exemplu",
+  metadata_proof: "Dovadă metadata (C2PA/IPTC)",
+  editorial_log: "Log editorial",
+  watermark_test: "Test watermark",
+  other: "Altul",
+}
+
+function iconForType(type: AIContentAssetType): React.ReactNode {
+  switch (type) {
+    case "image":
+      return <ImageIcon size={14} />
+    case "video":
+      return <Video size={14} />
+    case "audio":
+      return <Music size={14} />
+    case "deepfake":
+      return <ShieldAlert size={14} style={{ color: "#dc2626" }} />
+    case "chatbot_interaction":
+      return <MessageSquare size={14} />
+    default:
+      return <FileText size={14} />
+  }
+}
+
+function ContentRegisterTab() {
+  const [data, setData] = useState<ContentRegisterResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null)
+  const [filterType, setFilterType] = useState<AIContentAssetType | "all">("all")
+  const [filterGap, setFilterGap] = useState<"all" | "with-gap" | "no-gap">("all")
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/transparency/content-assets", {
+        cache: "no-store",
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setError(body?.error || `HTTP ${res.status}`)
+        return
+      }
+      const json = (await res.json()) as ContentRegisterResponse
+      setData(json)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Eroare la încărcare")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const filtered = useMemo(() => {
+    if (!data) return []
+    let out = data.assets
+    if (filterType !== "all") out = out.filter((a) => a.assetType === filterType)
+    if (filterGap === "with-gap") out = out.filter((a) => a.hasAnyGap)
+    if (filterGap === "no-gap") out = out.filter((a) => !a.hasAnyGap)
+    return out
+  }, [data, filterType, filterGap])
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* Stats grid */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          gap: "10px",
+        }}
+      >
+        {[
+          { label: "Total assets", value: data?.summary.total ?? 0 },
+          {
+            label: "Cu provider marking",
+            value: data?.summary.withProviderMarking ?? 0,
+          },
+          {
+            label: "Cu deployer disclosure",
+            value: data?.summary.withDeployerDisclosure ?? 0,
+          },
+          {
+            label: "Public-interest review",
+            value: data?.summary.publicInterestReviewed ?? 0,
+          },
+          {
+            label: "Unresolved gaps",
+            value: data?.summary.unresolvedGaps ?? 0,
+            danger: (data?.summary.unresolvedGaps ?? 0) > 0,
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            style={{
+              padding: "12px",
+              background: "var(--bg-raised)",
+              borderRadius: "8px",
+              border: `1px solid ${stat.danger ? "rgba(248,113,113,0.4)" : "var(--border)"}`,
+            }}
+          >
+            <div
+              style={{
+                fontSize: "22px",
+                fontWeight: 600,
+                color: stat.danger ? "#dc2626" : "var(--ink)",
+                fontFamily: "var(--font-display-v3)",
+              }}
+            >
+              {stat.value}
+            </div>
+            <div
+              style={{
+                fontSize: "11px",
+                color: "var(--ink-dim)",
+                marginTop: "2px",
+              }}
+            >
+              {stat.label}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters + add button */}
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <select
+            value={filterType}
+            onChange={(e) =>
+              setFilterType(e.target.value as AIContentAssetType | "all")
+            }
+            style={{
+              padding: "6px 10px",
+              border: "1px solid var(--border)",
+              borderRadius: "6px",
+              background: "var(--bg)",
+              color: "var(--ink)",
+              fontSize: "12px",
+            }}
+          >
+            <option value="all">Toate tipurile</option>
+            {Object.entries(ASSET_TYPE_LABELS).map(([k, label]) => (
+              <option key={k} value={k}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filterGap}
+            onChange={(e) =>
+              setFilterGap(e.target.value as "all" | "with-gap" | "no-gap")
+            }
+            style={{
+              padding: "6px 10px",
+              border: "1px solid var(--border)",
+              borderRadius: "6px",
+              background: "var(--bg)",
+              color: "var(--ink)",
+              fontSize: "12px",
+            }}
+          >
+            <option value="all">Toate gap-urile</option>
+            <option value="with-gap">Doar cu gap nerezolvat</option>
+            <option value="no-gap">Doar fără gap</option>
+          </select>
+        </div>
+        <button
+          onClick={() => setShowCreate(true)}
+          style={{
+            padding: "8px 14px",
+            borderRadius: "6px",
+            border: "1px solid var(--cobalt-600)",
+            background: "var(--cobalt-600)",
+            color: "#fff",
+            fontSize: "13px",
+            fontWeight: 500,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <Plus size={14} />
+          Adaugă asset
+        </button>
+      </div>
+
+      {/* Loading / error */}
+      {loading && (
+        <div
+          style={{
+            fontSize: "13px",
+            color: "var(--ink-dim)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+          Se încarcă registrul de content assets…
+        </div>
+      )}
+      {error && !loading && (
+        <div
+          role="alert"
+          style={{
+            padding: "12px 14px",
+            background: "rgba(248,113,113,0.10)",
+            border: "1px solid rgba(248,113,113,0.30)",
+            borderRadius: "8px",
+            fontSize: "13px",
+            color: "#dc2626",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Asset list */}
+      {!loading && !error && data && filtered.length === 0 && (
+        <div
+          style={{
+            padding: "32px",
+            background: "var(--bg-raised)",
+            border: "1px dashed var(--border)",
+            borderRadius: "8px",
+            textAlign: "center",
+            color: "var(--ink-muted)",
+            fontSize: "13px",
+          }}
+        >
+          Niciun asset înregistrat. Înregistrează prima piesă de conținut AI
+          (imagine, video, deepfake, text public-interest, chatbot) cu butonul
+          „Adaugă asset".
+        </div>
+      )}
+      {!loading && !error && data && filtered.length > 0 && (
+        <div
+          style={{
+            background: "var(--bg-raised)",
+            border: "1px solid var(--border)",
+            borderRadius: "8px",
+            overflow: "hidden",
+          }}
+        >
+          {filtered.map((asset) => {
+            const isExpanded = expandedAssetId === asset.id
+            return (
+              <div
+                key={asset.id}
+                style={{
+                  borderBottom: "1px solid var(--border-soft)",
+                }}
+              >
+                <button
+                  onClick={() =>
+                    setExpandedAssetId(isExpanded ? null : asset.id)
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "grid",
+                    gridTemplateColumns: "auto 1.6fr 1fr 1fr 1fr auto",
+                    gap: "12px",
+                    alignItems: "center",
+                    textAlign: "left",
+                    color: "var(--ink)",
+                  }}
+                >
+                  {iconForType(asset.assetType)}
+                  <div>
+                    <div style={{ fontSize: "13px", fontWeight: 500 }}>
+                      {asset.title}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "var(--ink-dim)",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {ASSET_TYPE_LABELS[asset.assetType]}
+                      {asset.distributionContext.length > 0 &&
+                        ` · ${asset.distributionContext.join(", ")}`}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: asset.providerMarkingApplied
+                        ? "var(--emerald-400, #059669)"
+                        : "var(--ink-dim)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    {asset.providerMarkingApplied ? (
+                      <ShieldCheck size={12} />
+                    ) : (
+                      <ShieldAlert size={12} />
+                    )}
+                    {asset.providerMarkingApplied
+                      ? STANDARD_LABELS[asset.providerMarkingStandard]
+                      : "Fără mark"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: asset.deployerDisclosureApplied
+                        ? "var(--emerald-400, #059669)"
+                        : "var(--ink-dim)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    {asset.deployerDisclosureApplied ? (
+                      <CheckCircle2 size={12} />
+                    ) : (
+                      <X size={12} />
+                    )}
+                    {asset.deployerDisclosureApplied
+                      ? (asset.deployerDisclosurePlacement
+                          ? PLACEMENT_LABELS_FULL[asset.deployerDisclosurePlacement]
+                          : "DA")
+                      : "Fără disclosure"}
+                  </div>
+                  <div>
+                    {asset.hasAnyGap ? (
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          padding: "2px 6px",
+                          borderRadius: "999px",
+                          background: "rgba(248,113,113,0.12)",
+                          color: "#dc2626",
+                          border: "1px solid rgba(248,113,113,0.30)",
+                        }}
+                      >
+                        {[
+                          asset.gap.providerGap ? "provider" : null,
+                          asset.gap.deployerGap ? "deployer" : null,
+                          asset.gap.editorialGap ? "editorial" : null,
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--emerald-400, #059669)",
+                          display: "inline-flex",
+                          gap: "4px",
+                          alignItems: "center",
+                        }}
+                      >
+                        <CheckCircle2 size={11} /> Complet
+                      </span>
+                    )}
+                  </div>
+                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+                {isExpanded && (
+                  <ContentAssetDetails asset={asset} onChanged={load} />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Create modal */}
+      {showCreate && data && (
+        <ContentAssetCreateModal
+          schema={data.schema}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false)
+            void load()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Inline expanded asset details panel
+// ────────────────────────────────────────────────────────────────────────────
+
+function ContentAssetDetails({
+  asset,
+  onChanged,
+}: {
+  asset: AnnotatedAsset
+  onChanged: () => void | Promise<void>
+}) {
+  const [showEvidence, setShowEvidence] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const markProviderApplied = async () => {
+    setBusy("provider")
+    setActionError(null)
+    try {
+      const res = await fetch(`/api/transparency/content-assets/${asset.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerMarkingApplied: true,
+          providerMarkingStandard:
+            asset.providerMarkingStandard === "none"
+              ? "c2pa"
+              : asset.providerMarkingStandard,
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `HTTP ${res.status}`)
+      }
+      await onChanged()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Eroare")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const markDeployerApplied = async () => {
+    setBusy("deployer")
+    setActionError(null)
+    try {
+      const res = await fetch(`/api/transparency/content-assets/${asset.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deployerDisclosureApplied: true,
+          deployerDisclosurePlacement:
+            asset.deployerDisclosurePlacement ?? "footer",
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `HTTP ${res.status}`)
+      }
+      await onChanged()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Eroare")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const deleteAsset = async () => {
+    if (
+      !window.confirm(
+        `Ștergi asset-ul „${asset.title}"? Toate findings linkate se închid automat.`,
+      )
+    )
+      return
+    setBusy("delete")
+    setActionError(null)
+    try {
+      const res = await fetch(`/api/transparency/content-assets/${asset.id}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `HTTP ${res.status}`)
+      }
+      await onChanged()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Eroare")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div
+      style={{
+        padding: "16px 24px 20px",
+        background: "var(--bg)",
+        borderTop: "1px solid var(--border-soft)",
+      }}
+    >
+      {/* Gap warnings */}
+      {asset.hasAnyGap && (
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          {asset.gap.providerGap && (
+            <div
+              style={{
+                padding: "10px 12px",
+                background: "rgba(251,146,60,0.12)",
+                borderRadius: "6px",
+                border: "1px solid rgba(251,146,60,0.30)",
+                fontSize: "12px",
+                color: "#c2410c",
+              }}
+            >
+              <strong>Provider gap (Art. 50(2)):</strong> {asset.gap.providerGap}
+            </div>
+          )}
+          {asset.gap.deployerGap && (
+            <div
+              style={{
+                padding: "10px 12px",
+                background: "rgba(248,113,113,0.12)",
+                borderRadius: "6px",
+                border: "1px solid rgba(248,113,113,0.30)",
+                fontSize: "12px",
+                color: "#dc2626",
+              }}
+            >
+              <strong>Deployer gap:</strong> {asset.gap.deployerGap}
+            </div>
+          )}
+          {asset.gap.editorialGap && (
+            <div
+              style={{
+                padding: "10px 12px",
+                background: "rgba(250,204,21,0.12)",
+                borderRadius: "6px",
+                border: "1px solid rgba(250,204,21,0.30)",
+                fontSize: "12px",
+                color: "#a16207",
+              }}
+            >
+              <strong>Editorial gap (Art. 50(4)(b)):</strong>{" "}
+              {asset.gap.editorialGap}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Sections grid */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "16px",
+          fontSize: "12px",
+          color: "var(--ink)",
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 600, marginBottom: "6px" }}>
+            A. Provider duty (Art. 50(2))
+          </div>
+          <div style={{ color: "var(--ink-muted)" }}>
+            Marcaj aplicat: <strong>{asset.providerMarkingApplied ? "DA" : "NU"}</strong>
+          </div>
+          <div style={{ color: "var(--ink-muted)" }}>
+            Standard: <strong>{STANDARD_LABELS[asset.providerMarkingStandard]}</strong>
+          </div>
+          {asset.providerMarkingProof && (
+            <div style={{ color: "var(--ink-muted)", marginTop: "4px" }}>
+              Dovadă: <span>{asset.providerMarkingProof}</span>
+            </div>
+          )}
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, marginBottom: "6px" }}>
+            B. Deployer duty (Art. 50(1)/(3)/(4))
+          </div>
+          <div style={{ color: "var(--ink-muted)" }}>
+            Disclosure aplicat:{" "}
+            <strong>{asset.deployerDisclosureApplied ? "DA" : "NU"}</strong>
+          </div>
+          {asset.deployerDisclosurePlacement && (
+            <div style={{ color: "var(--ink-muted)" }}>
+              Placement:{" "}
+              <strong>
+                {PLACEMENT_LABELS_FULL[asset.deployerDisclosurePlacement]}
+              </strong>
+            </div>
+          )}
+          {asset.deployerDisclosureLanguage && (
+            <div style={{ color: "var(--ink-muted)" }}>
+              Limbă:{" "}
+              <strong>{asset.deployerDisclosureLanguage.toUpperCase()}</strong>
+            </div>
+          )}
+          {asset.deployerDisclosureText && (
+            <div style={{ color: "var(--ink-muted)", marginTop: "4px" }}>
+              Text: <em>„{asset.deployerDisclosureText}"</em>
+            </div>
+          )}
+        </div>
+        {(asset.assetType === "public_interest_text" ||
+          asset.isPublicInterest) && (
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: "6px" }}>
+              C. Editorial review (Art. 50(4)(b))
+            </div>
+            <div style={{ color: "var(--ink-muted)" }}>
+              Editorial responsibility claim:{" "}
+              <strong>{asset.editorialResponsibilityClaim ? "DA" : "NU"}</strong>
+            </div>
+            {asset.editorialReviewBy && (
+              <div style={{ color: "var(--ink-muted)" }}>
+                Editor: <strong>{asset.editorialReviewBy}</strong>
+              </div>
+            )}
+            {asset.editorialReviewAtISO && (
+              <div style={{ color: "var(--ink-muted)" }}>
+                Data revizuire: <strong>{asset.editorialReviewAtISO}</strong>
+              </div>
+            )}
+          </div>
+        )}
+        <div>
+          <div style={{ fontWeight: 600, marginBottom: "6px" }}>
+            D. Evidence ({asset.evidenceItems.length})
+          </div>
+          {asset.evidenceItems.length === 0 ? (
+            <div style={{ color: "var(--ink-dim)", fontStyle: "italic" }}>
+              Nicio dovadă atașată.
+            </div>
+          ) : (
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: "16px",
+                color: "var(--ink-muted)",
+              }}
+            >
+              {asset.evidenceItems.map((ev) => (
+                <li key={ev.id} style={{ marginBottom: "4px" }}>
+                  <strong>{EVIDENCE_TYPE_LABELS[ev.type]}:</strong>{" "}
+                  {ev.description}
+                  {ev.url && (
+                    <>
+                      {" "}
+                      <a
+                        href={ev.url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        style={{ color: "var(--cobalt-600)" }}
+                      >
+                        link
+                      </a>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* Findings linked */}
+      {asset.linkedFindingIds.length > 0 && (
+        <div
+          style={{
+            marginTop: "12px",
+            fontSize: "11px",
+            color: "var(--ink-dim)",
+          }}
+        >
+          Findings linkate:{" "}
+          {asset.linkedFindingIds.map((fid) => (
+            <a
+              key={fid}
+              href={`/dashboard/resolve/${fid}`}
+              style={{
+                color: "var(--cobalt-600)",
+                marginRight: "8px",
+                textDecoration: "underline",
+              }}
+            >
+              {fid}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div
+        style={{
+          marginTop: "16px",
+          display: "flex",
+          gap: "8px",
+          flexWrap: "wrap",
+        }}
+      >
+        {!asset.providerMarkingApplied && (
+          <button
+            onClick={markProviderApplied}
+            disabled={busy !== null}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              border: "1px solid var(--border)",
+              background: "var(--bg-raised)",
+              color: "var(--ink)",
+              fontSize: "12px",
+              cursor: busy ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            {busy === "provider" ? (
+              <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+            ) : (
+              <ShieldCheck size={12} />
+            )}
+            Marchează provider mark aplicat
+          </button>
+        )}
+        {!asset.deployerDisclosureApplied && (
+          <button
+            onClick={markDeployerApplied}
+            disabled={busy !== null}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              border: "1px solid var(--border)",
+              background: "var(--bg-raised)",
+              color: "var(--ink)",
+              fontSize: "12px",
+              cursor: busy ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            {busy === "deployer" ? (
+              <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+            ) : (
+              <CheckCircle2 size={12} />
+            )}
+            Marchează deployer disclosure aplicat
+          </button>
+        )}
+        <button
+          onClick={() => setShowEvidence(true)}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "1px solid var(--border)",
+            background: "var(--bg-raised)",
+            color: "var(--ink)",
+            fontSize: "12px",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <Upload size={12} />
+          Atașează dovadă
+        </button>
+        <button
+          onClick={deleteAsset}
+          disabled={busy !== null}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "1px solid rgba(248,113,113,0.30)",
+            background: "rgba(248,113,113,0.06)",
+            color: "#dc2626",
+            fontSize: "12px",
+            cursor: busy ? "not-allowed" : "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          {busy === "delete" ? (
+            <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+          ) : (
+            <Trash2 size={12} />
+          )}
+          Șterge
+        </button>
+      </div>
+
+      {actionError && (
+        <div
+          role="alert"
+          style={{
+            marginTop: "10px",
+            padding: "8px 10px",
+            background: "rgba(248,113,113,0.10)",
+            border: "1px solid rgba(248,113,113,0.30)",
+            borderRadius: "6px",
+            fontSize: "12px",
+            color: "#dc2626",
+          }}
+        >
+          {actionError}
+        </div>
+      )}
+
+      {showEvidence && (
+        <AttachEvidenceModal
+          assetId={asset.id}
+          onClose={() => setShowEvidence(false)}
+          onAttached={() => {
+            setShowEvidence(false)
+            void onChanged()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Create asset modal
+// ────────────────────────────────────────────────────────────────────────────
+
+function ContentAssetCreateModal({
+  schema,
+  onClose,
+  onCreated,
+}: {
+  schema: ContentRegisterResponse["schema"]
+  onClose: () => void
+  onCreated: () => void | Promise<void>
+}) {
+  const [title, setTitle] = useState("")
+  const [assetType, setAssetType] = useState<AIContentAssetType>("image")
+  const [distributionContext, setDistributionContext] = useState("")
+  const [providerMarkingApplied, setProviderMarkingApplied] = useState(false)
+  const [providerMarkingStandard, setProviderMarkingStandard] =
+    useState<ContentLabelingStandard>("none")
+  const [providerMarkingProof, setProviderMarkingProof] = useState("")
+  const [deployerDisclosureApplied, setDeployerDisclosureApplied] = useState(false)
+  const [deployerDisclosurePlacement, setDeployerDisclosurePlacement] =
+    useState<TransparencyPlacement>("footer")
+  const [deployerDisclosureText, setDeployerDisclosureText] = useState("")
+  const [deployerDisclosureLanguage, setDeployerDisclosureLanguage] =
+    useState<TransparencyLanguage>("ro")
+  const [isPublicInterest, setIsPublicInterest] = useState(false)
+  const [editorialReviewBy, setEditorialReviewBy] = useState("")
+  const [editorialResponsibilityClaim, setEditorialResponsibilityClaim] =
+    useState(false)
+  const [notes, setNotes] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const showPublicInterestSection =
+    assetType === "public_interest_text" || isPublicInterest
+
+  const submit = async () => {
+    setError(null)
+    if (!title.trim()) {
+      setError("Titlul este obligatoriu.")
+      return
+    }
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/transparency/content-assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          assetType,
+          distributionContext: distributionContext
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          providerMarkingApplied,
+          providerMarkingStandard,
+          providerMarkingProof: providerMarkingProof.trim() || undefined,
+          deployerDisclosureApplied,
+          deployerDisclosurePlacement: deployerDisclosureApplied
+            ? deployerDisclosurePlacement
+            : undefined,
+          deployerDisclosureText: deployerDisclosureApplied
+            ? deployerDisclosureText.trim() || undefined
+            : undefined,
+          deployerDisclosureLanguage: deployerDisclosureApplied
+            ? deployerDisclosureLanguage
+            : undefined,
+          isPublicInterest: isPublicInterest || undefined,
+          editorialReviewBy: editorialReviewBy.trim() || undefined,
+          editorialResponsibilityClaim: showPublicInterestSection
+            ? editorialResponsibilityClaim
+            : undefined,
+          notes: notes.trim() || undefined,
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `HTTP ${res.status}`)
+      }
+      await onCreated()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Eroare")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15,23,42,0.55)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        padding: "48px 16px",
+        overflowY: "auto",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: "720px",
+          background: "var(--bg)",
+          border: "1px solid var(--border)",
+          borderRadius: "12px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+        }}
+      >
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--border-soft)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-display-v3)",
+              fontSize: "16px",
+              fontWeight: 600,
+              color: "var(--ink)",
+            }}
+          >
+            Adaugă asset — Content Register Art. 50
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Închide"
+            style={{
+              padding: "6px",
+              borderRadius: "6px",
+              border: "1px solid var(--border)",
+              background: "var(--bg-raised)",
+              color: "var(--ink-muted)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+            maxHeight: "70vh",
+            overflowY: "auto",
+          }}
+        >
+          {/* Identification */}
+          <div>
+            <label
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "var(--ink)",
+                display: "block",
+                marginBottom: "6px",
+              }}
+            >
+              Titlu asset *
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="ex: Banner reclamă produs X — generat Midjourney"
+              style={{
+                width: "100%",
+                padding: "8px 10px",
+                border: "1px solid var(--border)",
+                borderRadius: "6px",
+                background: "var(--bg)",
+                color: "var(--ink)",
+                fontSize: "13px",
+              }}
+            />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
+              >
+                Tip asset *
+              </label>
+              <select
+                value={assetType}
+                onChange={(e) =>
+                  setAssetType(e.target.value as AIContentAssetType)
+                }
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: "13px",
+                }}
+              >
+                {schema.assetTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {ASSET_TYPE_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "var(--ink)",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
+              >
+                Canale distribuție (separate prin virgulă)
+              </label>
+              <input
+                value={distributionContext}
+                onChange={(e) => setDistributionContext(e.target.value)}
+                placeholder="ex: LinkedIn Ads, Website hero, Newsletter"
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: "13px",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Provider section */}
+          <div
+            style={{
+              padding: "14px",
+              background: "var(--bg-raised)",
+              borderRadius: "8px",
+              border: "1px solid var(--border-soft)",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "13px",
+                color: "var(--ink)",
+                marginBottom: "8px",
+              }}
+            >
+              A. Provider duty (Art. 50(2))
+            </div>
+            <label
+              style={{
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                color: "var(--ink)",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={providerMarkingApplied}
+                onChange={(e) => setProviderMarkingApplied(e.target.checked)}
+              />
+              Marcaj tehnic machine-readable aplicat
+            </label>
+            <div style={{ marginTop: "8px" }}>
+              <label
+                style={{
+                  fontSize: "12px",
+                  color: "var(--ink-muted)",
+                  display: "block",
+                  marginBottom: "4px",
+                }}
+              >
+                Standard
+              </label>
+              <select
+                value={providerMarkingStandard}
+                onChange={(e) =>
+                  setProviderMarkingStandard(
+                    e.target.value as ContentLabelingStandard,
+                  )
+                }
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: "12px",
+                }}
+              >
+                {schema.standards.map((s) => (
+                  <option key={s} value={s}>
+                    {STANDARD_LABELS[s]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ marginTop: "8px" }}>
+              <label
+                style={{
+                  fontSize: "12px",
+                  color: "var(--ink-muted)",
+                  display: "block",
+                  marginBottom: "4px",
+                }}
+              >
+                Dovadă marcaj (URL sau notă)
+              </label>
+              <input
+                value={providerMarkingProof}
+                onChange={(e) => setProviderMarkingProof(e.target.value)}
+                placeholder="ex: https://verify.c2pa.org/asset/xyz sau IPTC Digital Source Type=trainedAlgorithmicMedia"
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: "12px",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Deployer section */}
+          <div
+            style={{
+              padding: "14px",
+              background: "var(--bg-raised)",
+              borderRadius: "8px",
+              border: "1px solid var(--border-soft)",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "13px",
+                color: "var(--ink)",
+                marginBottom: "8px",
+              }}
+            >
+              B. Deployer duty (Art. 50(1)/(3)/(4))
+            </div>
+            <label
+              style={{
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                color: "var(--ink)",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={deployerDisclosureApplied}
+                onChange={(e) =>
+                  setDeployerDisclosureApplied(e.target.checked)
+                }
+              />
+              Disclosure vizibil aplicat către utilizatori
+            </label>
+            {deployerDisclosureApplied && (
+              <>
+                <div
+                  style={{
+                    marginTop: "8px",
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr",
+                    gap: "8px",
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--ink-muted)",
+                        display: "block",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Placement
+                    </label>
+                    <select
+                      value={deployerDisclosurePlacement}
+                      onChange={(e) =>
+                        setDeployerDisclosurePlacement(
+                          e.target.value as TransparencyPlacement,
+                        )
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "6px 10px",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
+                        background: "var(--bg)",
+                        color: "var(--ink)",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {schema.placements.map((p) => (
+                        <option key={p} value={p}>
+                          {PLACEMENT_LABELS_FULL[p]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--ink-muted)",
+                        display: "block",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Limbă
+                    </label>
+                    <select
+                      value={deployerDisclosureLanguage}
+                      onChange={(e) =>
+                        setDeployerDisclosureLanguage(
+                          e.target.value as TransparencyLanguage,
+                        )
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "6px 10px",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
+                        background: "var(--bg)",
+                        color: "var(--ink)",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {schema.languages.map((l) => (
+                        <option key={l} value={l}>
+                          {l.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginTop: "8px" }}>
+                  <label
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--ink-muted)",
+                      display: "block",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Text disclosure (cum apare vizibil)
+                  </label>
+                  <textarea
+                    value={deployerDisclosureText}
+                    onChange={(e) => setDeployerDisclosureText(e.target.value)}
+                    rows={2}
+                    placeholder="ex: „Conținut generat cu AI — Art. 50(2) EU AI Act"
+                    style={{
+                      width: "100%",
+                      padding: "6px 10px",
+                      border: "1px solid var(--border)",
+                      borderRadius: "6px",
+                      background: "var(--bg)",
+                      color: "var(--ink)",
+                      fontSize: "12px",
+                      fontFamily: "inherit",
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Public-interest editorial (collapsed when not applicable) */}
+          {(assetType === "public_interest_text" ||
+            assetType === "text_synthetic") && (
+            <div
+              style={{
+                padding: "14px",
+                background: "var(--bg-raised)",
+                borderRadius: "8px",
+                border: "1px solid var(--border-soft)",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  color: "var(--ink)",
+                  marginBottom: "8px",
+                }}
+              >
+                C. Public-interest editorial (Art. 50(4)(b))
+              </div>
+              <label
+                style={{
+                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  color: "var(--ink)",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isPublicInterest}
+                  onChange={(e) => setIsPublicInterest(e.target.checked)}
+                />
+                Conținutul este pe un subiect de interes public
+              </label>
+              {showPublicInterestSection && (
+                <>
+                  <label
+                    style={{
+                      fontSize: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      color: "var(--ink)",
+                      marginTop: "8px",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editorialResponsibilityClaim}
+                      onChange={(e) =>
+                        setEditorialResponsibilityClaim(e.target.checked)
+                      }
+                    />
+                    Editorul își asumă responsabilitatea editorială (derogare
+                    Art. 50(4)(b))
+                  </label>
+                  <div style={{ marginTop: "8px" }}>
+                    <label
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--ink-muted)",
+                        display: "block",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Editor responsabil (email)
+                    </label>
+                    <input
+                      value={editorialReviewBy}
+                      onChange={(e) => setEditorialReviewBy(e.target.value)}
+                      placeholder="editor@news.ro"
+                      style={{
+                        width: "100%",
+                        padding: "6px 10px",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
+                        background: "var(--bg)",
+                        color: "var(--ink)",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          <div>
+            <label
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "var(--ink)",
+                display: "block",
+                marginBottom: "6px",
+              }}
+            >
+              Note interne
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              placeholder="(opțional) context, decizii editoriale, etc."
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                border: "1px solid var(--border)",
+                borderRadius: "6px",
+                background: "var(--bg)",
+                color: "var(--ink)",
+                fontSize: "12px",
+                fontFamily: "inherit",
+                resize: "vertical",
+              }}
+            />
+          </div>
+
+          {error && (
+            <div
+              role="alert"
+              style={{
+                padding: "10px 12px",
+                background: "rgba(248,113,113,0.10)",
+                border: "1px solid rgba(248,113,113,0.30)",
+                borderRadius: "6px",
+                fontSize: "12px",
+                color: "#dc2626",
+              }}
+            >
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            padding: "12px 20px",
+            borderTop: "1px solid var(--border-soft)",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "8px",
+          }}
+        >
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            style={{
+              padding: "8px 14px",
+              borderRadius: "6px",
+              border: "1px solid var(--border)",
+              background: "var(--bg-raised)",
+              color: "var(--ink-muted)",
+              fontSize: "13px",
+              cursor: submitting ? "not-allowed" : "pointer",
+            }}
+          >
+            Anulează
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting}
+            style={{
+              padding: "8px 14px",
+              borderRadius: "6px",
+              border: "1px solid var(--cobalt-600)",
+              background: "var(--cobalt-600)",
+              color: "#fff",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: submitting ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            {submitting && (
+              <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+            )}
+            Salvează asset
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Attach evidence modal
+// ────────────────────────────────────────────────────────────────────────────
+
+function AttachEvidenceModal({
+  assetId,
+  onClose,
+  onAttached,
+}: {
+  assetId: string
+  onClose: () => void
+  onAttached: () => void | Promise<void>
+}) {
+  const [type, setType] = useState<AIContentEvidenceType>("screenshot")
+  const [description, setDescription] = useState("")
+  const [url, setUrl] = useState("")
+  const [fileName, setFileName] = useState("")
+  const [fileHash, setFileHash] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = async () => {
+    setError(null)
+    if (description.trim().length < 3) {
+      setError("Descriere min 3 caractere.")
+      return
+    }
+    setSubmitting(true)
+    try {
+      const res = await fetch(
+        `/api/transparency/content-assets/${assetId}/evidence`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type,
+            description: description.trim(),
+            url: url.trim() || undefined,
+            fileName: fileName.trim() || undefined,
+            fileHash: fileHash.trim() || undefined,
+          }),
+        },
+      )
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `HTTP ${res.status}`)
+      }
+      await onAttached()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Eroare")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15,23,42,0.55)",
+        zIndex: 1100,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        padding: "48px 16px",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: "520px",
+          background: "var(--bg)",
+          border: "1px solid var(--border)",
+          borderRadius: "12px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+        }}
+      >
+        <div
+          style={{
+            padding: "14px 18px",
+            borderBottom: "1px solid var(--border-soft)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-display-v3)",
+              fontSize: "15px",
+              fontWeight: 600,
+              color: "var(--ink)",
+            }}
+          >
+            Atașează dovadă Art. 50
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Închide"
+            style={{
+              padding: "4px",
+              borderRadius: "6px",
+              border: "1px solid var(--border)",
+              background: "var(--bg-raised)",
+              color: "var(--ink-muted)",
+              cursor: "pointer",
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            padding: "16px 18px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+          }}
+        >
+          <div>
+            <label
+              style={{
+                fontSize: "12px",
+                color: "var(--ink)",
+                display: "block",
+                marginBottom: "4px",
+              }}
+            >
+              Tip dovadă
+            </label>
+            <select
+              value={type}
+              onChange={(e) =>
+                setType(e.target.value as AIContentEvidenceType)
+              }
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                border: "1px solid var(--border)",
+                borderRadius: "6px",
+                background: "var(--bg)",
+                color: "var(--ink)",
+                fontSize: "12px",
+              }}
+            >
+              {Object.entries(EVIDENCE_TYPE_LABELS).map(([k, label]) => (
+                <option key={k} value={k}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label
+              style={{
+                fontSize: "12px",
+                color: "var(--ink)",
+                display: "block",
+                marginBottom: "4px",
+              }}
+            >
+              Descriere *
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              placeholder={"ex: Screenshot post LinkedIn cu eticheta „Generated by AI” vizibilă în footer."}
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                border: "1px solid var(--border)",
+                borderRadius: "6px",
+                background: "var(--bg)",
+                color: "var(--ink)",
+                fontSize: "12px",
+                fontFamily: "inherit",
+                resize: "vertical",
+              }}
+            />
+          </div>
+          <div>
+            <label
+              style={{
+                fontSize: "12px",
+                color: "var(--ink)",
+                display: "block",
+                marginBottom: "4px",
+              }}
+            >
+              URL dovadă (opțional)
+            </label>
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://…"
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                border: "1px solid var(--border)",
+                borderRadius: "6px",
+                background: "var(--bg)",
+                color: "var(--ink)",
+                fontSize: "12px",
+              }}
+            />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div>
+              <label
+                style={{
+                  fontSize: "12px",
+                  color: "var(--ink)",
+                  display: "block",
+                  marginBottom: "4px",
+                }}
+              >
+                Nume fișier (opțional)
+              </label>
+              <input
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+                placeholder="screenshot.png"
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: "12px",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  fontSize: "12px",
+                  color: "var(--ink)",
+                  display: "block",
+                  marginBottom: "4px",
+                }}
+              >
+                SHA-256 hash (opțional)
+              </label>
+              <input
+                value={fileHash}
+                onChange={(e) => setFileHash(e.target.value)}
+                placeholder="ex: f3a8…"
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  fontSize: "12px",
+                  fontFamily: "monospace",
+                }}
+              />
+            </div>
+          </div>
+          {error && (
+            <div
+              role="alert"
+              style={{
+                padding: "8px 10px",
+                background: "rgba(248,113,113,0.10)",
+                border: "1px solid rgba(248,113,113,0.30)",
+                borderRadius: "6px",
+                fontSize: "12px",
+                color: "#dc2626",
+              }}
+            >
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            padding: "12px 18px",
+            borderTop: "1px solid var(--border-soft)",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "8px",
+          }}
+        >
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              border: "1px solid var(--border)",
+              background: "var(--bg-raised)",
+              color: "var(--ink-muted)",
+              fontSize: "12px",
+              cursor: submitting ? "not-allowed" : "pointer",
+            }}
+          >
+            Anulează
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              border: "1px solid var(--cobalt-600)",
+              background: "var(--cobalt-600)",
+              color: "#fff",
+              fontSize: "12px",
+              fontWeight: 500,
+              cursor: submitting ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            {submitting && (
+              <Loader2 size={11} style={{ animation: "spin 1s linear infinite" }} />
+            )}
+            Atașează
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
