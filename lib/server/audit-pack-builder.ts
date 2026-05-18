@@ -72,6 +72,7 @@ import {
 import { buildPmmMarkdown } from "@/lib/server/pmm-store"
 import { PMM_REVIEW_CYCLE_LABELS } from "@/lib/compliance/pmm-schema"
 import { buildIncidentMarkdown } from "@/lib/server/ai-incident-store"
+import { buildAuthorityCooperationMarkdown } from "@/lib/server/authority-cooperation-store"
 import {
   AI_INCIDENT_CATEGORY_LABELS,
   AI_INCIDENT_STATUS_LABELS,
@@ -352,6 +353,16 @@ export async function buildAuditPack(
       aiAdsClaimsCount: (state.aiAdsClaims ?? []).length,
       aiAdsApprovalsCount: (state.aiAdsCreativeApprovals ?? []).length,
       conversionTrackingReviewsCount: (state.conversionTrackingReviews ?? []).length,
+      // Sprint 026 — Art. 21 + Art. 26(11) cooperation requests.
+      authorityCooperationRequestsCount: (state.authorityCooperationRequests ?? []).length,
+      // Sprint 026 — Art. 47 EU Declaration of Conformity + Art. 48 CE marking checklist
+      // (sub-tipuri din `generatedDocuments`; numărate separat pentru auditori).
+      euDocArt47Count: state.generatedDocuments.filter(
+        (d) => d.documentType === "eu-doc-art-47",
+      ).length,
+      ceMarkingChecklistArt48Count: state.generatedDocuments.filter(
+        (d) => d.documentType === "ce-marking-art-48-checklist",
+      ).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -693,6 +704,70 @@ function buildFileContents(input: {
     })
   }
 
+  // Sprint 026 — Art. 47 EU Declaration of Conformity (Anexa V content).
+  const euDocs = input.state.generatedDocuments.filter(
+    (d) => d.documentType === "eu-doc-art-47"
+  )
+  files.push({
+    path: "documents/eu-declaration-art-47/_index.json",
+    bytes: utf8(
+      JSON.stringify(
+        {
+          generatedAt: input.generatedAt,
+          legalBasis: "Regulamentul (UE) 2024/1689, Articolul 47 + Anexa V",
+          count: euDocs.length,
+          documents: euDocs.map((doc) => ({
+            id: doc.id,
+            systemId: doc.systemId,
+            createdAtISO: doc.createdAtISO,
+            approvalStatus: doc.approvalStatus ?? "pending",
+            fileName: buildEuDocFileName(doc, input.state.aiSystems),
+          })),
+        },
+        null,
+        2,
+      ),
+    ),
+  })
+  for (const doc of euDocs) {
+    files.push({
+      path: `documents/eu-declaration-art-47/${buildEuDocFileName(doc, input.state.aiSystems)}`,
+      bytes: utf8(doc.content),
+    })
+  }
+
+  // Sprint 026 — Art. 48 CE marking checklist.
+  const ceDocs = input.state.generatedDocuments.filter(
+    (d) => d.documentType === "ce-marking-art-48-checklist"
+  )
+  files.push({
+    path: "documents/ce-marking-art-48/_index.json",
+    bytes: utf8(
+      JSON.stringify(
+        {
+          generatedAt: input.generatedAt,
+          legalBasis: "Regulamentul (UE) 2024/1689, Articolul 48",
+          count: ceDocs.length,
+          documents: ceDocs.map((doc) => ({
+            id: doc.id,
+            systemId: doc.systemId,
+            createdAtISO: doc.createdAtISO,
+            approvalStatus: doc.approvalStatus ?? "pending",
+            fileName: buildCEMarkingFileName(doc, input.state.aiSystems),
+          })),
+        },
+        null,
+        2,
+      ),
+    ),
+  })
+  for (const doc of ceDocs) {
+    files.push({
+      path: `documents/ce-marking-art-48/${buildCEMarkingFileName(doc, input.state.aiSystems)}`,
+      bytes: utf8(doc.content),
+    })
+  }
+
   // literacy/training-records.json
   files.push({
     path: "literacy/training-records.json",
@@ -800,7 +875,29 @@ function buildFileContents(input: {
   // ── Sprint 024: AI Ads / LLM Commerce Compliance Pack ────────────────
   pushAIAdsFiles(files, input.state, input.orgName)
 
+  // ── Sprint 026: Art. 21 + Art. 26(11) Authority Cooperation Log ──────
+  pushAuthorityCooperationFiles(files, input.state)
+
   return files
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 026 — Art. 21 + Art. 26(11) Authority Cooperation Log
+//
+//   cooperation/cooperation-log.md — registru solicitări oficiale primite de
+//   la autorități (ANSPDCP / ADR / ANCOM / ASF / AI Office / market
+//   surveillance) cu status, deadline, răspuns, închidere.
+// ────────────────────────────────────────────────────────────────────────────
+
+function pushAuthorityCooperationFiles(
+  files: FileBytes[],
+  state: AIActState,
+): void {
+  const records = state.authorityCooperationRequests ?? []
+  files.push({
+    path: "cooperation/cooperation-log.md",
+    bytes: utf8(buildAuthorityCooperationMarkdown(records)),
+  })
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2061,6 +2158,27 @@ function buildAnnexFileName(
   return `annex-iv-${sysSlug}-${date}-${doc.id.slice(-6)}.md`
 }
 
+// Sprint 026 — file-name helpers pentru Art. 47 (EU DoC) și Art. 48 (CE marking).
+function buildEuDocFileName(
+  doc: GeneratedDocumentRecord,
+  systems: AISystemRecord[]
+): string {
+  const system = systems.find((s) => s.id === doc.systemId)
+  const sysSlug = slugify(system?.name ?? doc.systemId)
+  const date = doc.createdAtISO.slice(0, 10)
+  return `eu-doc-art-47-${sysSlug}-${date}-${doc.id.slice(-6)}.md`
+}
+
+function buildCEMarkingFileName(
+  doc: GeneratedDocumentRecord,
+  systems: AISystemRecord[]
+): string {
+  const system = systems.find((s) => s.id === doc.systemId)
+  const sysSlug = slugify(system?.name ?? doc.systemId)
+  const date = doc.createdAtISO.slice(0, 10)
+  return `ce-marking-art-48-${sysSlug}-${date}-${doc.id.slice(-6)}.md`
+}
+
 function buildAuditTrailLog(input: {
   state: AIActState
   generatedAt: string
@@ -2099,9 +2217,40 @@ function buildAuditTrailLog(input: {
 
   // Documents
   for (const doc of input.state.generatedDocuments) {
-    push(doc.createdAtISO, input.issuedByUserEmail, "DOCUMENT_GENERATED", `annex-iv ${doc.id} → system=${doc.systemId}`)
+    push(
+      doc.createdAtISO,
+      input.issuedByUserEmail,
+      "DOCUMENT_GENERATED",
+      `${doc.documentType} ${doc.id} → system=${doc.systemId}`,
+    )
     if (doc.approvalStatus === "approved_as_evidence") {
       push(doc.createdAtISO, input.issuedByUserEmail, "DOCUMENT_APPROVED_AS_EVIDENCE", doc.id)
+    }
+  }
+
+  // Sprint 026 — Authority Cooperation Requests (Art. 21 + Art. 26(11))
+  for (const r of input.state.authorityCooperationRequests ?? []) {
+    push(
+      r.createdAtISO,
+      r.createdByEmail,
+      "AUTHORITY_COOPERATION_REQUEST_LOGGED",
+      `${r.id} authority=${r.authority} subject="${r.subject}"`,
+    )
+    if (r.respondedAtISO) {
+      push(
+        r.respondedAtISO,
+        r.responsibleEmail,
+        "AUTHORITY_COOPERATION_RESPONSE_SENT",
+        r.id,
+      )
+    }
+    if (r.closedAtISO) {
+      push(
+        r.closedAtISO,
+        r.responsibleEmail,
+        "AUTHORITY_COOPERATION_CASE_CLOSED",
+        r.id,
+      )
     }
   }
 
