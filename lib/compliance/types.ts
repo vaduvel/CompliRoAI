@@ -1417,6 +1417,17 @@ export type ComplianceState = {
    * re-evaluare risc sau când o anomalie critică rămâne nerezolvată.
    */
   pmmPlans?: PmmPlan[]
+
+  /**
+   * Sprint 020 — AI Act serious incidents (Art. 73, distinct de GDPR Art. 33).
+   * Fiecare record capturează un incident serios afectând un sistem AI
+   * high-risk: categorie + severitate + deadline Art. 73(3) (2/10/15 zile) +
+   * notificări către autoritatea de supraveghere + investigație root cause
+   * Art. 73(4). Bidirectional links: linkedBreachId (Sprint 008D) când
+   * același eveniment atinge date personale; linkedPmmAnomalyId (Sprint 019)
+   * când a fost escaladat dintr-o anomalie PMM critică.
+   */
+  aiIncidents?: AIIncident[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2482,6 +2493,196 @@ export type PmmPlan = {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   linkedFindingIds: string[]
   notes?: string
+  generatedMarkdown?: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   AI Incident Reporting — Art. 73 AI Act (Sprint 020)
+//
+//   Distinct from GDPR Art. 33 breach (Sprint 008D). Art. 73 AI Act se aplică
+//   sistemelor AI high-risk introduse pe piață în UE (provider) sau folosite
+//   în UE (deployer via Art. 26(5)), când apare un "incident serios" definit
+//   la Art. 3(49):
+//     (a) deces de persoană sau lezare gravă a sănătății
+//     (b) perturbare gravă + ireversibilă a managementului / funcționării
+//         infrastructurii critice
+//     (c) încălcare a obligațiilor din dreptul Uniunii destinate protecției
+//         drepturilor fundamentale
+//     (d) prejudiciu grav adus proprietății sau mediului
+//
+//   Termenele Art. 73(3):
+//     • 2 zile  → deces / lezare gravă a sănătății + critical_infrastructure
+//                 (b) ireversibil + widespread infringement
+//     • 10 zile → widespread infringement
+//     • 15 zile → orice alt incident serios
+//
+//   Art. 73(4) cere investigație root cause. Art. 73(5) descrie conținutul
+//   raportului (natura + circumstanțe + părți afectate + măsuri provizorii).
+//   Art. 26(5) impune deployer-ului să informeze provider-ul când detectează
+//   incident serios.
+//
+//   Bidirectional linkage:
+//     • linkedBreachId    → BreachRecord (Sprint 008D) când același eveniment
+//                           atinge și date personale (notificare paralelă
+//                           ANSPDCP Art. 33 + market surveillance Art. 73)
+//     • linkedPmmAnomalyId → PmmAnomalyRecord (Sprint 019) când incidentul a
+//                           fost escaladat dintr-o anomalie PMM
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Categoria incidentului per Art. 73(2). Determină termenul de raportare:
+ *   • death_or_serious_harm_health    → 2 zile
+ *   • critical_infrastructure_disruption → 2 zile
+ *   • widespread_infringement         → 10 zile
+ *   • fundamental_rights_infringement → 15 zile
+ *   • property_or_environment_harm    → 15 zile
+ *   • other_serious                   → 15 zile
+ */
+export type AIIncidentCategory =
+  | "death_or_serious_harm_health"
+  | "critical_infrastructure_disruption"
+  | "fundamental_rights_infringement"
+  | "widespread_infringement"
+  | "property_or_environment_harm"
+  | "other_serious"
+
+export type AIIncidentSeverity = "minor" | "moderate" | "serious" | "catastrophic"
+
+/**
+ * Lifecycle status:
+ *   draft                    — în pregătire, nu s-a decis dacă e raportabil
+ *   assessing                — evaluare de către DPO / responsabil AI
+ *   notification_required    — confirmat raportabil, încă netrimis autoritate
+ *   authority_notified       — notificarea a fost transmisă autorității
+ *   root_cause_investigation — Art. 73(4) în curs
+ *   remediated               — acțiuni corective aplicate, pending closure
+ *   closed                   — incident închis cu lecții documentate
+ *   not_reportable           — evaluat și concluzionat că NU este Art. 73
+ */
+export type AIIncidentStatus =
+  | "draft"
+  | "assessing"
+  | "notification_required"
+  | "authority_notified"
+  | "root_cause_investigation"
+  | "remediated"
+  | "closed"
+  | "not_reportable"
+
+export type AIIncidentNotificationStatus =
+  | "draft"
+  | "submitted"
+  | "acknowledged"
+  | "additional_info_requested"
+
+/**
+ * O singură notificare către autoritate. Poate fi mai multe: notificarea
+ * inițială (Art. 73(1)), urmată de update-uri / informații suplimentare la
+ * cererea autorității (Art. 73(7)).
+ */
+export type AIIncidentNotificationRecord = {
+  id: string
+  /**
+   * Numele autorității notificate. În România, market surveillance authority
+   * pentru AI Act este TBD (ADR coordonează; ANCOM propus). DPO completează
+   * conform desemnării oficiale din momentul incidentului.
+   */
+  authorityName: string
+  status: AIIncidentNotificationStatus
+  submittedAtISO?: string
+  /** Numărul de înregistrare al autorității (probă oficială). */
+  referenceNumber?: string
+  acknowledgmentReceivedAtISO?: string
+  additionalInfoRequestedAtISO?: string
+  /** Persoană de contact din autoritate. */
+  contactPersonEmail?: string
+  notes?: string
+}
+
+/**
+ * Art. 73(4) — investigația cauzei rădăcină. Provider-ul (și deployer-ul, prin
+ * Art. 26(5)) trebuie să investigheze incidentul, să stabilească contribuitorii
+ * și să implementeze măsuri corective + preventive verificabile.
+ */
+export type AIIncidentRootCause = {
+  identifiedAtISO: string
+  identifiedByEmail: string
+  rootCauseDescription: string
+  contributingFactors: string[]
+  evidenceCollected: string[]
+  remediationActions: string[]
+  preventionActions: string[]
+  preventiveMeasuresImplementedAtISO?: string
+}
+
+/**
+ * Incident raportabil sub Art. 73 EU AI Act. Per sistem AI high-risk, poate
+ * exista 0..N incidente; lifecycle-ul este independent pentru fiecare.
+ *
+ * Termenul (`reportingDeadlineISO`) este calculat de evaluator pornind de la
+ * `detectedAtISO` (clock starts când organizația a luat la cunoștință, per
+ * Art. 73(3) — "after becoming aware").
+ */
+export type AIIncident = {
+  id: string
+  orgId: string
+  title: string
+  description: string
+  category: AIIncidentCategory
+  severity: AIIncidentSeverity
+  /** Sistemul AI high-risk implicat (din state.aiSystems). */
+  linkedAISystemId: string
+  /** Categorii de persoane afectate (ex: "clienți", "angajați", "pacienți"). */
+  affectedSubjectsCategories: string[]
+  /** Număr aproximativ de persoane afectate (best estimate). */
+  affectedSubjectsCount?: number
+  /** Când s-a produs efectiv incidentul (poate fi anterior detectării). */
+  occurredAtISO?: string
+  /**
+   * Când organizația a devenit conștientă de incident — clock-ul Art. 73(3)
+   * începe de la acest moment.
+   */
+  detectedAtISO: string
+  /**
+   * Calculat de evaluator pe baza categoriei: detectedAt + 2/10/15 zile.
+   */
+  reportingDeadlineISO: string
+  reportingDeadlineDays: 2 | 10 | 15
+  /**
+   * Notificările trimise autorității de supraveghere (poate fi 0..N).
+   */
+  notifications: AIIncidentNotificationRecord[]
+  /**
+   * Concluzia evaluării: este incidentul raportabil Art. 73? True implicit
+   * pentru categoriile (a)/(b)/(c); poate fi marcat false după evaluare DPO
+   * dacă nu îndeplinește pragul "serios".
+   */
+  notificationRequired: boolean
+  /**
+   * Investigația Art. 73(4) — completată după ce echipa stabilește cauza.
+   */
+  rootCause?: AIIncidentRootCause
+  /**
+   * Sprint 008D bridge — când același eveniment atinge și date personale,
+   * BreachRecord-ul GDPR Art. 33 paralel este referențiat aici.
+   */
+  linkedBreachId?: string
+  /**
+   * Sprint 019 bridge — când incidentul a fost escaladat dintr-o anomalie
+   * PMM (PmmAnomalyRecord.severity = critical), planul + anomalia sunt
+   * referențiate aici.
+   */
+  linkedPmmAnomalyId?: string
+  /** ScanFinding-uri emise de evaluator (deadline overdue, lipsă root cause). */
+  linkedFindingIds: string[]
+  status: AIIncidentStatus
+  assignedToEmail?: string
+  closedAtISO?: string
+  closureNotes?: string
+  notes?: string
+  /** Markdown live regenerat de evaluator pentru export. */
   generatedMarkdown?: string
   createdAtISO: string
   updatedAtISO: string
