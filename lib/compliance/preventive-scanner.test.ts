@@ -541,4 +541,226 @@ describe("preventive-scanner", () => {
       expect(a.detectedAtISO).toBe(NOW)
     }
   })
+
+  // ────────────────────────────────────────────────────────────────────────
+  //   Sprint 023.7 — Rules 17-20 (Art. 50 Content Labeling Depth)
+  // ────────────────────────────────────────────────────────────────────────
+
+  it("Rule 17: deepfake fără disclosure emite CRITICAL action + shouldEmail", () => {
+    const state = baseState({
+      aiContentAssets: [
+        {
+          id: "asset-deepfake-1",
+          orgId: "org",
+          title: "Reclamă deepfake celebrity",
+          assetType: "deepfake",
+          distributionContext: ["TikTok Ads"],
+          providerMarkingApplied: false,
+          providerMarkingStandard: "none",
+          deployerDisclosureApplied: false,
+          evidenceItems: [],
+          linkedFindingIds: [],
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const deepfakeAction = actions.find(
+      (a) => a.type === "art50_deepfake_no_watermark",
+    )
+    expect(deepfakeAction).toBeTruthy()
+    expect(deepfakeAction?.urgency).toBe("critical")
+    expect(deepfakeAction?.shouldEmitFinding).toBe(true)
+    expect(deepfakeAction?.shouldEmail).toBe(true)
+    expect(deepfakeAction?.entityType).toBe("content_asset")
+  })
+
+  it("Rule 18: imagine sintetică fără marcaj emite due_soon action", () => {
+    const state = baseState({
+      aiContentAssets: [
+        {
+          id: "asset-img-1",
+          orgId: "org",
+          title: "Hero image Midjourney",
+          assetType: "image",
+          distributionContext: ["Website"],
+          providerMarkingApplied: false,
+          providerMarkingStandard: "none",
+          deployerDisclosureApplied: true,
+          evidenceItems: [],
+          linkedFindingIds: [],
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find(
+      (a) => a.type === "art50_synthetic_content_no_metadata",
+    )
+    expect(action).toBeTruthy()
+    expect(action?.urgency).toBe("due_soon")
+    expect(action?.shouldEmitFinding).toBe(true)
+  })
+
+  it("Rule 18: imagine cu C2PA NU emite action", () => {
+    const state = baseState({
+      aiContentAssets: [
+        {
+          id: "asset-img-2",
+          orgId: "org",
+          title: "Hero image cu C2PA",
+          assetType: "image",
+          distributionContext: ["Website"],
+          providerMarkingApplied: true,
+          providerMarkingStandard: "c2pa",
+          deployerDisclosureApplied: true,
+          evidenceItems: [],
+          linkedFindingIds: [],
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    expect(
+      actions.some((a) => a.type === "art50_synthetic_content_no_metadata"),
+    ).toBe(false)
+  })
+
+  it("Rule 19: chatbot system fără asset chatbot_interaction emite watch", () => {
+    const state = baseState({
+      aiSystems: [
+        makeSystem({
+          id: "sys-chatbot",
+          name: "Bot suport",
+          purpose: "support-chatbot",
+          createdAtISO: isoDaysAgo(10),
+        }),
+      ],
+      aiContentAssets: [],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find(
+      (a) =>
+        a.type === "art50_chatbot_no_runtime_disclosure" &&
+        a.entityId === "sys-chatbot",
+    )
+    expect(action).toBeTruthy()
+    expect(action?.urgency).toBe("watch")
+    expect(action?.shouldEmitFinding).toBe(true)
+  })
+
+  it("Rule 19: chatbot system cu asset chatbot_interaction disclosure aplicat NU emite", () => {
+    const state = baseState({
+      aiSystems: [
+        makeSystem({
+          id: "sys-chatbot",
+          name: "Bot suport",
+          purpose: "support-chatbot",
+          createdAtISO: isoDaysAgo(10),
+        }),
+      ],
+      aiContentAssets: [
+        {
+          id: "asset-chat-1",
+          orgId: "org",
+          title: "Welcome message chatbot",
+          assetType: "chatbot_interaction",
+          linkedAISystemId: "sys-chatbot",
+          distributionContext: ["Widget chat website"],
+          providerMarkingApplied: false,
+          providerMarkingStandard: "none",
+          deployerDisclosureApplied: true,
+          deployerDisclosurePlacement: "popup",
+          evidenceItems: [],
+          linkedFindingIds: [],
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    expect(
+      actions.some(
+        (a) =>
+          a.type === "art50_chatbot_no_runtime_disclosure" &&
+          a.entityId === "sys-chatbot",
+      ),
+    ).toBe(false)
+  })
+
+  it("Rule 20: public-interest text fără editorial claim ȘI fără disclosure emite due_soon", () => {
+    const state = baseState({
+      aiContentAssets: [
+        {
+          id: "asset-pi-1",
+          orgId: "org",
+          title: "Articol opinie politică AI",
+          assetType: "public_interest_text",
+          isPublicInterest: true,
+          distributionContext: ["news.example.ro"],
+          providerMarkingApplied: false,
+          providerMarkingStandard: "none",
+          deployerDisclosureApplied: false,
+          editorialResponsibilityClaim: false,
+          evidenceItems: [],
+          linkedFindingIds: [],
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    const action = actions.find(
+      (a) => a.type === "art50_public_interest_no_editorial_flag",
+    )
+    expect(action).toBeTruthy()
+    expect(action?.urgency).toBe("due_soon")
+    expect(action?.shouldEmitFinding).toBe(true)
+  })
+
+  it("Rule 20: public-interest cu editorial responsibility claim NU emite", () => {
+    const state = baseState({
+      aiContentAssets: [
+        {
+          id: "asset-pi-2",
+          orgId: "org",
+          title: "Articol cu editorial review",
+          assetType: "public_interest_text",
+          isPublicInterest: true,
+          distributionContext: ["news.example.ro"],
+          providerMarkingApplied: false,
+          providerMarkingStandard: "none",
+          deployerDisclosureApplied: false,
+          editorialResponsibilityClaim: true,
+          editorialReviewBy: "editor@news.ro",
+          editorialReviewAtISO: NOW,
+          evidenceItems: [],
+          linkedFindingIds: [],
+          createdAtISO: NOW,
+          updatedAtISO: NOW,
+        },
+      ],
+    })
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    expect(
+      actions.some((a) => a.type === "art50_public_interest_no_editorial_flag"),
+    ).toBe(false)
+  })
+
+  it("Rules 17-20: state fără aiContentAssets NU produce actions", () => {
+    const state = baseState({})
+    const actions = scanState(state, NOW, { legislativeChangeLog: [] })
+    expect(
+      actions.some((a) =>
+        [
+          "art50_deepfake_no_watermark",
+          "art50_synthetic_content_no_metadata",
+          "art50_public_interest_no_editorial_flag",
+        ].includes(a.type),
+      ),
+    ).toBe(false)
+  })
 })

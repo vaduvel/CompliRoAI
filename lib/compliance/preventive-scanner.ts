@@ -18,6 +18,7 @@ import {
 } from "./legislative-change-log"
 
 import type {
+  AIContentLabeledAsset,
   AIIncident,
   AISystemRecord,
   ApprovalRequest,
@@ -124,6 +125,13 @@ export function scanState(
   scanQms(state.qmsWorkspace, nowISO, actions)
   scanTransparency(
     state.transparencyImplementations ?? [],
+    state.aiSystems ?? [],
+    nowISO,
+    actions,
+  )
+  // Sprint 023.7 — Art. 50 Content Labeling Depth (per-asset).
+  scanContentAssets(
+    state.aiContentAssets ?? [],
     state.aiSystems ?? [],
     nowISO,
     actions,
@@ -607,6 +615,144 @@ function scanTransparency(
         nowISO,
       )
     }
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Rules 17-20 — Art. 50 Content Labeling Depth (Sprint 023.7, per-asset)
+//
+//   Rule 17: art50_deepfake_no_watermark — deepfake asset fără deployer
+//            disclosure → CRITICAL (Art. 50(4)(a), Recital 134).
+//   Rule 18: art50_synthetic_content_no_metadata — image/video/audio/text
+//            sintetic fără provider marking → HIGH (Art. 50(2)).
+//   Rule 19: art50_chatbot_no_runtime_disclosure — chatbot system în
+//            inventory fără asset chatbot_interaction cu disclosure → MEDIUM.
+//   Rule 20: art50_public_interest_no_editorial_flag — text public-interest
+//            fără editorial claim ȘI fără disclosure → HIGH (Art. 50(4)(b)).
+// ────────────────────────────────────────────────────────────────────────────
+
+const SYNTHETIC_ASSET_TYPES = new Set([
+  "image",
+  "video",
+  "audio",
+  "text_synthetic",
+  "deepfake",
+])
+
+function scanContentAssets(
+  assets: AIContentLabeledAsset[],
+  systems: AISystemRecord[],
+  nowISO: string,
+  acc: PreventiveAction[],
+): void {
+  // Rule 17 + 18 + 20 — iterăm asset-urile.
+  for (const a of assets) {
+    // Rule 17 — deepfake fără disclosure (CRITICAL)
+    if (a.assetType === "deepfake" && !a.deployerDisclosureApplied) {
+      pushAction(
+        acc,
+        {
+          idSuffix: a.id,
+          type: "art50_deepfake_no_watermark",
+          urgency: "critical",
+          entityType: "content_asset",
+          entityId: a.id,
+          entityLabel: `Deepfake fără disclosure — ${a.title}`,
+          recommendedAction:
+            "Aplică etichetă vizibilă deepfake (Art. 50(4)(a) EU AI Act) — overlay video / header / footer / reclamă label. Risc amendă până la 15M EUR.",
+          shouldEmitFinding: true,
+          shouldEmail: true,
+          emailTemplate: "renewal-reminder",
+          notes: `Distribuție: ${a.distributionContext.join(", ") || "(necunoscut)"}.`,
+        },
+        nowISO,
+      )
+    }
+
+    // Rule 18 — content sintetic fără marcaj provider (HIGH)
+    if (
+      SYNTHETIC_ASSET_TYPES.has(a.assetType) &&
+      (a.providerMarkingStandard === "none" || !a.providerMarkingApplied)
+    ) {
+      pushAction(
+        acc,
+        {
+          idSuffix: a.id,
+          type: "art50_synthetic_content_no_metadata",
+          urgency: "due_soon",
+          entityType: "content_asset",
+          entityId: a.id,
+          entityLabel: `Conținut sintetic fără marcaj tehnic — ${a.title}`,
+          recommendedAction:
+            "Aplică marcaj machine-readable (C2PA / IPTC PhotoMetadata / SynthID / watermark) — Art. 50(2) EU AI Act. Atașează metadata_proof sau watermark_test ca evidence.",
+          shouldEmitFinding: true,
+          shouldEmail: false,
+          notes: `Tip: ${a.assetType}. Standard curent: ${a.providerMarkingStandard}.`,
+        },
+        nowISO,
+      )
+    }
+
+    // Rule 20 — public-interest fără editorial claim ȘI fără disclosure (HIGH)
+    if (
+      (a.assetType === "public_interest_text" || a.isPublicInterest === true) &&
+      !a.editorialResponsibilityClaim &&
+      !a.deployerDisclosureApplied
+    ) {
+      pushAction(
+        acc,
+        {
+          idSuffix: a.id,
+          type: "art50_public_interest_no_editorial_flag",
+          urgency: "due_soon",
+          entityType: "content_asset",
+          entityId: a.id,
+          entityLabel: `Public-interest text fără editorial claim — ${a.title}`,
+          recommendedAction:
+            "Aplică disclosure vizibil SAU marchează editorialResponsibilityClaim=true cu editor identificat — Art. 50(4)(b) EU AI Act. Recomandat: ambele.",
+          shouldEmitFinding: true,
+          shouldEmail: false,
+          notes: `Editor responsibility claim: false. Disclosure aplicat: false.`,
+        },
+        nowISO,
+      )
+    }
+  }
+
+  // Rule 19 — chatbot system in inventory + niciun asset chatbot cu disclosure
+  // Heuristică: dacă există sistem cu purpose=support-chatbot/document-assistant
+  // SAU sistem deja flagged ca chatbot prin makesAutomatedDecisions+impactsRights,
+  // și nu există nici un AIContentLabeledAsset de tip chatbot_interaction cu
+  // deployerDisclosureApplied legat la el → emit MEDIUM finding.
+  const chatbotSystems = systems.filter(
+    (s) =>
+      s.purpose === "support-chatbot" || s.purpose === "document-assistant",
+  )
+  for (const sys of chatbotSystems) {
+    const matched = assets.find(
+      (a) =>
+        a.assetType === "chatbot_interaction" &&
+        a.linkedAISystemId === sys.id &&
+        a.deployerDisclosureApplied,
+    )
+    if (matched) continue
+    pushAction(
+      acc,
+      {
+        idSuffix: sys.id,
+        type: "art50_chatbot_no_runtime_disclosure",
+        urgency: "watch",
+        entityType: "content_asset",
+        entityId: sys.id,
+        entityLabel: `Chatbot fără disclosure runtime — ${sys.name}`,
+        recommendedAction:
+          "Înregistrează un asset chatbot_interaction în Content Register și marchează deployerDisclosureApplied=true cu placement (popup/header). Art. 50(1) EU AI Act.",
+        shouldEmitFinding: true,
+        shouldEmail: false,
+        notes: `Sistem AI: ${sys.id} (${sys.purpose}). Nu există asset Art. 50 cu disclosure pentru chatbot.`,
+      },
+      nowISO,
+    )
   }
 }
 
