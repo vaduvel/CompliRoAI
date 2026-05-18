@@ -1471,6 +1471,238 @@ export type ComplianceState = {
    * forward-looking, nu retroactively.
    */
   legislativeBaselineISO?: string
+
+  /**
+   * Sprint 023 — API/SDK developer surface (only used by ai-builder workspace).
+   *
+   * `apiKeys` — registry of issued API keys (full token never persisted; only
+   * SHA-256 hash + first 8 chars displayed as prefix). Created via
+   * `/dashboard/api-sdk` UI (session auth) or `/api/v1/keys` POST.
+   *
+   * `apiCallLogs` — recent /api/v1/* calls (capped at 1000 entries, newest
+   * first). Logged via `lib/server/api-audit.ts`. Request/response are
+   * summarised + redacted — no raw user groups or data categories stored.
+   */
+  apiKeys?: ApiKey[]
+  apiCallLogs?: ApiCallLog[]
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 023 — API v1 + SDK types
+//
+//   Developer surface for AI builders integrating CompliRoAI into their
+//   build/deploy workflow. All API responses are versioned ("v1") and shaped
+//   to be stable contracts; breaking changes ship via /api/v2 in the future.
+//
+//   See lib/compliance/api-v1-schema.ts (input validation) +
+//   lib/compliance/compliance-gate.ts (gate engine) +
+//   app/api/v1/* (HTTP surface) + lib/sdk/* (TypeScript client).
+// ────────────────────────────────────────────────────────────────────────────
+
+export type ApiKeyScope =
+  | "classify"        // POST /api/v1/classify
+  | "gate"            // POST /api/v1/gate
+  | "deployment"      // POST /api/v1/deployment
+  | "read_state"      // future read-only access
+
+export type ApiKeyStatus = "active" | "revoked" | "expired"
+
+export type ApiKey = {
+  id: string
+  orgId: string
+  /** Human-readable identifier, ex: "Production CI/CD", "Staging" */
+  label: string
+  /** First 8 chars of the full token, safe to display (ex: "cra_a1b2"). */
+  prefix: string
+  /** SHA-256 hex of the full token. Lookup key on incoming auth. */
+  hmacHash: string
+  createdByEmail: string
+  createdAtISO: string
+  lastUsedAtISO?: string
+  /** Optional expiry (ISO date). When passed, status becomes "expired". */
+  expiresAtISO?: string
+  revokedAtISO?: string
+  status: ApiKeyStatus
+  scopes: ApiKeyScope[]
+  notes?: string
+}
+
+export type ApiCallLog = {
+  id: string
+  orgId: string
+  /** null/undefined when call was authenticated via session (e.g. /keys mgmt). */
+  apiKeyId?: string
+  /** Path of the API call, ex: "/api/v1/classify". */
+  endpoint: string
+  method: string
+  statusCode: number
+  durationMs: number
+  ip?: string
+  userAgent?: string
+  /**
+   * Hashed/redacted request summary (purpose + truthy flags). Never raw user
+   * groups, data categories, or PII.
+   */
+  requestSummary: string
+  /** Verdict / risk class / status code — short text. Never full response body. */
+  responseSummary: string
+  /** Internal error code, ex: "RATE_LIMITED", "INVALID_BODY". */
+  errorCode?: string
+  createdAtISO: string
+}
+
+// ── Compliance Gate response (consumed by /api/v1/gate + SDK.gate()) ─────────
+
+export type ComplianceGateVerdict =
+  /** Can deploy as-is. All obligations met or not applicable. */
+  | "pass"
+  /** Needs human review or additional evidence before deployment. */
+  | "review_required"
+  /** Must not deploy (prohibited use, missing critical safeguard). */
+  | "blocked"
+
+export type ComplianceGateReasonCategory =
+  | "legal_prohibition"
+  | "missing_evidence"
+  | "risk_class_mismatch"
+  | "transparency_required"
+  | "dpia_required"
+  | "fria_required"
+  | "logging_required"
+  | "human_oversight_required"
+  | "dpa_missing"
+  | "transfer_review"
+  | "other"
+
+export type ComplianceGateReasonSeverity = "info" | "warning" | "error"
+
+export type ComplianceGateReason = {
+  category: ComplianceGateReasonCategory
+  /** Legal article reference, ex: "Art. 5(1)(a)", "Art. 27", "GDPR Art. 28". */
+  articleRef: string
+  severity: ComplianceGateReasonSeverity
+  /** Human-readable RO message. */
+  message: string
+  /** Next action the developer/deployer should take. */
+  nextAction: string
+}
+
+export type ComplianceGateRiskClass =
+  | "prohibited"
+  | "high"
+  | "limited"
+  | "minimal"
+  | "unknown"
+
+export type ComplianceGateRole =
+  | "provider"
+  | "deployer"
+  | "importer"
+  | "distributor"
+  | "mixed"
+  | "exempt"
+  | "unknown"
+
+export type ComplianceGateObligationStatus = "met" | "missing" | "not_applicable"
+
+export type ComplianceGateObligation = {
+  /** Legal article, ex: "Art. 14 AI Act", "GDPR Art. 28". */
+  article: string
+  description: string
+  status: ComplianceGateObligationStatus
+}
+
+export type ComplianceGateResponse = {
+  verdict: ComplianceGateVerdict
+  riskClass: ComplianceGateRiskClass
+  aiActRole: ComplianceGateRole
+  reasons: ComplianceGateReason[]
+  obligations: ComplianceGateObligation[]
+  /** Evidence pieces the developer must attach to flip review/blocked → pass. */
+  missingEvidence: string[]
+  nextActions: string[]
+  /** Hints surfaced in the Audit Pack ZIP at export time. */
+  auditPackHints: string[]
+  apiVersion: "v1"
+  classifiedAtISO: string
+}
+
+// ── Classify response shape (used by /api/v1/classify + SDK.classify()) ─────
+
+export type ClassifyV1Sector =
+  | "fintech"
+  | "healthcare"
+  | "hr"
+  | "education"
+  | "law_enforcement"
+  | "consumer"
+  | "industrial"
+  | "public"
+  | "other"
+
+export type ClassifyV1AutonomyLevel =
+  | "fully_autonomous"
+  | "human_in_loop"
+  | "human_on_loop"
+  | "human_in_command"
+
+export type ClassifyV1VendorRegion = "EU" | "US" | "UK" | "other" | "self_hosted"
+
+export type ClassifyV1DeploymentContext =
+  | "production"
+  | "staging"
+  | "preview"
+  | "internal"
+
+export type ClassifyV1Input = {
+  systemName: string
+  purpose: AISystemPurpose
+  sector?: ClassifyV1Sector
+  userGroups?: string[]
+  dataCategories?: string[]
+  processesPersonalData?: boolean
+  processesSpecialCategories?: boolean
+  autonomyLevel?: ClassifyV1AutonomyLevel
+  humanOversightDocumented?: boolean
+  loggingEnabled?: boolean
+  vendorRegion?: ClassifyV1VendorRegion
+  modelProvider?: string
+  deploymentContext?: ClassifyV1DeploymentContext
+  dpaSigned?: boolean
+}
+
+export type ClassifyV1Obligation = {
+  article: string
+  description: string
+}
+
+export type ClassifyV1Response = {
+  systemName: string
+  riskClass: ComplianceGateRiskClass
+  /** Mirrors the raw AI Act classifier output for the supplied purpose. */
+  aiActArticle: string
+  aiActReason: string
+  aiActDeadline?: string
+  aiActRole: ComplianceGateRole
+  obligations: ClassifyV1Obligation[]
+  nextActions: string[]
+  apiVersion: "v1"
+  classifiedAtISO: string
+}
+
+export type DeploymentV1Input = ClassifyV1Input & {
+  /** Unique identifier supplied by the AI builder, ex: commit SHA or build tag. */
+  deploymentRef: string
+}
+
+export type DeploymentV1Response = {
+  deploymentRef: string
+  systemName: string
+  gate: ComplianceGateResponse
+  /** True if a finding has been emitted for this deployment because gate != pass. */
+  findingEmitted: boolean
+  apiVersion: "v1"
+  loggedAtISO: string
 }
 
 // ────────────────────────────────────────────────────────────────────────────
