@@ -634,7 +634,7 @@ export default function HomePage() {
                   textDecoration: "none",
                 }}
               >
-                Cere demo + ofertă <ArrowRight size={16} />
+                Cere ofertă personalizată <ArrowRight size={16} />
               </Link>
               <p style={{ fontSize: 12, color: "var(--ink-dim)", marginTop: 12 }}>
                 După audit one-off, abonament menținere €99-299/lună (update-uri legislative + change log).
