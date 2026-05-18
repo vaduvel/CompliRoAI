@@ -1004,6 +1004,117 @@ export async function scheduleReviewReminder(
   return existing
 }
 
+// ── Sprint 020 bridge: escalate PMM anomaly → AI Incident (Art. 73) ────────
+
+/**
+ * Sprint 020 — escalează o anomalie PMM critică spre AI Incident Reporting
+ * (Art. 73 AI Act). Operație bidirectională:
+ *   1. Creează un AIIncident nou în registry-ul Sprint 020 cu metadata
+ *      pre-populată din anomalie (severitate → catastrophic dacă anomaly
+ *      critical, categorie default fundamental_rights_infringement; DPO
+ *      poate ajusta ulterior).
+ *   2. Actualizează PmmAnomalyRecord cu escalatedToIncident=true +
+ *      linkedIncidentId pe planul curent.
+ *   3. Emite ai_incident.linked_to_pmm_anomaly + pmm.anomaly_escalated events.
+ *
+ * Returnează ID-ul incidentului nou creat (sau aruncă dacă planul / anomalia
+ * nu există sau dacă anomalia este deja escaladată).
+ *
+ * NOTĂ: import dinamic pentru a evita ciclul ai-incident-store ↔ pmm-store.
+ */
+export async function escalateAnomalyToIncident(
+  orgId: string,
+  planId: string,
+  anomalyId: string,
+  actor: ComplianceEventActorInput,
+  orgName = "Organizația",
+): Promise<{
+  incidentId: string
+  plan: PmmPlan
+}> {
+  const plan = await getPmmPlanById(orgId, planId)
+  if (!plan) throw new Error(`PMM plan ${planId} inexistent`)
+  const anomaly = plan.anomalies.find((a) => a.id === anomalyId)
+  if (!anomaly) throw new Error(`Anomalia ${anomalyId} inexistentă pe plan ${planId}`)
+  if (anomaly.escalatedToIncident && anomaly.linkedIncidentId) {
+    throw new Error(
+      `Anomalia ${anomalyId} deja escaladată spre incidentul ${anomaly.linkedIncidentId}`,
+    )
+  }
+
+  // Map anomaly severity → incident severity
+  const severityMap = {
+    low: "minor",
+    medium: "moderate",
+    high: "serious",
+    critical: "catastrophic",
+  } as const
+  const incidentSeverity = severityMap[anomaly.severity]
+
+  // Map anomaly category → AI incident category. Default fundamental_rights
+  // pentru cele mai multe; bias / data drift indică probabilitate impact
+  // drepturi fundamentale. DPO poate ajusta ulterior.
+  const category =
+    anomaly.category === "security"
+      ? "critical_infrastructure_disruption"
+      : "fundamental_rights_infringement"
+
+  // Import dynamic ca să evităm circular import
+  const { createIncident, linkToPmmAnomaly } = await import(
+    "@/lib/server/ai-incident-store"
+  )
+
+  const incident = await createIncident(
+    orgId,
+    {
+      title: `Incident escaladat din anomalie PMM: ${plan.title}`,
+      description: `Incident escaladat automat din anomalia PMM "${anomaly.description}" (categorie: ${anomaly.category}, severitate: ${anomaly.severity}) detectată pe ${anomaly.detectedAtISO}. Impact declarat: ${anomaly.impactDescription}. Anomalia a fost evaluată ca necesitând notificare Art. 73 conform politicii organizației.`,
+      category,
+      severity: incidentSeverity,
+      linkedAISystemId: plan.linkedAISystemId,
+      detectedAtISO: anomaly.detectedAtISO,
+      linkedPmmAnomalyId: anomalyId,
+      notificationRequired: true,
+      assignedToEmail: actor.label,
+      notes: `Escalat din PMM Plan: ${plan.id} (${plan.title}). Categorie incident default = fundamental_rights_infringement; DPO trebuie să valideze categoria + severitatea + să decidă autoritatea destinatară.`,
+    },
+    actor,
+    orgName,
+  )
+
+  // Update PMM anomaly to mark escalation (bidirectional)
+  await linkToPmmAnomaly(orgId, incident.id, planId, anomalyId, actor)
+
+  // Emit dedicated PMM-side event for audit clarity
+  await mutateFreshStateForOrg(orgId, (s) => {
+    return {
+      ...s,
+      events: appendComplianceEvents(s, [
+        createComplianceEvent(
+          {
+            type: "pmm.anomaly_escalated",
+            entityType: "system",
+            entityId: planId,
+            message: `Anomalie PMM "${anomaly.description}" escaladată spre AI Incident ${incident.id} (Art. 73)`,
+            createdAtISO: nowISO(),
+            metadata: {
+              anomalyId,
+              incidentId: incident.id,
+              category: incident.category,
+              severity: incident.severity,
+              reportingDeadlineDays: incident.reportingDeadlineDays,
+            },
+          },
+          actor,
+        ),
+      ]),
+    }
+  })
+
+  const updatedPlan = await getPmmPlanById(orgId, planId)
+  return { incidentId: incident.id, plan: updatedPlan ?? plan }
+}
+
 // ── Markdown export (regenerat live) ─────────────────────────────────────────
 
 export function buildPmmMarkdown(
