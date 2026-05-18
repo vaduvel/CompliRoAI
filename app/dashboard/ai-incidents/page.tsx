@@ -61,6 +61,9 @@ import type {
   AIIncidentSeverity,
   AIIncidentStatus,
   AISystemRecord,
+  AuthorityCooperationAuthority,
+  AuthorityCooperationRequest,
+  AuthorityCooperationStatus,
   PmmAnomalyRecord,
   PmmPlan,
 } from "@/lib/compliance/types"
@@ -263,6 +266,8 @@ export default function AIIncidentsPage() {
       </div>
 
       <StatsBar summary={summary} />
+
+      <AuthorityCooperationPanel />
 
       {error && (
         <div
@@ -2448,4 +2453,419 @@ const emptyText: CSSProperties = {
   fontSize: 11,
   color: "var(--ink-dim)",
   fontStyle: "italic",
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 026 — Authority Cooperation Panel (Art. 21 + Art. 26(11))
+//
+//   Registru distinct de Art. 73 incidents. Aici trackuim solicitări oficiale
+//   primite de la autorități (ANSPDCP, ADR, ANCOM, ASF, AI Office, market
+//   surveillance) pentru documentație tehnică / log-uri / dovezi de
+//   conformitate. Probă auditabilă în Audit Pack.
+// ────────────────────────────────────────────────────────────────────────────
+
+const AUTH_AUTHORITY_LABELS_RO: Record<AuthorityCooperationAuthority, string> = {
+  anspdcp: "ANSPDCP",
+  adr: "ADR",
+  ancom: "ANCOM",
+  asf: "ASF",
+  "ai-office": "AI Office (EC)",
+  "market-surveillance-authority": "Autoritate supraveghere piață",
+  "fundamental-rights-authority": "Autoritate drepturi fundamentale",
+  other: "Altă autoritate",
+}
+
+const AUTH_STATUS_LABELS_RO: Record<AuthorityCooperationStatus, string> = {
+  received: "Primit",
+  "in-progress": "În lucru",
+  responded: "Răspuns trimis",
+  closed: "Închis",
+}
+
+const AUTH_STATUS_COLORS: Record<AuthorityCooperationStatus, { bg: string; fg: string }> = {
+  received: { bg: "rgba(251,191,36,0.16)", fg: "#fbbf24" },
+  "in-progress": { bg: "rgba(96,165,250,0.16)", fg: "#60a5fa" },
+  responded: { bg: "rgba(52,211,153,0.16)", fg: "#34d399" },
+  closed: { bg: "rgba(148,163,184,0.16)", fg: "#94a3b8" },
+}
+
+function AuthorityCooperationPanel() {
+  const [records, setRecords] = useState<AuthorityCooperationRequest[]>([])
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+
+  const [authority, setAuthority] = useState<AuthorityCooperationAuthority>("anspdcp")
+  const [authorityNameOther, setAuthorityNameOther] = useState("")
+  const [referenceNumber, setReferenceNumber] = useState("")
+  const [subject, setSubject] = useState("")
+  const [deadlineISO, setDeadlineISO] = useState("")
+  const [responsibleEmail, setResponsibleEmail] = useState("")
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/authority-cooperation", { cache: "no-store" })
+      if (!res.ok) {
+        if (res.status === 401) return
+        throw new Error(`HTTP ${res.status}`)
+      }
+      const json = (await res.json()) as { records: AuthorityCooperationRequest[] }
+      setRecords(json.records ?? [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Eroare la încărcare")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  async function handleCreate() {
+    setSubmitting(true)
+    setError(null)
+    try {
+      const body: Record<string, unknown> = {
+        authority,
+        subject: subject.trim(),
+        responsibleEmail: responsibleEmail.trim(),
+      }
+      if (authority === "other") body.authorityNameOther = authorityNameOther.trim()
+      if (referenceNumber.trim()) body.referenceNumber = referenceNumber.trim()
+      if (deadlineISO.trim()) body.deadlineISO = new Date(deadlineISO).toISOString()
+      const res = await fetch("/api/authority-cooperation", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(payload.error ?? `HTTP ${res.status}`)
+      }
+      setSubject("")
+      setReferenceNumber("")
+      setDeadlineISO("")
+      setShowForm(false)
+      await refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Eroare la creare")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleStatusChange(id: string, next: AuthorityCooperationStatus) {
+    try {
+      const res = await fetch(`/api/authority-cooperation/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Eroare")
+    }
+  }
+
+  const openCount = records.filter(
+    (r) => r.status === "received" || r.status === "in-progress",
+  ).length
+
+  return (
+    <div
+      style={{
+        border: "1px solid var(--border-soft)",
+        borderRadius: 8,
+        background: "var(--surface-1)",
+        overflow: "hidden",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          padding: "10px 14px",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          color: "var(--ink)",
+          fontSize: 13,
+          fontWeight: 500,
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link2 size={14} />
+          Solicitări de la autorități (Art. 21 + Art. 26(11))
+          {openCount > 0 && (
+            <span
+              style={{
+                padding: "1px 6px",
+                fontSize: 11,
+                background: "rgba(251,191,36,0.18)",
+                color: "#fbbf24",
+                borderRadius: 4,
+                fontWeight: 600,
+              }}
+            >
+              {openCount} deschis{openCount === 1 ? "ă" : "e"}
+            </span>
+          )}
+        </span>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </button>
+
+      {open && (
+        <div
+          style={{
+            borderTop: "1px solid var(--border-soft)",
+            padding: "12px 14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          <p style={{ fontSize: 12, color: "var(--ink-muted)", margin: 0, lineHeight: 1.5 }}>
+            Registru distinct de Art. 73 — solicitări oficiale primite pentru documentație
+            tehnică, log-uri sau evidence de conformitate. Răspunsurile + datele de închidere
+            apar în Audit Pack (cooperation-log.md).
+          </p>
+
+          {error && (
+            <div
+              style={{
+                padding: "8px 12px",
+                background: "var(--red-soft)",
+                color: "#f87171",
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setShowForm((v) => !v)}
+              style={{
+                padding: "6px 12px",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border-soft)",
+                color: "var(--ink)",
+                fontSize: 12,
+                borderRadius: 6,
+                cursor: "pointer",
+              }}
+            >
+              {showForm ? "Anulează" : "+ Înregistrează solicitare"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              disabled={loading}
+              style={{
+                padding: "6px 12px",
+                background: "transparent",
+                border: "1px solid var(--border-soft)",
+                color: "var(--ink-muted)",
+                fontSize: 12,
+                borderRadius: 6,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+            >
+              {loading ? "Se încarcă..." : "Reîncarcă"}
+            </button>
+          </div>
+
+          {showForm && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                padding: 12,
+                border: "1px solid var(--border-soft)",
+                borderRadius: 6,
+              }}
+            >
+              <label style={{ display: "flex", flexDirection: "column", gap: 4, gridColumn: "span 2" }}>
+                <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>Subiect / descriere solicitare*</span>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  style={{ padding: "6px 8px", fontSize: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", color: "var(--ink)", borderRadius: 4 }}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>Autoritate*</span>
+                <select
+                  value={authority}
+                  onChange={(e) => setAuthority(e.target.value as AuthorityCooperationAuthority)}
+                  style={{ padding: "6px 8px", fontSize: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", color: "var(--ink)", borderRadius: 4 }}
+                >
+                  {(Object.keys(AUTH_AUTHORITY_LABELS_RO) as AuthorityCooperationAuthority[]).map((a) => (
+                    <option key={a} value={a}>
+                      {AUTH_AUTHORITY_LABELS_RO[a]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {authority === "other" && (
+                <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>Nume autoritate*</span>
+                  <input
+                    type="text"
+                    value={authorityNameOther}
+                    onChange={(e) => setAuthorityNameOther(e.target.value)}
+                    style={{ padding: "6px 8px", fontSize: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", color: "var(--ink)", borderRadius: 4 }}
+                  />
+                </label>
+              )}
+              <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>Referință autoritate (opțional)</span>
+                <input
+                  type="text"
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                  style={{ padding: "6px 8px", fontSize: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", color: "var(--ink)", borderRadius: 4 }}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>Deadline răspuns (opțional)</span>
+                <input
+                  type="date"
+                  value={deadlineISO}
+                  onChange={(e) => setDeadlineISO(e.target.value)}
+                  style={{ padding: "6px 8px", fontSize: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", color: "var(--ink)", borderRadius: 4 }}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>Responsabil intern (email)*</span>
+                <input
+                  type="email"
+                  value={responsibleEmail}
+                  onChange={(e) => setResponsibleEmail(e.target.value)}
+                  style={{ padding: "6px 8px", fontSize: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", color: "var(--ink)", borderRadius: 4 }}
+                />
+              </label>
+              <div style={{ gridColumn: "span 2", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => void handleCreate()}
+                  disabled={
+                    submitting ||
+                    !subject.trim() ||
+                    !responsibleEmail.trim() ||
+                    (authority === "other" && !authorityNameOther.trim())
+                  }
+                  style={{
+                    padding: "6px 14px",
+                    background: "var(--ink)",
+                    color: "var(--bg)",
+                    border: "none",
+                    fontSize: 12,
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    fontWeight: 500,
+                  }}
+                >
+                  {submitting ? "Se salvează..." : "Înregistrează"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {records.length === 0 ? (
+            <p style={emptyText}>Niciun request înregistrat încă.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {records.map((r) => {
+                const colors = AUTH_STATUS_COLORS[r.status]
+                const authLabel =
+                  r.authority === "other"
+                    ? r.authorityNameOther ?? "—"
+                    : AUTH_AUTHORITY_LABELS_RO[r.authority]
+                return (
+                  <div
+                    key={r.id}
+                    style={{
+                      padding: "8px 12px",
+                      border: "1px solid var(--border-soft)",
+                      borderRadius: 6,
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      gap: 8,
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 12, color: "var(--ink)", margin: 0, fontWeight: 500 }}>
+                        {authLabel} · {r.subject}
+                      </p>
+                      <p style={{ fontSize: 11, color: "var(--ink-dim)", margin: "2px 0 0" }}>
+                        Primit {new Date(r.receivedAtISO).toLocaleDateString("ro-RO")}
+                        {r.deadlineISO && ` · Deadline ${new Date(r.deadlineISO).toLocaleDateString("ro-RO")}`}
+                        {` · Responsabil ${r.responsibleEmail}`}
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <span
+                        style={{
+                          padding: "2px 8px",
+                          background: colors.bg,
+                          color: colors.fg,
+                          borderRadius: 4,
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {AUTH_STATUS_LABELS_RO[r.status]}
+                      </span>
+                      <select
+                        value={r.status}
+                        onChange={(e) =>
+                          void handleStatusChange(
+                            r.id,
+                            e.target.value as AuthorityCooperationStatus,
+                          )
+                        }
+                        style={{
+                          padding: "2px 6px",
+                          fontSize: 11,
+                          background: "var(--surface-2)",
+                          color: "var(--ink-muted)",
+                          border: "1px solid var(--border-soft)",
+                          borderRadius: 4,
+                        }}
+                      >
+                        {(Object.keys(AUTH_STATUS_LABELS_RO) as AuthorityCooperationStatus[]).map(
+                          (s) => (
+                            <option key={s} value={s}>
+                              {AUTH_STATUS_LABELS_RO[s]}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
