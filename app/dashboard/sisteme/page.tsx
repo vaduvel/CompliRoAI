@@ -8,6 +8,7 @@ import type {
   HumanOversightProtocol,
   LoggingConfig,
   PmmPlan,
+  QmsSystemAttestation,
 } from "@/lib/compliance/types"
 import { AIInventoryPanel } from "@/components/ai-act/ai-inventory-panel"
 import { AISystemsList } from "@/components/ai-act/ai-systems-list"
@@ -20,17 +21,19 @@ export default function SistemePage() {
   const [loggingRecords, setLoggingRecords] = useState<LoggingConfig[]>([])
   const [pmmRecords, setPmmRecords] = useState<PmmPlan[]>([])
   const [incidents, setIncidents] = useState<AIIncident[]>([])
+  const [qmsAttestations, setQmsAttestations] = useState<QmsSystemAttestation[]>([])
   const [loading, setLoading] = useState(true)
   const [workspaceMode, setWorkspaceMode] = useState<"imm-classic" | "ai-builder" | "cabinet">("imm-classic")
 
   const load = useCallback(async () => {
-    const [systemsRes, friaRes, ovRes, lgRes, pmmRes, incRes] = await Promise.all([
+    const [systemsRes, friaRes, ovRes, lgRes, pmmRes, incRes, qmsRes] = await Promise.all([
       fetch("/api/ai-systems"),
       fetch("/api/fria"),
       fetch("/api/oversight"),
       fetch("/api/logging-evidence"),
       fetch("/api/pmm"),
       fetch("/api/ai-incidents"),
+      fetch("/api/qms/system-attestation"),
     ])
     if (systemsRes.ok) {
       const data = await systemsRes.json()
@@ -55,6 +58,10 @@ export default function SistemePage() {
     if (incRes.ok) {
       const data = await incRes.json()
       setIncidents((data.records ?? []) as AIIncident[])
+    }
+    if (qmsRes.ok) {
+      const data = await qmsRes.json()
+      setQmsAttestations((data.attestations ?? []) as QmsSystemAttestation[])
     }
     setLoading(false)
   }, [])
@@ -147,6 +154,16 @@ export default function SistemePage() {
     return open
   }, [incidents])
 
+  // Sprint 021 — sisteme high-risk fără QMS per-system attestation (Art. 17(1)(a)).
+  const systemsRequiringQmsAttestationIds = useMemo(() => {
+    const attested = new Set(qmsAttestations.map((a) => a.systemId))
+    const needs = new Set<string>()
+    for (const s of systems) {
+      if (s.riskLevel === "high" && !attested.has(s.id)) needs.add(s.id)
+    }
+    return needs
+  }, [systems, qmsAttestations])
+
   return (
     <div style={{ padding: "32px", maxWidth: "900px", display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Header */}
@@ -210,6 +227,7 @@ export default function SistemePage() {
             systemsRequiringLoggingIds={systemsRequiringLoggingIds}
             systemsRequiringPmmIds={systemsRequiringPmmIds}
             systemsWithOpenIncidentIds={systemsWithOpenIncidentIds}
+            systemsRequiringQmsAttestationIds={systemsRequiringQmsAttestationIds}
           />
         )}
       </div>

@@ -76,6 +76,12 @@ interface AISystemsListProps {
    * not preventive obligations like FRIA/Oversight/Logging/PMM).
    */
   systemsWithOpenIncidentIds?: Set<string>
+  /**
+   * Sprint 021 — set of high-risk system IDs that DO NOT yet have a QMS
+   * per-system attestation (Art. 17(1)(a) coverage). Renders amber banner
+   * pointing provider to attest the system in /dashboard/qms.
+   */
+  systemsRequiringQmsAttestationIds?: Set<string>
 }
 
 export function AISystemsList({
@@ -87,6 +93,7 @@ export function AISystemsList({
   systemsRequiringLoggingIds,
   systemsRequiringPmmIds,
   systemsWithOpenIncidentIds,
+  systemsRequiringQmsAttestationIds,
 }: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -212,9 +219,11 @@ export function AISystemsList({
         const needsOversight = systemsRequiringOversightIds?.has(system.id) === true
         const needsLogging = systemsRequiringLoggingIds?.has(system.id) === true
         const needsPmm = systemsRequiringPmmIds?.has(system.id) === true
+        const needsQms = systemsRequiringQmsAttestationIds?.has(system.id) === true
         const hasOpenIncident =
           systemsWithOpenIncidentIds?.has(system.id) === true
-        const hasBanner = needsFria || needsOversight || needsLogging || needsPmm
+        const hasBanner =
+          needsFria || needsOversight || needsLogging || needsPmm || needsQms
 
         return (
           <div
@@ -336,7 +345,7 @@ export function AISystemsList({
                     needsFria || needsOversight || needsLogging
                       ? "none"
                       : "1px solid rgba(251,191,36,0.25)",
-                  borderBottom: "none",
+                  borderBottom: needsQms ? "1px solid rgba(251,191,36,0.18)" : "none",
                   borderTopLeftRadius:
                     needsFria || needsOversight || needsLogging ? "0" : "10px",
                   borderTopRightRadius:
@@ -358,6 +367,45 @@ export function AISystemsList({
                   }}
                 >
                   Pornește plan →
+                </Link>
+              </div>
+            )}
+            {needsQms && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 12px",
+                  background: "var(--amber-soft)",
+                  borderLeft: "1px solid rgba(251,191,36,0.25)",
+                  borderRight: "1px solid rgba(251,191,36,0.25)",
+                  borderTop:
+                    needsFria || needsOversight || needsLogging || needsPmm
+                      ? "none"
+                      : "1px solid rgba(251,191,36,0.25)",
+                  borderBottom: "none",
+                  borderTopLeftRadius:
+                    needsFria || needsOversight || needsLogging || needsPmm ? "0" : "10px",
+                  borderTopRightRadius:
+                    needsFria || needsOversight || needsLogging || needsPmm ? "0" : "10px",
+                  fontSize: "11px",
+                  color: "#fbbf24",
+                }}
+              >
+                <ShieldAlert size={12} style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>
+                  Acest sistem necesită QMS attestation (Art. 17)
+                </span>
+                <Link
+                  href={`/dashboard/qms?attest=${encodeURIComponent(system.id)}`}
+                  style={{
+                    color: "#fbbf24",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Atestă sistem →
                 </Link>
               </div>
             )}
