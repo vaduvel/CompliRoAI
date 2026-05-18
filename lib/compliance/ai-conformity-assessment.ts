@@ -445,6 +445,490 @@ export function buildAnnexIVDocument(
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//   Art. 47 — EU Declaration of Conformity (Annex V content)
+// ─────────────────────────────────────────────────────────────────────────────
+// Regulament (UE) 2024/1689, Articolul 47 + Anexa V:
+// EU Declaration of Conformity must contain (minimum):
+//   1. Numele + tipul HRAIS + cod identificare unic.
+//   2. Numele + adresa providerului (și a reprezentantului autorizat, dacă există).
+//   3. Declarație că EU DoC este emisă pe responsabilitatea exclusivă a providerului.
+//   4. Declarație că HRAIS respectă Regulamentul (UE) 2024/1689 + alte acte UE aplicabile.
+//   5. Referințe la standardele armonizate / specificațiile comune utilizate.
+//   6. Dacă cazul: numele + ID notified body + descrierea procedurii conformity
+//      assessment + referință certificat.
+//   7. Loc + dată emitere + nume + funcție + semnătură.
+// Limbă: oficială UE a Statului Membru. Update continuu (Art. 47(2)).
+
+export type EUDeclarationInputs = {
+  /** Câmpul 1 — codul unic de identificare (ex: număr serie, UUID intern). */
+  uniqueIdentifier: string
+  /** Câmpul 2 — adresa providerului. */
+  providerAddress: string
+  /** Câmpul 2 — opțional: reprezentant autorizat în UE (provider non-UE). */
+  authorisedRepresentative?: {
+    name: string
+    address: string
+  }
+  /** Câmpul 5 — standardele armonizate aplicate (ex: ISO/IEC 42001, ISO/IEC 23894). */
+  harmonisedStandards?: string[]
+  /** Câmpul 5 — specificații comune (Art. 41) aplicate, dacă există. */
+  commonSpecifications?: string[]
+  /** Câmpul 6 — informații despre notified body (Anexa VII), dacă există. */
+  notifiedBody?: {
+    name: string
+    /** ID-ul numeric atribuit de Comisie. */
+    identificationNumber: string
+    /** Descrierea procedurii — implicit Anexa VI sau Anexa VII. */
+    assessmentProcedure:
+      | "Anexa VI — Internal Control"
+      | "Anexa VII — QMS + Tech Doc Assessment"
+    /** Referința certificatului de conformitate emis de NB. */
+    certificateReference?: string
+  }
+  /** Câmpul 7 — locul emiterii. */
+  placeOfIssue: string
+  /** Câmpul 7 — numele semnatarului. */
+  signerName: string
+  /** Câmpul 7 — funcția semnatarului. */
+  signerTitle: string
+  /** Limba versiunii (default `ro` pentru România). */
+  language?: "ro" | "en"
+}
+
+export type EUDeclarationDocument = {
+  title: string
+  content: string
+  generatedAtISO: string
+}
+
+export function buildEUDeclarationOfConformity(
+  system: SystemForAnnexIV,
+  inputs: EUDeclarationInputs,
+  orgName: string,
+  branding?: AnnexIVBranding
+): EUDeclarationDocument {
+  const now = new Date().toISOString()
+  const dateStr = new Date(now).toLocaleDateString("ro-RO")
+  const brandName = branding?.brandName?.trim() || "CompliRoAI"
+  const isCustomBrand = branding?.isCustom === true && brandName !== "CompliRoAI"
+  const language = inputs.language ?? "ro"
+
+  const sections: string[] = []
+
+  if (branding?.logoUrl) {
+    sections.push(`![${brandName}](${branding.logoUrl})`, ``)
+  }
+
+  sections.push(
+    `# DECLARAȚIA UE DE CONFORMITATE`,
+    `## EU Declaration of Conformity (Art. 47 + Anexa V)`,
+    ``,
+    `**Baza legală:** Regulamentul (UE) 2024/1689 al Parlamentului European și al Consiliului din 13 iunie 2024 (EU AI Act) — Articolul 47 + Anexa V.`,
+    `**Limba versiunii:** ${language === "ro" ? "română" : "engleză"}.`,
+    ``,
+    `---`,
+    ``,
+    `## 1. Sistem AI cu risc ridicat (HRAIS)`,
+    ``,
+    `| Câmp | Valoare |`,
+    `|------|---------|`,
+    `| Denumire | ${system.name} |`,
+    `| Tip / Model | ${system.modelType} |`,
+    `| Scop propus | ${system.purpose} |`,
+    `| Cod unic de identificare | ${inputs.uniqueIdentifier} |`,
+    ``,
+    `## 2. Provider`,
+    ``,
+    `**Nume / denumire:** ${orgName}`,
+    `**Adresă:** ${inputs.providerAddress}`,
+  )
+
+  if (inputs.authorisedRepresentative) {
+    sections.push(
+      ``,
+      `**Reprezentant autorizat în UE (Art. 22):**`,
+      `- Nume: ${inputs.authorisedRepresentative.name}`,
+      `- Adresă: ${inputs.authorisedRepresentative.address}`,
+    )
+  }
+
+  sections.push(
+    ``,
+    `## 3. Declarație de responsabilitate exclusivă`,
+    ``,
+    `Prezenta Declarație UE de Conformitate este emisă **pe responsabilitatea exclusivă a providerului** identificat la secțiunea 2 supra.`,
+    ``,
+    `## 4. Conformitate cu legislația aplicabilă`,
+    ``,
+    `Sistemul AI identificat la secțiunea 1 respectă:`,
+    `- Regulamentul (UE) 2024/1689 (EU AI Act), în special cerințele Titlului III Capitolul 2 (Art. 8–15) pentru sisteme cu risc ridicat;`,
+    `- Regulamentul (UE) 2016/679 (GDPR), unde sistemul prelucrează date cu caracter personal;`,
+    `- Alte acte UE armonizate aplicabile (Anexa I a Regulamentului, dacă relevant).`,
+    ``,
+    `## 5. Standarde armonizate și specificații comune`,
+    ``,
+  )
+
+  if (inputs.harmonisedStandards && inputs.harmonisedStandards.length > 0) {
+    sections.push(`**Standarde armonizate aplicate (Art. 40):**`)
+    for (const std of inputs.harmonisedStandards) {
+      sections.push(`- ${std}`)
+    }
+    sections.push(``)
+  } else {
+    sections.push(
+      `> ⚠️ Nu a fost declarat niciun standard armonizat. Specifică minim ISO/IEC 42001 sau echivalent dacă a fost utilizat. Dacă nu există standarde armonizate aplicabile, secțiunea poate rămâne goală — providerul demonstrează conformitatea prin tech doc (Anexa IV) și QMS (Art. 17).`,
+      ``,
+    )
+  }
+
+  if (inputs.commonSpecifications && inputs.commonSpecifications.length > 0) {
+    sections.push(`**Specificații comune aplicate (Art. 41):**`)
+    for (const cs of inputs.commonSpecifications) {
+      sections.push(`- ${cs}`)
+    }
+    sections.push(``)
+  }
+
+  sections.push(
+    `## 6. Notified body și certificat (Anexa VII)`,
+    ``,
+  )
+
+  if (inputs.notifiedBody) {
+    sections.push(
+      `| Câmp | Valoare |`,
+      `|------|---------|`,
+      `| Nume notified body | ${inputs.notifiedBody.name} |`,
+      `| ID numeric | ${inputs.notifiedBody.identificationNumber} |`,
+      `| Procedura conformity assessment | ${inputs.notifiedBody.assessmentProcedure} |`,
+      `| Referință certificat | ${inputs.notifiedBody.certificateReference ?? "—"} |`,
+      ``,
+    )
+  } else {
+    sections.push(
+      `**Nu este implicat un notified body.** Conformity assessment a fost realizat pe baza Anexei VI (Internal Control) — aplicabil HRAIS din Anexa III punctele 2-8 sau când au fost aplicate integral standardele armonizate.`,
+      ``,
+    )
+  }
+
+  sections.push(
+    `## 7. Loc, dată, semnătură`,
+    ``,
+    `**Loc emitere:** ${inputs.placeOfIssue}`,
+    `**Data emiterii:** ${dateStr}`,
+    ``,
+    `**Semnat de:**`,
+    `- Nume: ${inputs.signerName}`,
+    `- Funcție: ${inputs.signerTitle}`,
+    `- Semnătură: _________________________`,
+    ``,
+    `---`,
+    ``,
+    `### Obligația de actualizare`,
+    ``,
+    `Conform Art. 47(2), prezenta declarație trebuie **actualizată continuu** dacă apar modificări semnificative ale sistemului AI (Art. 43(4)) sau ale standardelor/cerințelor aplicabile. Versiunile anterioare se păstrează în Audit Pack pentru auditare.`,
+    ``,
+    `### Format`,
+    ``,
+    `Documentul este redactat în format **mașină-lizibil + uman-lizibil** (Markdown UTF-8) — îndeplinește cerința Art. 47(1).`,
+    ``,
+    `### Retenție`,
+    ``,
+    `Providerul păstrează prezenta declarație **minim 10 ani de la introducerea pe piață** a sistemului AI (Art. 18) și o pune la dispoziția autorităților naționale competente la cerere (Art. 21).`,
+    ``,
+    `---`,
+    ``,
+    `⚠️ *Document generat automat de ${brandName}${isCustomBrand ? " (powered by CompliRoAI)" : ""}. Verifică toate câmpurile cu jurist înainte de semnare și depunere oficială.*`,
+  )
+
+  return {
+    title: `EU Declaration of Conformity — ${system.name}`,
+    content: sections.join("\n"),
+    generatedAtISO: now,
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//   Art. 48 — CE marking checklist
+// ─────────────────────────────────────────────────────────────────────────────
+// Regulament (UE) 2024/1689, Articolul 48:
+//   - CE marking vizibil, lizibil, indelebil pe HRAIS (sau pe ambalaj/doc dacă fizic imposibil).
+//   - Digital CE marking acceptat pentru HRAIS pur digitale.
+//   - Identificare numerică notified body alăturat (dacă există NB — Art. 43 + Anexa VII).
+//   - Aplicat înainte de plasarea pe piață sau punerea în funcțiune.
+
+export type CEMarkingChecklistItem = {
+  id: string
+  question: string
+  legalRef: string
+  /** Răspunsul considerat conform. */
+  expected: "yes" | "no" | "na-acceptable"
+  /** Severitate dacă răspunsul nu este cel așteptat. */
+  severityIfFail: "critical" | "high" | "medium"
+  /** Cui îi aplică. */
+  appliesTo:
+    | "all-hrais"
+    | "physical-product"
+    | "digital-only"
+    | "notified-body-route"
+}
+
+export const CE_MARKING_CHECKLIST: CEMarkingChecklistItem[] = [
+  {
+    id: "ce-1-applied-before-market",
+    question:
+      "Marcajul CE este aplicat **înainte** de plasarea pe piață sau punerea în funcțiune a HRAIS?",
+    legalRef: "EU AI Act Art. 48(1)",
+    expected: "yes",
+    severityIfFail: "critical",
+    appliesTo: "all-hrais",
+  },
+  {
+    id: "ce-2-visible",
+    question:
+      "Marcajul CE este aplicat **vizibil, lizibil și indelebil** pe HRAIS (pentru produse fizice)?",
+    legalRef: "EU AI Act Art. 48(2)",
+    expected: "yes",
+    severityIfFail: "high",
+    appliesTo: "physical-product",
+  },
+  {
+    id: "ce-3-package-fallback",
+    question:
+      "Dacă aplicarea directă nu este posibilă fizic: marcajul este pe **ambalaj sau documentația care însoțește** sistemul?",
+    legalRef: "EU AI Act Art. 48(2)",
+    expected: "yes",
+    severityIfFail: "high",
+    appliesTo: "physical-product",
+  },
+  {
+    id: "ce-4-digital-marking",
+    question:
+      "Pentru HRAIS **pur digital** (fără produs fizic): marcajul CE este afișat **digital** (UI sau metadata) într-un mod accesibil utilizatorului?",
+    legalRef: "EU AI Act Art. 48(3)",
+    expected: "yes",
+    severityIfFail: "high",
+    appliesTo: "digital-only",
+  },
+  {
+    id: "ce-5-notified-body-id",
+    question:
+      "Dacă procedura conformity assessment a implicat notified body (Anexa VII): **numărul de identificare al NB** este afișat alături de CE?",
+    legalRef: "EU AI Act Art. 48(4)",
+    expected: "yes",
+    severityIfFail: "high",
+    appliesTo: "notified-body-route",
+  },
+  {
+    id: "ce-6-eu-doc-available",
+    question:
+      "Există o **EU Declaration of Conformity** valabilă (Art. 47) care însoțește marcajul CE?",
+    legalRef: "EU AI Act Art. 47 + Art. 48",
+    expected: "yes",
+    severityIfFail: "critical",
+    appliesTo: "all-hrais",
+  },
+  {
+    id: "ce-7-no-misleading",
+    question:
+      "Nu există alte marcaje, semne sau inscripții care ar putea **induce în eroare** terții cu privire la semnificația marcajului CE?",
+    legalRef: "EU AI Act Art. 48(5)",
+    expected: "yes",
+    severityIfFail: "medium",
+    appliesTo: "all-hrais",
+  },
+]
+
+export type CEMarkingChecklistAnswers = Record<string, "yes" | "no" | "na">
+
+export type CEMarkingChecklistResult = {
+  hasPhysicalProduct: boolean
+  hasNotifiedBody: boolean
+  passed: number
+  applicable: number
+  gaps: Array<{
+    id: string
+    question: string
+    legalRef: string
+    severity: "critical" | "high" | "medium"
+  }>
+  verdict: "ready-for-ce" | "fixes-needed" | "blocked-critical"
+}
+
+export function evaluateCEMarkingChecklist(
+  answers: CEMarkingChecklistAnswers,
+  context: {
+    hasPhysicalProduct: boolean
+    hasNotifiedBody: boolean
+  }
+): CEMarkingChecklistResult {
+  let passed = 0
+  let applicable = 0
+  const gaps: CEMarkingChecklistResult["gaps"] = []
+
+  for (const item of CE_MARKING_CHECKLIST) {
+    if (item.appliesTo === "physical-product" && !context.hasPhysicalProduct) continue
+    if (item.appliesTo === "digital-only" && context.hasPhysicalProduct) continue
+    if (item.appliesTo === "notified-body-route" && !context.hasNotifiedBody) continue
+
+    applicable++
+    const answer = answers[item.id] ?? "no"
+
+    if (answer === item.expected || answer === "na") {
+      passed++
+    } else {
+      gaps.push({
+        id: item.id,
+        question: item.question,
+        legalRef: item.legalRef,
+        severity: item.severityIfFail,
+      })
+    }
+  }
+
+  let verdict: CEMarkingChecklistResult["verdict"]
+  if (gaps.some((g) => g.severity === "critical")) {
+    verdict = "blocked-critical"
+  } else if (gaps.length > 0) {
+    verdict = "fixes-needed"
+  } else {
+    verdict = "ready-for-ce"
+  }
+
+  return {
+    hasPhysicalProduct: context.hasPhysicalProduct,
+    hasNotifiedBody: context.hasNotifiedBody,
+    passed,
+    applicable,
+    gaps: gaps.sort((a, b) => {
+      const order = { critical: 0, high: 1, medium: 2 }
+      return order[a.severity] - order[b.severity]
+    }),
+    verdict,
+  }
+}
+
+export type CEMarkingChecklistDocument = {
+  title: string
+  content: string
+  generatedAtISO: string
+}
+
+export function buildCEMarkingChecklistDocument(
+  system: SystemForAnnexIV,
+  answers: CEMarkingChecklistAnswers,
+  context: { hasPhysicalProduct: boolean; hasNotifiedBody: boolean },
+  orgName: string,
+  branding?: AnnexIVBranding
+): CEMarkingChecklistDocument {
+  const now = new Date().toISOString()
+  const dateStr = new Date(now).toLocaleDateString("ro-RO")
+  const brandName = branding?.brandName?.trim() || "CompliRoAI"
+  const isCustomBrand = branding?.isCustom === true && brandName !== "CompliRoAI"
+  const result = evaluateCEMarkingChecklist(answers, context)
+
+  const verdictLabel: Record<CEMarkingChecklistResult["verdict"], string> = {
+    "ready-for-ce": "✅ Pregătit pentru aplicare CE",
+    "fixes-needed": "⚠️ Lacune neblocante — remediere recomandată",
+    "blocked-critical":
+      "🔴 Blocat — lacune critice trebuie remediate înainte de plasarea pe piață",
+  }
+
+  const sections: string[] = []
+
+  if (branding?.logoUrl) {
+    sections.push(`![${brandName}](${branding.logoUrl})`, ``)
+  }
+
+  sections.push(
+    `# Checklist Marcaj CE — Art. 48 EU AI Act`,
+    ``,
+    `**Sistem AI:** ${system.name}`,
+    `**Organizație:** ${orgName}`,
+    `**Data generării:** ${dateStr}`,
+    `**Baza legală:** Regulamentul (UE) 2024/1689, Articolul 48.`,
+    ``,
+    `---`,
+    ``,
+    `## Verdict`,
+    ``,
+    `${verdictLabel[result.verdict]}`,
+    ``,
+    `**Itemuri conforme:** ${result.passed} / ${result.applicable}`,
+    `**Produs fizic:** ${result.hasPhysicalProduct ? "Da" : "Nu — sistem pur digital"}`,
+    `**Notified body implicat (Anexa VII):** ${result.hasNotifiedBody ? "Da" : "Nu — conformity assessment intern (Anexa VI)"}`,
+    ``,
+    `---`,
+    ``,
+    `## Checklist detaliat`,
+    ``,
+  )
+
+  for (const item of CE_MARKING_CHECKLIST) {
+    if (item.appliesTo === "physical-product" && !context.hasPhysicalProduct) continue
+    if (item.appliesTo === "digital-only" && context.hasPhysicalProduct) continue
+    if (item.appliesTo === "notified-body-route" && !context.hasNotifiedBody) continue
+
+    const answer = answers[item.id] ?? "no"
+    const ok = answer === item.expected || answer === "na"
+    const icon = ok
+      ? "✅"
+      : item.severityIfFail === "critical"
+      ? "🔴"
+      : item.severityIfFail === "high"
+      ? "🟡"
+      : "🟠"
+    const answerLbl = answer === "yes" ? "Da" : answer === "no" ? "Nu" : "N/A"
+
+    sections.push(
+      `### ${icon} ${item.question}`,
+      ``,
+      `- **Referință:** ${item.legalRef}`,
+      `- **Răspuns:** ${answerLbl}`,
+      `- **Așteptat:** ${item.expected === "yes" ? "Da" : item.expected === "no" ? "Nu" : "N/A acceptabil"}`,
+      ``,
+    )
+  }
+
+  if (result.gaps.length > 0) {
+    sections.push(`---`, ``, `## Lacune identificate`, ``)
+    for (const gap of result.gaps) {
+      const sev =
+        gap.severity === "critical"
+          ? "🔴 Critic"
+          : gap.severity === "high"
+          ? "🟡 Ridicat"
+          : "🟠 Mediu"
+      sections.push(`- **${sev}** — ${gap.question} (${gap.legalRef})`)
+    }
+    sections.push(``)
+  }
+
+  sections.push(
+    `---`,
+    ``,
+    `## Note legale`,
+    ``,
+    `- Marcajul CE confirmă că HRAIS respectă cerințele aplicabile ale Regulamentului (UE) 2024/1689 și ale altor acte UE armonizate.`,
+    `- Pentru HRAIS pur digitale, marcajul CE poate fi afișat **digital** (Art. 48(3)) — în UI, în documentația tehnică digitală sau ca metadata interoperabilă.`,
+    `- Numărul de identificare al notified body (dacă există) trebuie afișat **imediat alături** de marcajul CE (Art. 48(4)).`,
+    `- Marcajul CE este aplicat de provider sau, dacă există, de reprezentantul autorizat (Art. 22 + Art. 48).`,
+    `- **Sancțiune:** marcaj CE aplicat incorect → Art. 99 + autoritate națională de supraveghere a pieței poate cere retragerea de pe piață.`,
+    ``,
+    `---`,
+    ``,
+    `⚠️ *Acest checklist este pregătit de ${brandName}${isCustomBrand ? " (powered by CompliRoAI)" : ""}. Marcajul CE final trebuie validat de provider împreună cu jurist și, dacă este cazul, cu notified body.*`,
+  )
+
+  return {
+    title: `Checklist Marcaj CE — ${system.name}`,
+    content: sections.join("\n"),
+    generatedAtISO: now,
+  }
+}
+
 export function scoreAssessment(answers: AssessmentAnswers): AssessmentResult {
   let score = 0
   let maxScore = 0

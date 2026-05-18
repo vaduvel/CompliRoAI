@@ -1632,6 +1632,24 @@ export type ComplianceState = {
   aiAdsClaims?: AIAdsClaim[]
   aiAdsCreativeApprovals?: AIAdsCreativeApproval[]
   conversionTrackingReviews?: ConversionTrackingReview[]
+
+  /**
+   * Sprint 026 — Art. 21 EU AI Act + Art. 26(11) cooperation requests register.
+   *
+   * Articolul 21 obligă providerii (și prin Art. 26(11) deployer-ii) să
+   * **coopereze cu autoritățile naționale competente** la cerere — punând la
+   * dispoziție documentația tehnică, log-urile, evidence-ul de conformitate.
+   * Registrul de mai jos este probă auditabilă că organizația a tratat în mod
+   * trasabil fiecare solicitare oficială primită.
+   *
+   * Câmpuri minime per request:
+   *  - autoritatea (RO: ANSPDCP, ADR, ANCOM, ASF; UE: AI Office / market
+   *    surveillance authority — Art. 70);
+   *  - data primirii + deadline-ul răspunsului;
+   *  - documentele furnizate (link la generatedDocuments / dpia / fria etc.);
+   *  - status (received → in-progress → responded → closed).
+   */
+  authorityCooperationRequests?: AuthorityCooperationRequest[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2165,7 +2183,16 @@ export type OrgSubscription = {
 export type AIActGeneratedDocumentRecord = {
   id: string
   systemId: string
-  documentType: "annex-iv"
+  /**
+   * Tipul documentului generat:
+   * - `annex-iv` — tech doc Anexa IV (Art. 11).
+   * - `eu-doc-art-47` — EU Declaration of Conformity (Art. 47 + Anexa V).
+   * - `ce-marking-art-48-checklist` — checklist marcaj CE (Art. 48).
+   */
+  documentType:
+    | "annex-iv"
+    | "eu-doc-art-47"
+    | "ce-marking-art-48-checklist"
   content: string
   createdAtISO: string
   approvalStatus?: "pending" | "approved_as_evidence"
@@ -3771,6 +3798,80 @@ export type AIAdsCampaign = {
   // Findings
   linkedFindingIds: string[]
   notes?: string
+  createdByEmail: string
+  createdAtISO: string
+  updatedAtISO: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//   Sprint 026 — Art. 21 + Art. 26(11) Authority Cooperation Requests
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Articolul 21 (provider) + Art. 26(11) (deployer) — obligația de cooperare cu
+// autoritățile naționale competente. Registrul acesta este probă auditabilă a
+// cooperării: pentru fiecare solicitare oficială primită, organizația poate
+// arăta cine a primit-o, când, ce documente a furnizat, când a închis cazul.
+
+export type AuthorityCooperationAuthority =
+  /** Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal. */
+  | "anspdcp"
+  /** Autoritatea pentru Digitalizarea României. */
+  | "adr"
+  /** Autoritatea Națională pentru Administrare și Reglementare în Comunicații. */
+  | "ancom"
+  /** Autoritatea de Supraveghere Financiară. */
+  | "asf"
+  /** AI Office (Comisia Europeană, DG CONNECT). */
+  | "ai-office"
+  /** Autoritate de supraveghere a pieței (Art. 70) — generic / Stat Membru. */
+  | "market-surveillance-authority"
+  /** Autoritate competentă în domeniul drepturilor fundamentale (Art. 77). */
+  | "fundamental-rights-authority"
+  /** Altă autoritate (descriere în câmp `authorityNameOther`). */
+  | "other"
+
+export type AuthorityCooperationStatus =
+  | "received"
+  | "in-progress"
+  | "responded"
+  | "closed"
+
+export type AuthorityCooperationRequest = {
+  id: string
+  /** Autoritatea care a făcut solicitarea. */
+  authority: AuthorityCooperationAuthority
+  /** Folosit doar când `authority === "other"`. */
+  authorityNameOther?: string
+  /** Numărul de referință al solicitării (dacă a fost atribuit de autoritate). */
+  referenceNumber?: string
+  /** Data primirii (ISO). */
+  receivedAtISO: string
+  /** Deadline-ul oficial al răspunsului (ISO), dacă autoritatea l-a impus. */
+  deadlineISO?: string
+  /** Sumar al subiectului solicitării (ce documente / sistem / incident). */
+  subject: string
+  /**
+   * Documentele/probele furnizate. Câmp text-liber descriptiv plus opțional
+   * link-uri către resurse interne (system / DPIA / FRIA / generatedDocument /
+   * AI incident). Evidence-ul fizic (PDF-uri, scrisori) intră în Audit Pack
+   * prin Approvals / Magic Links la momentul răspunsului.
+   */
+  responseSummary?: string
+  /** ID-uri din alte module — pentru cross-link în Audit Pack. */
+  linkedSystemIds?: string[]
+  linkedIncidentIds?: string[]
+  linkedGeneratedDocumentIds?: string[]
+  linkedDpiaIds?: string[]
+  linkedFriaIds?: string[]
+  /** Status lifecycle. */
+  status: AuthorityCooperationStatus
+  /** Data răspunsului oficial transmis autorității (ISO). */
+  respondedAtISO?: string
+  /** Data închiderii cazului (ISO). */
+  closedAtISO?: string
+  /** Persoana responsabilă în organizație (de obicei DPO / responsabil AI). */
+  responsibleEmail: string
+  /** Email-ul actorului care a creat înregistrarea. */
   createdByEmail: string
   createdAtISO: string
   updatedAtISO: string

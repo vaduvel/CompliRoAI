@@ -14,11 +14,13 @@ import {
 import type { AISystemRecord } from "@/lib/compliance/types"
 import {
   AI_CONFORMITY_QUESTIONS,
+  CE_MARKING_CHECKLIST,
   buildAnnexIVDocument,
   scoreAssessment,
   type AssessmentAnswer,
   type AssessmentAnswers,
   type AssessmentResult,
+  type CEMarkingChecklistAnswers,
 } from "@/lib/compliance/ai-conformity-assessment"
 
 // ── Answer selector ───────────────────────────────────────────────────────────
@@ -167,6 +169,37 @@ function GapItem({ gap }: { gap: AssessmentResult["gaps"][0] }) {
   )
 }
 
+// ── EU DoC field input (Sprint 026) ──────────────────────────────────────────
+
+function EuDocField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      <span style={{ fontSize: "11px", color: "var(--ink-muted)" }}>{label}</span>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          padding: "8px 10px",
+          borderRadius: "6px",
+          border: "1px solid var(--border-strong)",
+          background: "var(--bg)",
+          color: "var(--ink)",
+          fontSize: "13px",
+        }}
+      />
+    </label>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ConformitatePage() {
@@ -180,6 +213,23 @@ export default function ConformitatePage() {
   const [generatingAnnex, setGeneratingAnnex] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  // Art. 47 — EU Declaration of Conformity inputs (Sprint 026)
+  const [showEuDocForm, setShowEuDocForm] = useState(false)
+  const [generatingEuDoc, setGeneratingEuDoc] = useState(false)
+  const [euDocUniqueId, setEuDocUniqueId] = useState("")
+  const [euDocProviderAddress, setEuDocProviderAddress] = useState("")
+  const [euDocPlaceOfIssue, setEuDocPlaceOfIssue] = useState("București, România")
+  const [euDocSignerName, setEuDocSignerName] = useState("")
+  const [euDocSignerTitle, setEuDocSignerTitle] = useState("")
+  const [euDocStandards, setEuDocStandards] = useState("")
+
+  // Art. 48 — CE marking checklist (Sprint 026)
+  const [showCeForm, setShowCeForm] = useState(false)
+  const [generatingCe, setGeneratingCe] = useState(false)
+  const [ceHasPhysicalProduct, setCeHasPhysicalProduct] = useState(false)
+  const [ceHasNotifiedBody, setCeHasNotifiedBody] = useState(false)
+  const [ceAnswers, setCeAnswers] = useState<CEMarkingChecklistAnswers>({})
 
   const loadSystems = useCallback(async () => {
     const res = await fetch("/api/ai-systems")
@@ -295,6 +345,96 @@ export default function ConformitatePage() {
       setError("Eroare la generarea Anexei IV.")
     } finally {
       setGeneratingAnnex(false)
+    }
+  }
+
+  // Art. 47 — generate EU Declaration of Conformity (Sprint 026)
+  async function handleGenerateEuDoc() {
+    if (!selectedSystemId) return
+    if (!euDocUniqueId.trim() || !euDocProviderAddress.trim() || !euDocPlaceOfIssue.trim() || !euDocSignerName.trim() || !euDocSignerTitle.trim()) {
+      setError("Completează toate câmpurile obligatorii pentru Anexa V înainte de generare.")
+      return
+    }
+    setGeneratingEuDoc(true)
+    setError(null)
+    try {
+      const standards = euDocStandards
+        .split(/[,\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const res = await fetch("/api/ai-act/eu-declaration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemId: selectedSystemId,
+          inputs: {
+            uniqueIdentifier: euDocUniqueId.trim(),
+            providerAddress: euDocProviderAddress.trim(),
+            placeOfIssue: euDocPlaceOfIssue.trim(),
+            signerName: euDocSignerName.trim(),
+            signerTitle: euDocSignerTitle.trim(),
+            harmonisedStandards: standards.length > 0 ? standards : undefined,
+            language: "ro",
+          },
+        }),
+      })
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({})) as { error?: string }
+        setError(payload.error ?? "Generarea Declarației UE a eșuat.")
+        return
+      }
+      const data = await res.json() as { content: string }
+      const system = systems.find((s) => s.id === selectedSystemId)!
+      const blob = new Blob([data.content], { type: "text/markdown;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `eu-declaration-${system.name.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.md`
+      a.click()
+      URL.revokeObjectURL(url)
+      setSuccessMsg("Declarație UE de Conformitate (Art. 47) descărcată")
+    } catch {
+      setError("Eroare la generarea Declarației UE.")
+    } finally {
+      setGeneratingEuDoc(false)
+    }
+  }
+
+  // Art. 48 — generate CE marking checklist (Sprint 026)
+  async function handleGenerateCeChecklist() {
+    if (!selectedSystemId) return
+    setGeneratingCe(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/ai-act/ce-marking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemId: selectedSystemId,
+          answers: ceAnswers,
+          hasPhysicalProduct: ceHasPhysicalProduct,
+          hasNotifiedBody: ceHasNotifiedBody,
+        }),
+      })
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({})) as { error?: string }
+        setError(payload.error ?? "Generarea checklist-ului CE a eșuat.")
+        return
+      }
+      const data = await res.json() as { content: string }
+      const system = systems.find((s) => s.id === selectedSystemId)!
+      const blob = new Blob([data.content], { type: "text/markdown;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `ce-marking-checklist-${system.name.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.md`
+      a.click()
+      URL.revokeObjectURL(url)
+      setSuccessMsg("Checklist marcaj CE (Art. 48) descărcat")
+    } catch {
+      setError("Eroare la generarea checklist-ului CE.")
+    } finally {
+      setGeneratingCe(false)
     }
   }
 
@@ -584,6 +724,194 @@ export default function ConformitatePage() {
                       )}
                     </button>
                   )}
+
+                  {/* Art. 47 — EU Declaration of Conformity (Sprint 026) */}
+                  <div style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: "8px",
+                    background: "var(--bg-raised)",
+                    overflow: "hidden",
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEuDocForm((v) => !v)}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", padding: "11px 16px", border: "none",
+                        background: "transparent", cursor: "pointer",
+                        fontSize: "13px", color: "var(--ink)", fontWeight: 500,
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <FileText size={14} strokeWidth={2} />
+                        EU Declaration of Conformity (Art. 47 + Anexa V)
+                      </span>
+                      <ChevronRight
+                        size={14}
+                        style={{
+                          color: "var(--ink-dim)",
+                          transform: showEuDocForm ? "rotate(90deg)" : "none",
+                          transition: "transform 0.15s ease",
+                        }}
+                      />
+                    </button>
+                    {showEuDocForm && (
+                      <div style={{
+                        padding: "12px 16px",
+                        borderTop: "1px solid var(--border)",
+                        display: "flex", flexDirection: "column", gap: "10px",
+                      }}>
+                        <p style={{ fontSize: "12px", color: "var(--ink-muted)", margin: 0, lineHeight: 1.5 }}>
+                          Câmpurile minime cerute de Anexa V. Pregătit pentru semnătură de provider sau reprezentant autorizat (Art. 22).
+                        </p>
+                        <EuDocField label="Cod unic identificare (ex: număr serie, UUID)*" value={euDocUniqueId} onChange={setEuDocUniqueId} />
+                        <EuDocField label="Adresă provider*" value={euDocProviderAddress} onChange={setEuDocProviderAddress} />
+                        <EuDocField label="Loc emitere*" value={euDocPlaceOfIssue} onChange={setEuDocPlaceOfIssue} />
+                        <EuDocField label="Nume semnatar*" value={euDocSignerName} onChange={setEuDocSignerName} />
+                        <EuDocField label="Funcție semnatar*" value={euDocSignerTitle} onChange={setEuDocSignerTitle} />
+                        <EuDocField label="Standarde armonizate (separate prin virgulă; ex: ISO/IEC 42001)" value={euDocStandards} onChange={setEuDocStandards} />
+                        <button
+                          onClick={() => void handleGenerateEuDoc()}
+                          disabled={generatingEuDoc}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                            padding: "10px 16px", borderRadius: "6px",
+                            border: "1px solid var(--border-strong)", background: "transparent",
+                            fontSize: "13px", color: "var(--ink-muted)", cursor: "pointer",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {generatingEuDoc ? (
+                            <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Se generează...</>
+                          ) : (
+                            <><Download size={14} strokeWidth={2} /> Descarcă Declarație UE de Conformitate</>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Art. 48 — CE marking checklist (Sprint 026) */}
+                  <div style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: "8px",
+                    background: "var(--bg-raised)",
+                    overflow: "hidden",
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowCeForm((v) => !v)}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", padding: "11px 16px", border: "none",
+                        background: "transparent", cursor: "pointer",
+                        fontSize: "13px", color: "var(--ink)", fontWeight: 500,
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <ShieldCheck size={14} strokeWidth={2} />
+                        Checklist Marcaj CE (Art. 48)
+                      </span>
+                      <ChevronRight
+                        size={14}
+                        style={{
+                          color: "var(--ink-dim)",
+                          transform: showCeForm ? "rotate(90deg)" : "none",
+                          transition: "transform 0.15s ease",
+                        }}
+                      />
+                    </button>
+                    {showCeForm && (
+                      <div style={{
+                        padding: "12px 16px",
+                        borderTop: "1px solid var(--border)",
+                        display: "flex", flexDirection: "column", gap: "10px",
+                      }}>
+                        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+                          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--ink-muted)" }}>
+                            <input
+                              type="checkbox"
+                              checked={ceHasPhysicalProduct}
+                              onChange={(e) => setCeHasPhysicalProduct(e.target.checked)}
+                            />
+                            Produs fizic (nu doar software)
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--ink-muted)" }}>
+                            <input
+                              type="checkbox"
+                              checked={ceHasNotifiedBody}
+                              onChange={(e) => setCeHasNotifiedBody(e.target.checked)}
+                            />
+                            Notified body implicat (Anexa VII)
+                          </label>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {CE_MARKING_CHECKLIST
+                            .filter((item) => {
+                              if (item.appliesTo === "physical-product" && !ceHasPhysicalProduct) return false
+                              if (item.appliesTo === "digital-only" && ceHasPhysicalProduct) return false
+                              if (item.appliesTo === "notified-body-route" && !ceHasNotifiedBody) return false
+                              return true
+                            })
+                            .map((item) => {
+                              const current = ceAnswers[item.id] ?? "no"
+                              return (
+                                <div key={item.id} style={{
+                                  display: "flex", flexDirection: "column", gap: "6px",
+                                  padding: "8px 10px",
+                                  border: "1px solid var(--border)",
+                                  borderRadius: "6px",
+                                }}>
+                                  <p style={{ fontSize: "12px", color: "var(--ink)", margin: 0, lineHeight: 1.5 }}>
+                                    {item.question}
+                                  </p>
+                                  <p style={{ fontSize: "10px", color: "var(--ink-subtle)", margin: 0, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                                    {item.legalRef}
+                                  </p>
+                                  <div style={{ display: "flex", gap: "6px" }}>
+                                    {(["yes", "no", "na"] as const).map((opt) => (
+                                      <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={() => setCeAnswers((prev) => ({ ...prev, [item.id]: opt }))}
+                                        style={{
+                                          padding: "3px 10px",
+                                          borderRadius: "12px",
+                                          border: current === opt ? "1px solid var(--cobalt-600)" : "1px solid var(--border-strong)",
+                                          background: current === opt ? "var(--cobalt-soft)" : "transparent",
+                                          color: current === opt ? "var(--cobalt-400)" : "var(--ink-muted)",
+                                          fontSize: "11px",
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        {opt === "yes" ? "Da" : opt === "no" ? "Nu" : "N/A"}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                        </div>
+                        <button
+                          onClick={() => void handleGenerateCeChecklist()}
+                          disabled={generatingCe}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                            padding: "10px 16px", borderRadius: "6px",
+                            border: "1px solid var(--border-strong)", background: "transparent",
+                            fontSize: "13px", color: "var(--ink-muted)", cursor: "pointer",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {generatingCe ? (
+                            <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Se generează...</>
+                          ) : (
+                            <><Download size={14} strokeWidth={2} /> Descarcă Checklist CE</>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Gap analysis */}
                   {savedResult && savedResult.gaps.length > 0 && (
