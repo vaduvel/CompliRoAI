@@ -45,7 +45,7 @@ export type Feature =
   | "logging_evidence"
   | "post_market_monitoring"
   | "ai_incident_reporting"
-  | "qms"
+  | "qms_workspace"
   // ── Cabinet workflow ───────────────────────────────────────────────────────
   | "multi_client_portfolio"
   | "magic_links"
@@ -100,7 +100,7 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     "logging_evidence",
     "post_market_monitoring",
     "ai_incident_reporting",
-    "qms",
+    "qms_workspace",
     // ai-builder also retains literacy / vendor / dpia at the deployer side
     "transparency_engine",
     "literacy_tracking",
@@ -149,6 +149,9 @@ const WORKSPACE_MODE_FEATURES: Record<WorkspaceMode, ReadonlySet<Feature>> = {
     // Reporting (Art. 73 — serious incident notification to market
     // surveillance authority).
     "ai_incident_reporting",
+    // Sprint 021 — cabinets prepare QMS Workspace (Art. 17) pentru clientii
+    // provider.
+    "qms_workspace",
   ]),
 }
 
@@ -181,7 +184,7 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "logging_evidence",
     "post_market_monitoring",
     "ai_incident_reporting",
-    "qms",
+    "qms_workspace",
     "multi_client_portfolio",
     "magic_links",
     "approval_queue",
@@ -247,7 +250,7 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "logging_evidence",
     "post_market_monitoring",
     "ai_incident_reporting",
-    "qms",
+    "qms_workspace",
   ]),
   cabinet_solo: new Set<Feature>([
     "ai_inventory",
@@ -301,6 +304,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "post_market_monitoring",
     // Sprint 020 — cabinet assisting AI Incident Reporting (Art. 73).
     "ai_incident_reporting",
+    // Sprint 021 — cabinet preparing QMS Workspace (Art. 17).
+    "qms_workspace",
   ]),
   cabinet_enterprise: new Set<Feature>([
     "ai_inventory",
@@ -336,6 +341,8 @@ const TIER_UNLOCKED_FEATURES: Record<BillingTier, ReadonlySet<Feature>> = {
     "post_market_monitoring",
     // Sprint 020 — cabinet assisting AI Incident Reporting (Art. 73).
     "ai_incident_reporting",
+    // Sprint 021 — cabinet preparing QMS Workspace (Art. 17).
+    "qms_workspace",
   ]),
   one_off_audit: new Set<Feature>([
     "ai_inventory",

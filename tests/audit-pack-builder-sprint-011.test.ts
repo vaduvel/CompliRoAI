@@ -1104,7 +1104,110 @@ describe("audit-pack backward compat (Sprint 011)", () => {
     expect(paths).toContain("audit-log/events.md")
     expect(paths).toContain("pmm/registry.md")
     expect(paths).toContain("ai-incidents/registry.md")
+    // Sprint 021: QMS readme when QMS not initialized (graceful empty state)
+    expect(paths).toContain("qms/README.md")
     // Verify ok
+    const { verifyAuditPackZip } = await import("@/lib/server/audit-pack-builder")
+    const verification = await verifyAuditPackZip(result.zipBuffer)
+    expect(verification.valid).toBe(true)
+  })
+
+  it("Sprint 021 — when QMS workspace is initialized, audit pack contains workspace.md + sections + lessons + attestations + cross-module-health", async () => {
+    const nowISO = new Date().toISOString()
+    mockState.value = {
+      ...initialComplianceState,
+      events: [],
+      qmsWorkspace: {
+        id: "qms-test",
+        orgId: "org-test-pack",
+        organizationSize: "midsize",
+        simplifiedMode: false,
+        sections: [
+          {
+            key: "a_regulatory_compliance_strategy",
+            status: "documented",
+            description: "Strategie documentata complet 30+ caractere narrativ.",
+            procedureSummary: "Procedura completa 30+ caractere pentru conformity.",
+            responsibleRole: "Quality Manager",
+            documentReferences: [
+              {
+                id: "doc-1",
+                type: "policy",
+                title: "Politica QMS v1.0",
+                attachedAtISO: nowISO,
+                attachedByEmail: "qm@example.com",
+              },
+            ],
+          },
+          // Additional 12 minimal sections
+          ...[
+            "b_design_control_verification",
+            "c_development_quality_assurance",
+            "d_examination_test_validation",
+            "e_technical_specifications_standards",
+            "f_data_management_systems",
+            "g_risk_management_system",
+            "h_post_market_monitoring",
+            "i_serious_incident_reporting",
+            "j_communication_with_authorities",
+            "k_record_keeping",
+            "l_resource_management_security",
+            "m_accountability_framework",
+          ].map((k) => ({
+            key: k as never,
+            status: "not_started" as const,
+            description: "",
+            procedureSummary: "",
+            responsibleRole: "",
+            documentReferences: [],
+          })),
+        ],
+        lessonsLearned: [
+          {
+            id: "qms-lesson-manual-X",
+            source: "manual",
+            title: "Lectie test",
+            rootCauseSummary: "Cauza X",
+            preventiveActionsTaken: ["Actiune 1"],
+            recordedAtISO: nowISO,
+            recordedByEmail: "qm@example.com",
+            applicableToSystems: [],
+          },
+        ],
+        systemAttestations: [],
+        status: "draft",
+        completeness: "incomplete",
+        versionLabel: "v0.1 — draft",
+        linkedFindingIds: [],
+        createdAtISO: nowISO,
+        updatedAtISO: nowISO,
+      },
+    } as AIActState
+    const { buildAuditPack } = await import("@/lib/server/audit-pack-builder")
+    const result = await buildAuditPack("org-test-pack", {
+      issuedByUserId: "u1",
+      issuedByUserEmail: "u1@example.com",
+      workspaceMode: "ai-builder",
+      currentOrgId: "org-test-pack",
+    })
+    const zip = await JSZip.loadAsync(result.zipBuffer)
+    const paths = Object.keys(zip.files)
+    expect(paths).toContain("qms/workspace.md")
+    expect(paths).toContain("qms/sections/a_regulatory_compliance_strategy.md")
+    expect(paths).toContain("qms/sections/m_accountability_framework.md")
+    expect(paths).toContain("qms/lessons-learned.md")
+    expect(paths).toContain("qms/system-attestations.md")
+    expect(paths).toContain("qms/cross-module-health.md")
+    // Verify content
+    const wsMd = await zip.file("qms/workspace.md")!.async("string")
+    expect(wsMd).toContain("Art. 17")
+    expect(wsMd).toContain("v0.1 — draft")
+    const lessonsMd = await zip.file("qms/lessons-learned.md")!.async("string")
+    expect(lessonsMd).toContain("Lectie test")
+    // Manifest summary contains qmsWorkspaceCount=1
+    expect(result.manifest.summary.qmsWorkspaceCount).toBe(1)
+    expect(result.manifest.summary.qmsCompleteness).toBe("incomplete")
+    // Chain still valid
     const { verifyAuditPackZip } = await import("@/lib/server/audit-pack-builder")
     const verification = await verifyAuditPackZip(result.zipBuffer)
     expect(verification.valid).toBe(true)

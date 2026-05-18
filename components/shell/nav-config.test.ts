@@ -122,9 +122,9 @@ describe("nav-config — ai-builder exposes builder workflow", () => {
     expect(labels).not.toContain("Risc AI")
   })
 
-  it("ai-builder placeholders (QMS, API/SDK) appear even on ai_builder tier; FRIA + Oversight + Logging + PMM + Incidente sunt live", () => {
+  it("ai-builder Sprint 016-021 modules sunt live pe ai_builder tier (FRIA + Oversight + Logging + PMM + Incidente + QMS); API/SDK ramane placeholder coming-soon", () => {
     const labels = labelsForRole("ai-builder", "ai_builder")
-    // Sprint 016 + 017 + 018 + 019 + 020 — FRIA + Oversight + Logging + PMM + Incidente AI sunt live (mutate în section "compliance").
+    // Sprint 016 + 017 + 018 + 019 + 020 + 021 — toate live in "compliance".
     expect(labels).toContain("FRIA")
     expect(labels).toContain("Oversight uman")
     expect(labels).toContain("Logging")
@@ -158,20 +158,21 @@ describe("nav-config — cabinet exposes full collaboration workflow", () => {
     expect(labels).toContain("Setări (facturare)")
   })
 
-  it("cabinet does NOT see ai-builder-only modules (Annex IV / EU DB / API SDK / QMS), DOES see FRIA + Oversight + Logging + PMM + Incidente AI (Sprint 016/017/018/019/020 — cabinets prepare pentru clienți deployer)", () => {
+  it("cabinet does NOT see ai-builder-only modules (Annex IV / EU DB / API SDK), DOES see FRIA + Oversight + Logging + PMM + Incidente AI + QMS (Sprint 016-021 — cabinets prepare pentru clienți provider/deployer)", () => {
     const labels = labelsForRole("cabinet", "free_trial")
     expect(labels).not.toContain("Annex IV")
     expect(labels).not.toContain("EU Database")
     expect(labels).not.toContain("API / SDK")
-    expect(labels).not.toContain("QMS")
-    // FRIA + Oversight + Logging + PMM + Incidente AI sunt shared între ai-builder
-    // + cabinet per mandate § 16-21 — cabinet prepares evaluări pe seama
-    // clienților deployer (Art. 27 + Art. 14 + Art. 12 + Art. 72 + Art. 73 AI Act).
+    // FRIA + Oversight + Logging + PMM + Incidente AI + QMS sunt shared între
+    // ai-builder + cabinet per mandate § 16-21 — cabinet prepares evaluări pe
+    // seama clienților provider/deployer (Art. 27 + Art. 14 + Art. 12 + Art.
+    // 72 + Art. 73 + Art. 17 AI Act).
     expect(labels).toContain("FRIA")
     expect(labels).toContain("Oversight uman")
     expect(labels).toContain("Logging")
     expect(labels).toContain("PMM")
     expect(labels).toContain("Incidente AI")
+    expect(labels).toContain("QMS")
   })
 
   it("cabinet on cabinet_solo tier sees magic links but NOT trust center / branding / approvals", () => {

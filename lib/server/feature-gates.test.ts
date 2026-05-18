@@ -12,7 +12,7 @@ describe("feature-gates — workspaceMode visibility", () => {
     expect(featureBelongsToWorkspace("imm-classic", "annex_iv_generator")).toBe(false)
     expect(featureBelongsToWorkspace("imm-classic", "fria_generator")).toBe(false)
     expect(featureBelongsToWorkspace("imm-classic", "eu_database_wizard")).toBe(false)
-    expect(featureBelongsToWorkspace("imm-classic", "qms")).toBe(false)
+    expect(featureBelongsToWorkspace("imm-classic", "qms_workspace")).toBe(false)
   })
 
   it("imm-classic does NOT see cabinet collaboration features", () => {
@@ -29,7 +29,7 @@ describe("feature-gates — workspaceMode visibility", () => {
     expect(featureBelongsToWorkspace("ai-builder", "logging_evidence")).toBe(true)
     expect(featureBelongsToWorkspace("ai-builder", "post_market_monitoring")).toBe(true)
     expect(featureBelongsToWorkspace("ai-builder", "ai_incident_reporting")).toBe(true)
-    expect(featureBelongsToWorkspace("ai-builder", "qms")).toBe(true)
+    expect(featureBelongsToWorkspace("ai-builder", "qms_workspace")).toBe(true)
     expect(featureBelongsToWorkspace("ai-builder", "api_sdk")).toBe(true)
   })
 
@@ -158,7 +158,7 @@ describe("feature-gates — listUnlockedFeatures", () => {
     const features = listUnlockedFeatures("ai-builder", "free_trial")
     expect(features).toContain("annex_iv_generator")
     expect(features).toContain("fria_generator")
-    expect(features).toContain("qms")
+    expect(features).toContain("qms_workspace")
     expect(features).toContain("api_sdk")
   })
 

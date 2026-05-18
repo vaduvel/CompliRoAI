@@ -214,13 +214,16 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     requiredFeature: "ai_incident_reporting",
   },
   {
+    // Sprint 021 — QMS Workspace (Art. 17 EU AI Act umbrella module pentru
+    // providers of high-risk AI systems). Move din section "builder" în
+    // "compliance" pentru cabinet alignment (cabinetele asistă clienții
+    // provider la documentarea QMS).
     href: "/dashboard/qms",
     label: "QMS",
-    iconName: "Cog",
-    section: "builder",
-    workspaceModes: ["ai-builder"],
-    requiredFeature: "qms",
-    badge: "coming-soon",
+    iconName: "FileBadge",
+    section: "compliance",
+    workspaceModes: ["ai-builder", "cabinet"],
+    requiredFeature: "qms_workspace",
   },
   {
     href: "/dashboard/api-sdk",

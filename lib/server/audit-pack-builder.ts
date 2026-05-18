@@ -36,6 +36,7 @@ import type {
   LiteracyRecord,
   LoggingConfig,
   PmmPlan,
+  QmsWorkspace,
   RopaActivityRecord,
   ScanFinding,
   VendorRecord,
@@ -67,6 +68,13 @@ import {
   AI_INCIDENT_CATEGORY_LABELS,
   AI_INCIDENT_STATUS_LABELS,
 } from "@/lib/compliance/ai-incident-schema"
+import { buildQmsMarkdown } from "@/lib/compliance/qms-evaluator"
+import {
+  QMS_LESSON_SOURCE_LABELS,
+  QMS_SECTION_LABELS,
+  QMS_WORKSPACE_STATUS_LABELS,
+  getQmsSchemaSection,
+} from "@/lib/compliance/qms-schema"
 import { DEPLOYER_TYPE_LABELS } from "@/lib/compliance/fria-schema"
 import { buildRopaMachineReadableExport } from "@/lib/compliance/ropa-risk-engine"
 import {
@@ -136,6 +144,10 @@ export type AuditPackManifest = {
     pmmPlansCount?: number
     // Sprint 020 — AI Incidents Art. 73 included in pack.
     aiIncidentsCount?: number
+    // Sprint 021 — QMS Workspace Art. 17 included in pack (1 daca workspace
+    // exista, 0 daca neinitializat).
+    qmsWorkspaceCount?: number
+    qmsCompleteness?: "incomplete" | "partial" | "complete"
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -314,6 +326,8 @@ export async function buildAuditPack(
       loggingConfigsCount: (state.loggingEvidence ?? []).length,
       pmmPlansCount: (state.pmmPlans ?? []).length,
       aiIncidentsCount: (state.aiIncidents ?? []).length,
+      qmsWorkspaceCount: state.qmsWorkspace ? 1 : 0,
+      qmsCompleteness: state.qmsWorkspace?.completeness,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -751,6 +765,8 @@ function buildFileContents(input: {
   pushPmmFiles(files, input.state, input.orgName)
   // ── Sprint 020: AI Incidents Art. 73 (distinct de Breach GDPR Art. 33) ──
   pushAIIncidentFiles(files, input.state, input.orgName)
+  // ── Sprint 021: QMS Workspace Art. 17 (umbrella module) ────────────────
+  pushQmsFiles(files, input.state, input.orgName)
 
   return files
 }
@@ -1412,6 +1428,214 @@ function pushAIIncidentFiles(
   void AI_INCIDENT_STATUS_LABELS
 }
 
+/**
+ * Sprint 021 — QMS Workspace (Art. 17 EU AI Act umbrella module). Patternul
+ * urmărit: workspace.md (long-form 13 sectiuni + lessons + attestations) +
+ * sections/{key}.md (granular per sectiune) + lessons-learned.md +
+ * system-attestations.md + cross-module-health.md. Daca QMS nu este
+ * initializat, scrie un singur fisier note (audit-pack rămâne valid).
+ */
+function pushQmsFiles(
+  files: FileBytes[],
+  state: AIActState,
+  orgName: string,
+): void {
+  const workspace = state.qmsWorkspace as QmsWorkspace | undefined
+  if (!workspace) {
+    files.push({
+      path: "qms/README.md",
+      bytes: utf8(
+        `# QMS — ${orgName}\n\n_QMS Workspace (Art. 17 EU AI Act) nu este inițializat pentru această organizație._\n`,
+      ),
+    })
+    return
+  }
+  // 1) workspace.md — full markdown via evaluator
+  files.push({
+    path: "qms/workspace.md",
+    bytes: utf8(
+      buildQmsMarkdown({
+        workspace,
+        orgName,
+        state,
+      }),
+    ),
+  })
+  // 2) sections/{key}.md — granular per sectiune
+  for (const section of workspace.sections) {
+    const schemaSec = getQmsSchemaSection(section.key)
+    if (!schemaSec) continue
+    const lines: string[] = [
+      `# QMS Sectiunea ${schemaSec.letter} — ${schemaSec.displayLabel}`,
+      ``,
+      `**Organizatie:** ${orgName}`,
+      `**Referinta legala:** ${schemaSec.articleRef}`,
+      `**Status:** ${section.status}`,
+      `**Tier:** ${schemaSec.tier}`,
+      `**Responsabil rol:** ${section.responsibleRole || "—"}`,
+      section.responsibleEmail ? `**Responsabil email:** ${section.responsibleEmail}` : "",
+      section.approvedAtISO
+        ? `**Aprobat la:** ${section.approvedAtISO} de ${section.approvedByEmail ?? "—"}`
+        : "",
+      ``,
+      `## Descriere`,
+      section.description || "_de completat_",
+      ``,
+      `## Procedura`,
+      section.procedureSummary || "_de completat_",
+      ``,
+      `## Cross-module references`,
+    ]
+    const counts: string[] = []
+    if (section.linkedRopaActivityCount !== undefined)
+      counts.push(`- RoPA activities: ${section.linkedRopaActivityCount}`)
+    if (section.linkedAIDataMapCount !== undefined)
+      counts.push(`- AI Data Map: ${section.linkedAIDataMapCount}`)
+    if (section.linkedDpiaCount !== undefined)
+      counts.push(`- DPIA: ${section.linkedDpiaCount}`)
+    if (section.linkedFriaCount !== undefined)
+      counts.push(`- FRIA: ${section.linkedFriaCount}`)
+    if (section.linkedFindingCount !== undefined)
+      counts.push(`- Findings (open): ${section.linkedFindingCount}`)
+    if (section.linkedPmmPlanCount !== undefined)
+      counts.push(`- PMM plans: ${section.linkedPmmPlanCount}`)
+    if (section.linkedAIIncidentCount !== undefined)
+      counts.push(`- AI Incidents: ${section.linkedAIIncidentCount}`)
+    if (section.linkedLoggingConfigCount !== undefined)
+      counts.push(`- Logging Evidence: ${section.linkedLoggingConfigCount}`)
+    if (counts.length === 0) lines.push("_Niciun modul cross-linkat._")
+    else lines.push(...counts)
+    lines.push("")
+    lines.push(`## Documente atasate (${section.documentReferences.length})`)
+    if (section.documentReferences.length === 0) {
+      lines.push("_Niciun document atasat._")
+    } else {
+      for (const d of section.documentReferences) {
+        lines.push(
+          `- **${d.type}** · ${escapeMdCell(d.title)}${d.versionLabel ? ` (${d.versionLabel})` : ""} — atasat ${d.attachedAtISO} de ${d.attachedByEmail}${d.url ? ` · ${d.url}` : ""}`,
+        )
+      }
+    }
+    if (section.notes) {
+      lines.push("")
+      lines.push("## Note")
+      lines.push(section.notes)
+    }
+    files.push({
+      path: `qms/sections/${section.key}.md`,
+      bytes: utf8(lines.join("\n") + "\n"),
+    })
+  }
+  // 3) lessons-learned.md
+  {
+    const lines: string[] = [
+      `# QMS Lessons Learned — ${orgName}`,
+      ``,
+      `**Total:** ${workspace.lessonsLearned.length}`,
+      ``,
+    ]
+    if (workspace.lessonsLearned.length === 0) {
+      lines.push(`_Nicio lectie inregistrata._`)
+    } else {
+      for (const l of workspace.lessonsLearned) {
+        lines.push(`## ${l.title}`)
+        lines.push(``)
+        lines.push(`- Sursa: ${QMS_LESSON_SOURCE_LABELS[l.source]}`)
+        if (l.sourceEntityId) lines.push(`- Entitate sursa: ${l.sourceEntityId}`)
+        lines.push(`- Inregistrat: ${l.recordedAtISO} de ${l.recordedByEmail}`)
+        if (l.applicableToSystems.length > 0) {
+          lines.push(`- Sisteme aplicabile: ${l.applicableToSystems.join(", ")}`)
+        }
+        lines.push(``)
+        lines.push(`**Cauza radacina:** ${l.rootCauseSummary}`)
+        if (l.preventiveActionsTaken.length > 0) {
+          lines.push(``)
+          lines.push(`**Actiuni preventive aplicate:**`)
+          for (const a of l.preventiveActionsTaken) lines.push(`- ${a}`)
+        }
+        if (l.resultingPolicyChange) {
+          lines.push(``)
+          lines.push(`**Schimbare politica:** ${l.resultingPolicyChange}`)
+        }
+        if (l.resultingProcessChange) {
+          lines.push(``)
+          lines.push(`**Schimbare proces:** ${l.resultingProcessChange}`)
+        }
+        lines.push(``)
+      }
+    }
+    files.push({
+      path: "qms/lessons-learned.md",
+      bytes: utf8(lines.join("\n") + "\n"),
+    })
+  }
+  // 4) system-attestations.md
+  {
+    const lines: string[] = [
+      `# QMS Per-System Attestations — ${orgName}`,
+      ``,
+      `**Total:** ${workspace.systemAttestations.length}`,
+      ``,
+    ]
+    const aiSystems = (state.aiSystems ?? []) as AISystemRecord[]
+    const sysById = new Map<string, AISystemRecord>()
+    for (const s of aiSystems) sysById.set(s.id, s)
+    if (workspace.systemAttestations.length === 0) {
+      lines.push(`_Niciun sistem atestat._`)
+    } else {
+      lines.push(
+        `| Sistem | Versiune QMS | Atestat la | Atestat de | Sectiuni acoperite | Gap-uri |`,
+      )
+      lines.push(`|---|---|---|---|---|---|`)
+      for (const a of workspace.systemAttestations) {
+        const sysName = sysById.get(a.systemId)?.name ?? a.systemId
+        lines.push(
+          `| ${escapeMdCell(sysName)} | ${escapeMdCell(a.qmsVersionLabel)} | ${a.attestedAtISO} | ${a.attestedByEmail} | ${a.sectionsConfirmedCovered.length}/13 | ${a.gapsAcknowledged.length} |`,
+        )
+      }
+    }
+    files.push({
+      path: "qms/system-attestations.md",
+      bytes: utf8(lines.join("\n") + "\n"),
+    })
+  }
+  // 5) cross-module-health.md
+  {
+    const lines: string[] = [
+      `# QMS Cross-Module Health — ${orgName}`,
+      ``,
+      `**Versiune QMS:** ${workspace.versionLabel}`,
+      `**Status:** ${QMS_WORKSPACE_STATUS_LABELS[workspace.status]}`,
+      `**Completeness:** ${workspace.completeness}`,
+      ``,
+      `| Litera | Sectiune | Module asteptate | Total refs |`,
+      `|---|---|---|---|`,
+    ]
+    for (const section of workspace.sections) {
+      const schemaSec = getQmsSchemaSection(section.key)
+      if (!schemaSec || schemaSec.crossModuleLinks.length === 0) continue
+      const totalRefs =
+        (section.linkedRopaActivityCount ?? 0) +
+        (section.linkedAIDataMapCount ?? 0) +
+        (section.linkedDpiaCount ?? 0) +
+        (section.linkedFriaCount ?? 0) +
+        (section.linkedFindingCount ?? 0) +
+        (section.linkedPmmPlanCount ?? 0) +
+        (section.linkedAIIncidentCount ?? 0) +
+        (section.linkedLoggingConfigCount ?? 0)
+      lines.push(
+        `| ${schemaSec.letter} | ${escapeMdCell(schemaSec.displayLabel)} | ${schemaSec.crossModuleLinks.join(", ")} | ${totalRefs} |`,
+      )
+    }
+    files.push({
+      path: "qms/cross-module-health.md",
+      bytes: utf8(lines.join("\n") + "\n"),
+    })
+  }
+  // Suppress unused-import warning (label catalog stays imported for type safety)
+  void QMS_SECTION_LABELS
+}
+
 function pushDsarFiles(
   files: FileBytes[],
   state: AIActState,
@@ -1720,6 +1944,41 @@ function buildAuditTrailLog(input: {
     }
   }
 
+  // Sprint 021 — QMS Workspace lifecycle
+  const qms = input.state.qmsWorkspace
+  if (qms) {
+    push(
+      qms.createdAtISO,
+      input.issuedByUserEmail,
+      "QMS_INITIALIZED",
+      `version=${qms.versionLabel} size=${qms.organizationSize} simplified=${qms.simplifiedMode}`,
+    )
+    if (qms.approvedAtISO) {
+      push(
+        qms.approvedAtISO,
+        qms.approvedByEmail ?? input.issuedByUserEmail,
+        "QMS_APPROVED",
+        `version=${qms.versionLabel} nextReview=${qms.nextReviewISO ?? "—"}`,
+      )
+    }
+    for (const att of qms.systemAttestations) {
+      push(
+        att.attestedAtISO,
+        att.attestedByEmail,
+        "QMS_SYSTEM_ATTESTED",
+        `system=${att.systemId} sections=${att.sectionsConfirmedCovered.length}/13 gaps=${att.gapsAcknowledged.length}`,
+      )
+    }
+    for (const lesson of qms.lessonsLearned) {
+      push(
+        lesson.recordedAtISO,
+        lesson.recordedByEmail,
+        "QMS_LESSON_RECORDED",
+        `source=${lesson.source} title=${lesson.title.slice(0, 80)}`,
+      )
+    }
+  }
+
   // Generation event itself
   push(input.generatedAt, input.issuedByUserEmail, "AUDIT_PACK_GENERATED", `org=${input.orgName}`)
 
@@ -1921,6 +2180,7 @@ function buildSignatureTxt(input: {
     `Logging configs (Art.12):${input.manifest.summary.loggingConfigsCount ?? 0}`,
     `PMM plans (Art.72):   ${input.manifest.summary.pmmPlansCount ?? 0}`,
     `AI Incidents (Art.73):${input.manifest.summary.aiIncidentsCount ?? 0}`,
+    `QMS Workspace (Art.17):${input.manifest.summary.qmsWorkspaceCount ?? 0} (${input.manifest.summary.qmsCompleteness ?? "—"})`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",
