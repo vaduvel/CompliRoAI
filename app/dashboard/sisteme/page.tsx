@@ -27,7 +27,7 @@ export default function SistemePage() {
   const latestLoadId = useRef(0)
   const hasLoadedOnce = useRef(false)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (preserveSystem?: AISystemRecord) => {
     const loadId = latestLoadId.current + 1
     latestLoadId.current = loadId
 
@@ -72,7 +72,13 @@ export default function SistemePage() {
         return
       }
 
-      if (nextSystems) setSystems(nextSystems)
+      if (nextSystems) {
+        const systemsToSet =
+          preserveSystem && !nextSystems.some((system) => system.id === preserveSystem.id)
+            ? [preserveSystem, ...nextSystems]
+            : nextSystems
+        setSystems(systemsToSet)
+      }
       if (nextFria) setFriaRecords(nextFria)
       if (nextOversight) setOversightRecords(nextOversight)
       if (nextLogging) setLoggingRecords(nextLogging)
@@ -88,6 +94,18 @@ export default function SistemePage() {
       }
     }
   }, [])
+
+  const handleSystemAdded = useCallback(
+    (system: AISystemRecord) => {
+      setSystems((current) =>
+        current.some((existing) => existing.id === system.id)
+          ? current
+          : [system, ...current],
+      )
+      void load(system)
+    },
+    [load],
+  )
 
   useEffect(() => {
     void load()
@@ -220,7 +238,7 @@ export default function SistemePage() {
       )}
 
       {/* Add system */}
-      <AIInventoryPanel onAdded={load} />
+      <AIInventoryPanel onAdded={handleSystemAdded} />
 
       {/* List */}
       <div>

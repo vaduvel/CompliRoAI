@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Plus, X, Loader2 } from "lucide-react"
-import type { AISystemPurpose } from "@/lib/compliance/types"
+import type { AISystemPurpose, AISystemRecord } from "@/lib/compliance/types"
 
 const PURPOSE_OPTIONS: { value: AISystemPurpose; label: string }[] = [
   { value: "hr-screening", label: "HR Screening / Recrutare" },
@@ -16,7 +16,7 @@ const PURPOSE_OPTIONS: { value: AISystemPurpose; label: string }[] = [
 ]
 
 interface AIInventoryPanelProps {
-  onAdded: () => Promise<void> | void
+  onAdded: (system: AISystemRecord) => Promise<void> | void
 }
 
 const labelStyle: React.CSSProperties = {
@@ -82,7 +82,12 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
         throw new Error(data.error ?? `Eroare ${res.status}`)
       }
 
-      await Promise.resolve(onAdded())
+      const data = (await res.json()) as { system?: AISystemRecord }
+      if (!data.system) {
+        throw new Error("Sistemul a fost salvat, dar răspunsul serverului nu conține înregistrarea.")
+      }
+
+      await Promise.resolve(onAdded(data.system))
       reset()
       setOpen(false)
     } catch (err) {
