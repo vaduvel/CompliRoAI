@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, ChevronRight, AlertCircle, CheckCircle2, Building2, Send } from "lucide-react"
+import { ChevronRight, AlertCircle, CheckCircle2, Building2, Send, Upload } from "lucide-react"
 
 type ClientRow = {
   orgId: string
@@ -18,10 +18,6 @@ export function PortfolioClient() {
   const router = useRouter()
   const [clients, setClients] = useState<ClientRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [formLoading, setFormLoading] = useState(false)
-  const [formError, setFormError] = useState("")
-  const [form, setForm] = useState({ orgName: "", cui: "" })
   const [switching, setSwitching] = useState<string | null>(null)
   const [intakeBusy, setIntakeBusy] = useState<string | null>(null)
   const [intakeLink, setIntakeLink] = useState<{ orgName: string; url: string } | null>(null)
@@ -92,120 +88,28 @@ export function PortfolioClient() {
     }
   }
 
-  async function handleAddClient(e: React.FormEvent) {
-    e.preventDefault()
-    setFormError("")
-    setFormLoading(true)
-    try {
-      const res = await fetch("/api/portfolio/clients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orgName: form.orgName.trim(),
-          cui: form.cui.trim() || undefined,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setFormError(data.error ?? "Eroare la adăugare.")
-        return
-      }
-      setShowForm(false)
-      setForm({ orgName: "", cui: "" })
-      await load()
-    } catch {
-      setFormError("Eroare de rețea. Încearcă din nou.")
-    } finally {
-      setFormLoading(false)
-    }
-  }
-
   return (
     <div className="cr-page cr-stack">
       {/* Header */}
       <div className="cr-hero">
         <div className="cr-hero__copy">
-          <div className="cr-eyebrow">Portofoliu · triaj</div>
+          <div className="cr-eyebrow">Portofoliu · triaj cross-client</div>
           <h1 className="cr-title">
-            Portofoliu clienți
+            Portofoliu execuție
           </h1>
           <p className="cr-subtitle">
-            Gestionezi conformitatea pentru toți clienții cabinetului tău dintr-un singur loc.
+            Vezi rapid ce clienți cer atenție și intră în execuție. Pentru import,
+            editare și onboarding folosește registrul Clienți.
           </p>
         </div>
 
-        {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="cr-btn cr-btn--primary"
-          >
-            <Plus size={15} /> Adaugă client
-          </button>
-        )}
-      </div>
-
-      {/* Add client form */}
-      {showForm && (
-        <form
-          onSubmit={handleAddClient}
-          className="cr-card cr-form-card"
+        <button
+          onClick={() => router.push("/dashboard/clienti")}
+          className="cr-btn cr-btn--primary"
         >
-          <div className="cr-form-title">Client nou</div>
-
-          <div>
-            <label className="cr-field-label">
-              Nume firmă <span style={{ color: "var(--red-400)" }}>*</span>
-            </label>
-            <input
-              required
-              minLength={2}
-              value={form.orgName}
-              onChange={(e) => setForm((f) => ({ ...f, orgName: e.target.value }))}
-              placeholder="Ex: Firma Client SRL"
-              className="cr-input"
-            />
-          </div>
-
-          <div>
-            <label className="cr-field-label">
-              CUI / Cod fiscal (opțional)
-            </label>
-            <input
-              value={form.cui}
-              onChange={(e) => setForm((f) => ({ ...f, cui: e.target.value }))}
-              placeholder="RO12345678 sau 12345678"
-              className="cr-input"
-            />
-          </div>
-
-          {formError && (
-            <div className="cr-alert cr-alert--danger">
-              {formError}
-            </div>
-          )}
-
-          <div className="cr-actions" style={{ justifyContent: "flex-start" }}>
-            <button
-              type="submit"
-              disabled={formLoading}
-              className="cr-btn cr-btn--primary"
-            >
-              {formLoading ? "Se adaugă..." : "Adaugă client"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowForm(false)
-                setFormError("")
-                setForm({ orgName: "", cui: "" })
-              }}
-              className="cr-btn"
-            >
-              Anulează
-            </button>
-          </div>
-        </form>
-      )}
+          <Upload size={15} /> Importă / gestionează clienți
+        </button>
+      </div>
 
       {/* Intake link success banner */}
       {intakeLink && (
@@ -273,7 +177,7 @@ export function PortfolioClient() {
       {/* Clients list */}
       <div>
         <div className="cr-section-label" style={{ marginBottom: 10 }}>
-          {loading ? "Se încarcă..." : `${clients.length} client${clients.length !== 1 ? "i" : ""}`}
+          {loading ? "Se încarcă..." : `${clients.length} ${clients.length === 1 ? "client" : "clienți"}`}
         </div>
 
         {!loading && clients.length === 0 ? (
@@ -283,7 +187,7 @@ export function PortfolioClient() {
               Niciun client adăugat încă
             </div>
             <div style={{ fontSize: "12px", color: "var(--ink-dim)" }}>
-              Adaugă primul client cu butonul de mai sus.
+              Importă primul client din registrul Clienți.
             </div>
           </div>
         ) : (

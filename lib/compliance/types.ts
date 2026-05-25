@@ -465,6 +465,77 @@ export type ComplianceEvent = {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+//   Cabinet Import Center — client metadata + proactive onboarding signals.
+//   Importul nu este doar "tabel firme": creează contextul inițial pentru
+//   execuție AI Act + GDPR pe fiecare client.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type ClientImportYesNoUnknown = "yes" | "no" | "unknown"
+
+export type ClientServiceScope =
+  | "ai_act"
+  | "gdpr"
+  | "ai_literacy"
+  | "audit_pack"
+
+export type ClientExpectedAIRole =
+  | "deployer"
+  | "provider"
+  | "builder"
+  | "unknown"
+
+export type ClientStatus = "lead" | "active" | "paused" | "archived"
+
+export type ClientImportSignalType =
+  | "send_intake"
+  | "complete_ai_inventory"
+  | "gdpr_dpia_review"
+  | "ai_literacy_task"
+  | "role_risk_review"
+
+export type ClientImportSignal = {
+  id: string
+  type: ClientImportSignalType
+  label: string
+  severity: "info" | "medium" | "high"
+  createdAtISO: string
+  status: "open" | "done"
+  source: "client_import"
+}
+
+export type ClientMeta = {
+  orgName?: string
+  cui?: string
+  contactName?: string
+  contactEmail?: string
+  phone?: string
+  sector?: string
+  employees?: string
+  city?: string
+  country?: string
+  serviceScope?: ClientServiceScope[]
+  expectedAiRole?: ClientExpectedAIRole
+  usesAi?: ClientImportYesNoUnknown
+  knownAiTools?: string[]
+  personalDataAi?: ClientImportYesNoUnknown
+  highRiskSuspected?: ClientImportYesNoUnknown
+  assignedTo?: string
+  clientStatus?: ClientStatus
+  intakeEmail?: string
+  sendIntake?: boolean
+  notes?: string
+  tags?: string[]
+  externalId?: string
+  createdByCabinet?: string
+  createdAtISO?: string
+  importedAtISO?: string
+  importSource?: "manual" | "csv" | "api"
+  importSignals?: ClientImportSignal[]
+  intakeLinkUrl?: string
+  intakeLinkCreatedAtISO?: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 //   Sprint 027 — AI Guidance Orchestrator
 //   Persistă planurile AI de lucru ca recomandări auditabile. AI-ul NU execută
 //   acțiuni: omul acceptă/respinge planul, iar findings/evidence rămân sursa
@@ -1446,6 +1517,12 @@ export type ComplianceState = {
    * generat din state-ul AI Data Map curent.
    */
   aiExposureReports?: AIExposureReport[]
+
+  /**
+   * Cabinet Import Center. Metadata inițială a clientului importat de cabinet
+   * și semnalele proactive create din CSV/manual intake.
+   */
+  clientMeta?: ClientMeta
 
   /**
    * GDPR breach records (Sprint 008D — Art. 33 ANSPDCP 72h + Art. 34 data
