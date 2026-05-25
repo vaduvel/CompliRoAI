@@ -162,8 +162,8 @@ export default function LoggingEvidencePage() {
   const load = useCallback(async () => {
     try {
       const [lgRes, sysRes] = await Promise.all([
-        fetch("/api/logging-evidence"),
-        fetch("/api/ai-systems"),
+        fetch("/api/logging-evidence", { cache: "no-store" }),
+        fetch("/api/ai-systems", { cache: "no-store" }),
       ])
       if (lgRes.ok) {
         const data = (await lgRes.json()) as ListResponse

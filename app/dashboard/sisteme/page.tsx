@@ -37,13 +37,13 @@ export default function SistemePage() {
 
     try {
       const [systemsRes, friaRes, ovRes, lgRes, pmmRes, incRes, qmsRes] = await Promise.all([
-        fetch("/api/ai-systems"),
-        fetch("/api/fria"),
-        fetch("/api/oversight"),
-        fetch("/api/logging-evidence"),
-        fetch("/api/pmm"),
-        fetch("/api/ai-incidents"),
-        fetch("/api/qms/system-attestation"),
+        fetch("/api/ai-systems", { cache: "no-store" }),
+        fetch("/api/fria", { cache: "no-store" }),
+        fetch("/api/oversight", { cache: "no-store" }),
+        fetch("/api/logging-evidence", { cache: "no-store" }),
+        fetch("/api/pmm", { cache: "no-store" }),
+        fetch("/api/ai-incidents", { cache: "no-store" }),
+        fetch("/api/qms/system-attestation", { cache: "no-store" }),
       ])
 
       const nextSystems = systemsRes.ok
