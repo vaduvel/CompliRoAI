@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Plus, X, Loader2 } from "lucide-react"
 import type { AISystemPurpose } from "@/lib/compliance/types"
 
@@ -31,6 +31,7 @@ const labelStyle: React.CSSProperties = {
 
 export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
   const [open, setOpen] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -96,10 +97,16 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
       setForm((p) => ({ ...p, [field]: e.target.checked }))
   }
 
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
+
   if (!open) {
     return (
       <button
         className="cr-btn cr-btn--primary"
+        disabled={!hydrated}
+        aria-busy={!hydrated}
         onClick={() => setOpen(true)}
         style={{
           display: "flex",
@@ -112,7 +119,8 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
           fontSize: "13px",
           fontWeight: 500,
           color: "var(--cobalt-400)",
-          cursor: "pointer",
+          cursor: hydrated ? "pointer" : "wait",
+          opacity: hydrated ? 1 : 0.72,
           alignSelf: "flex-start",
         }}
         onMouseEnter={(e) => {
