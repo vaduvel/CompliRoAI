@@ -165,38 +165,28 @@ export default function SistemePage() {
   }, [systems, qmsAttestations])
 
   return (
-    <div style={{ padding: "32px", maxWidth: "900px", display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div>
-        <h1 style={{
-          fontFamily: "var(--font-display-v3)",
-          fontSize: "22px",
-          fontWeight: 600,
-          color: "var(--ink)",
-          margin: 0,
-          letterSpacing: "-0.02em",
-        }}>
-          Sisteme AI
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Inventar AI</div>
+          <h1 className="cr-title">Sisteme AI</h1>
+          <p className="cr-subtitle">
           Inventarul oficial al sistemelor AI utilizate în organizație · Deadline high-risk: 2 dec 2027
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* High-risk warning */}
       {highRiskCount > 0 && (
-        <div style={{
-          display: "flex", gap: "12px", padding: "12px 16px",
-          background: "var(--amber-soft)", borderRadius: "8px",
-          border: "1px solid rgba(251,191,36,0.2)",
-        }}>
-          <AlertTriangle size={16} style={{ color: "var(--amber-400)", flexShrink: 0, marginTop: "1px" }} />
-          <div style={{ fontSize: "13px", color: "var(--amber-400)" }}>
+        <div className="cr-alert cr-alert--warning">
+          <AlertTriangle size={16} />
+          <div>
             Ai {highRiskCount} sistem{highRiskCount !== 1 ? "e" : ""} de risc ridicat sau interzis.
             Documentează-le înainte de 2 decembrie 2027.{" "}
             <a
               href="/dashboard/sisteme/eu-db-wizard"
-              style={{ color: "var(--cobalt-400)", textDecoration: "none", fontWeight: 500 }}
+              className="cr-link"
             >
               Înregistrare EU Database →
             </a>
@@ -209,14 +199,11 @@ export default function SistemePage() {
 
       {/* List */}
       <div>
-        <div style={{
-          fontSize: "11px", fontWeight: 500, color: "var(--ink-dim)",
-          marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.08em",
-        }}>
+        <div className="cr-section-label" style={{ marginBottom: "8px" }}>
           {systems.length} sistem{systems.length !== 1 ? "e" : ""} înregistrat{systems.length !== 1 ? "e" : ""}
         </div>
         {loading ? (
-          <div style={{ fontSize: "13px", color: "var(--ink-dim)", padding: "24px 0" }}>Se încarcă...</div>
+          <div className="cr-empty">Se încarcă inventarul AI...</div>
         ) : (
           <AISystemsList
             systems={systems}

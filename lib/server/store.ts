@@ -76,6 +76,7 @@ export function mergeWithDefault(partial: Partial<AIActState> | null | undefined
     generatedDocuments: partial.generatedDocuments ?? base.generatedDocuments,
     aiSystems: partial.aiSystems ?? base.aiSystems,
     literacyRecords: partial.literacyRecords ?? base.literacyRecords,
+    aiGuidancePlans: partial.aiGuidancePlans ?? base.aiGuidancePlans,
     // Onboarding: păstrează existing sau cade pe default {completed:false, step:1}.
     onboarding: partial.onboarding ?? base.onboarding,
   }

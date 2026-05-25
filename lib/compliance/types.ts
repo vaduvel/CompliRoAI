@@ -433,6 +433,7 @@ export type ComplianceEventEntityType =
   | "integration"
   | "system"
   | "drift"
+  | "ai_guidance"
 
 export type ComplianceEventActorRole =
   | "owner"
@@ -461,6 +462,36 @@ export type ComplianceEvent = {
   // Câmpurile lipsesc pe evenimente vechi (pre-S2B.3) — backward compatible.
   prevHash?: string
   selfHash?: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 027 — AI Guidance Orchestrator
+//   Persistă planurile AI de lucru ca recomandări auditabile. AI-ul NU execută
+//   acțiuni: omul acceptă/respinge planul, iar findings/evidence rămân sursa
+//   de adevăr operațională.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type AIGuidancePlanRecordStatus =
+  | "generated"
+  | "accepted"
+  | "rejected"
+  | "superseded"
+
+export type AIGuidancePlanRecord = {
+  id: string
+  planId: string
+  orgId: string
+  status: AIGuidancePlanRecordStatus
+  plan: import("@/lib/compliance/guidance-orchestrator").GuidancePlan
+  diffFromPrevious?: import("@/lib/compliance/guidance-orchestrator").GuidancePlanDiff
+  generatedAtISO: string
+  generatedByEmail?: string
+  reason?: string
+  acceptedAtISO?: string
+  acceptedByEmail?: string
+  rejectedAtISO?: string
+  rejectedByEmail?: string
+  rejectionNote?: string
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1348,7 +1379,7 @@ export type ClientPortalComment = {
 //   - efactura* (Bundle D fiscal — separat product)
 //   - scannedDocuments, scans (document scanner — diferit product)
 //   - chat, taskState (UX layers — Sprint 011)
-//   - aiComplianceFieldOverrides, traceabilityReviews (specific compliscan)
+//   - aiComplianceFieldOverrides, traceabilityReviews (legacy donor-specific)
 //   - fiscalProtocols, snapshotHistory, validatedBaselineSnapshotId
 //   - intakeAnswers, intakeCompletedAtISO, d406EvidenceSubmitted
 //   - siteScan, siteScanJobs (separate site-scanner module)
@@ -1650,6 +1681,16 @@ export type ComplianceState = {
    *  - status (received → in-progress → responded → closed).
    */
   authorityCooperationRequests?: AuthorityCooperationRequest[]
+
+  /**
+   * Sprint 027 — AI Guidance Orchestrator plans.
+   *
+   * Planurile sunt snapshots auditabile generate din state-ul determinist
+   * (findings, preventive engine, coverage matrix, AI inventory). Ele pot fi
+   * acceptate/respine de om, dar nu închid automat findings și nu modifică
+   * evidence-ul. Regenerarea after-action produce diff față de planul anterior.
+   */
+  aiGuidancePlans?: AIGuidancePlanRecord[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -3876,4 +3917,3 @@ export type AuthorityCooperationRequest = {
   createdAtISO: string
   updatedAtISO: string
 }
-

@@ -106,44 +106,24 @@ export function MagicLinksClient() {
   }
 
   return (
-    <div
-      style={{
-        padding: 32,
-        maxWidth: 1100,
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-      }}
-    >
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: 22,
-              fontWeight: 600,
-              color: "var(--ink)",
-              margin: 0,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Magic Links
-          </h1>
-          <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 6 }}>
-            Trimite intake, aprobări sau rapoarte clienților fără cont prin
-            linkuri unice semnate HMAC.
-          </p>
+    <div className="cr-page cr-stack">
+      <header className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <Link2 size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">Colaborare</div>
+            <h1 className="cr-title">Magic Links</h1>
+            <p className="cr-subtitle">
+              Trimite intake, aprobări sau rapoarte clienților fără cont prin
+              linkuri unice semnate HMAC.
+            </p>
+          </div>
         </div>
         {!showForm && (
           <button
+            className="cr-btn cr-btn--primary"
             onClick={() => {
               setCreatedUrl(null)
               setShowForm(true)
@@ -152,14 +132,6 @@ export function MagicLinksClient() {
               display: "flex",
               alignItems: "center",
               gap: 8,
-              padding: "10px 16px",
-              borderRadius: 8,
-              border: "none",
-              background: "var(--cobalt-600)",
-              color: "#fff",
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: "pointer",
             }}
           >
             <Plus size={15} /> Trimite magic link nou
@@ -209,11 +181,7 @@ export function MagicLinksClient() {
           </div>
           <button
             onClick={() => copyToClipboard(createdUrl, "created")}
-            style={{
-              ...iconBtn,
-              background:
-                copiedId === "created" ? "var(--emerald-soft)" : "transparent",
-            }}
+            className={`cr-btn cr-btn--icon cr-btn--sm ${copiedId === "created" ? "cr-btn--success" : ""}`}
             title="Copiază link"
           >
             <Copy size={14} />
@@ -222,14 +190,14 @@ export function MagicLinksClient() {
             href={createdUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ ...iconBtn, textDecoration: "none" }}
+            className="cr-btn cr-btn--icon cr-btn--sm"
             title="Deschide într-un tab nou"
           >
             <ExternalLink size={14} />
           </a>
           <button
             onClick={() => setCreatedUrl(null)}
-            style={iconBtn}
+            className="cr-btn cr-btn--icon cr-btn--sm"
             title="Închide"
           >
             <X size={14} />
@@ -375,11 +343,7 @@ export function MagicLinksClient() {
                     {r.status === "active" && (
                       <button
                         onClick={() => handleRevoke(r.id)}
-                        style={{
-                          ...iconBtn,
-                          color: "var(--red-400)",
-                          borderColor: "rgba(239,68,68,0.3)",
-                        }}
+                        className="cr-btn cr-btn--danger cr-btn--sm"
                         title="Revocă"
                       >
                         Revocă
@@ -394,20 +358,6 @@ export function MagicLinksClient() {
       </div>
     </div>
   )
-}
-
-const iconBtn: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 6,
-  padding: "6px 10px",
-  border: "1px solid var(--border)",
-  background: "transparent",
-  borderRadius: 6,
-  color: "var(--ink-muted)",
-  cursor: "pointer",
-  fontSize: 12,
 }
 
 function NewLinkForm({

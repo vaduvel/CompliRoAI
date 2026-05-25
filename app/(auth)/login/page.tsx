@@ -6,8 +6,9 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const nextPath = searchParams.get("next") ?? "/dashboard/sisteme"
+  const initialMode = searchParams.get("mode") === "register" ? "register" : "login"
 
-  const [mode, setMode] = useState<"login" | "register">("login")
+  const [mode, setMode] = useState<"login" | "register">(initialMode)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [orgName, setOrgName] = useState("")
@@ -51,99 +52,61 @@ function LoginForm() {
     }
   }
 
-  const inputStyle = {
-    width: "100%",
-    background: "var(--bg-hover)",
-    border: "1px solid var(--border-strong)",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    color: "var(--ink)",
-    fontSize: "14px",
-    outline: "none",
-  } as React.CSSProperties
-
-  const labelStyle = {
-    display: "block",
-    fontSize: "12px",
-    color: "var(--ink-muted)",
-    marginBottom: "6px",
-    fontWeight: 500,
-  } as React.CSSProperties
-
   return (
-    <div style={{
-      width: "100%",
-      maxWidth: "400px",
-      padding: "40px 32px",
-      background: "var(--bg-raised)",
-      borderRadius: "12px",
-      border: "1px solid var(--border)",
-      margin: "0 16px",
-    }}>
-      {/* Header */}
-      <div style={{ marginBottom: "32px", textAlign: "center" }}>
-        <div style={{
-          fontFamily: "var(--font-display-v3)",
-          fontSize: "20px",
-          fontWeight: 600,
-          color: "var(--ink)",
-          letterSpacing: "-0.02em",
-          marginBottom: "6px",
-        }}>
-          AI Act Compliance
+    <div className="cr-auth-card cr-card">
+      <div className="cr-auth-brand">
+        <div className="cr-auth-logo" aria-hidden="true">
+          C
         </div>
-        <div style={{ fontSize: "13px", color: "var(--ink-dim)" }}>
+        <div className="cr-auth-title">
+          CompliRoAI
+        </div>
+        <div className="cr-auth-subtitle">
           {mode === "login" ? "Intră în contul tău" : "Creează cont nou"}
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <form onSubmit={handleSubmit} className="cr-auth-form">
         {mode === "register" && (
           <div>
-            <label style={labelStyle}>Nume organizație</label>
+            <label className="cr-field-label">Nume organizație</label>
             <input
               type="text"
               required
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               placeholder="Ex: Firma SRL"
-              style={inputStyle}
+              className="cr-input"
             />
           </div>
         )}
 
         <div>
-          <label style={labelStyle}>Email</label>
+          <label className="cr-field-label">Email</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="email@firma.ro"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
 
         <div>
-          <label style={labelStyle}>Parolă</label>
+          <label className="cr-field-label">Parolă</label>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
 
         {error && (
-          <div style={{
-            fontSize: "13px",
-            color: "var(--red-400)",
-            background: "var(--red-soft)",
-            padding: "10px 12px",
-            borderRadius: "6px",
-          }}>
+          <div className="cr-alert cr-alert--danger">
             {error}
           </div>
         )}
@@ -151,17 +114,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          style={{
-            padding: "11px",
-            borderRadius: "8px",
-            border: "none",
-            cursor: loading ? "not-allowed" : "pointer",
-            background: "var(--cobalt-600)",
-            color: "#fff",
-            fontSize: "14px",
-            fontWeight: 500,
-            opacity: loading ? 0.7 : 1,
-          }}
+          className="cr-btn cr-btn--primary cr-auth-submit"
         >
           {loading
             ? (mode === "login" ? "Se conectează..." : "Se creează contul...")
@@ -170,14 +123,14 @@ function LoginForm() {
         </button>
       </form>
 
-      {/* Toggle */}
-      <div style={{ marginTop: "20px", textAlign: "center", fontSize: "13px", color: "var(--ink-dim)" }}>
+      <div className="cr-auth-toggle">
         {mode === "login" ? (
           <>
             Nu ai cont?{" "}
             <button
+              type="button"
               onClick={() => { setMode("register"); setError("") }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--cobalt-400)", fontSize: "13px" }}
+              className="cr-link-button"
             >
               Creează unul
             </button>
@@ -186,8 +139,9 @@ function LoginForm() {
           <>
             Ai deja cont?{" "}
             <button
+              type="button"
               onClick={() => { setMode("login"); setError("") }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--cobalt-400)", fontSize: "13px" }}
+              className="cr-link-button"
             >
               Conectează-te
             </button>
@@ -200,8 +154,10 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
+    <main className="cr-auth-page">
+      <Suspense>
+        <LoginForm />
+      </Suspense>
+    </main>
   )
 }

@@ -29,27 +29,20 @@ export default function LiteracyPage() {
   const totalHours = records.reduce((sum, r) => sum + (r.durationHours ?? 0), 0)
 
   return (
-    <div style={{ padding: "32px", maxWidth: "900px", display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Header */}
-      <div>
-        <h1 style={{
-          fontFamily: "var(--font-display-v3)",
-          fontSize: "22px", fontWeight: 600, color: "var(--ink)", margin: 0, letterSpacing: "-0.02em",
-        }}>
-          AI Literacy
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
-          Obligație activă din 2 februarie 2025 · Art. 4 EU AI Act · Documentează că angajații au primit training
-        </p>
+    <div className="cr-page cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Conformitate</div>
+          <h1 className="cr-title">AI Literacy</h1>
+          <p className="cr-subtitle">
+            Obligație activă din 2 februarie 2025 · Art. 4 EU AI Act · documentează
+            că angajații relevanți au primit training și au semnat atestarea.
+          </p>
+        </div>
       </div>
 
       {/* Status banner */}
-      <div style={{
-        display: "flex", gap: "12px", padding: "14px 16px",
-        background: isCompliant ? "var(--emerald-soft)" : "var(--red-soft)",
-        borderRadius: "8px",
-        border: "1px solid " + (isCompliant ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"),
-      }}>
+      <div className={`cr-alert ${isCompliant ? "cr-alert--info" : "cr-alert--danger"}`}>
         {isCompliant
           ? <CheckCircle2 size={16} style={{ color: "var(--emerald-400)", flexShrink: 0, marginTop: "1px" }} />
           : <AlertCircle size={16} style={{ color: "var(--red-400)", flexShrink: 0, marginTop: "1px" }} />
@@ -71,21 +64,15 @@ export default function LiteracyPage() {
 
       {/* Stats */}
       {records.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+        <div className="cr-stat-strip" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
           {[
             { label: "Total înregistrări", value: records.length },
             { label: "Atestate semnate", value: attestedCount },
             { label: "Ore de training", value: `${totalHours}h` },
           ].map((stat) => (
-            <div key={stat.label} style={{
-              padding: "16px", background: "var(--bg-raised)",
-              borderRadius: "8px", border: "1px solid var(--border)",
-            }}>
-              <div style={{
-                fontSize: "22px", fontWeight: 600, color: "var(--ink)",
-                fontFamily: "var(--font-display-v3)",
-              }}>{stat.value}</div>
-              <div style={{ fontSize: "12px", color: "var(--ink-dim)", marginTop: "4px" }}>{stat.label}</div>
+            <div key={stat.label} className="cr-stat">
+              <div className="cr-stat__value">{stat.value}</div>
+              <div className="cr-stat__label">{stat.label}</div>
             </div>
           ))}
         </div>

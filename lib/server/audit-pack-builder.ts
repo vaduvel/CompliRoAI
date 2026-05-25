@@ -73,6 +73,7 @@ import { buildPmmMarkdown } from "@/lib/server/pmm-store"
 import { PMM_REVIEW_CYCLE_LABELS } from "@/lib/compliance/pmm-schema"
 import { buildIncidentMarkdown } from "@/lib/server/ai-incident-store"
 import { buildAuthorityCooperationMarkdown } from "@/lib/server/authority-cooperation-store"
+import { buildGuidancePlanMarkdown } from "@/lib/server/guidance-plan-store"
 import {
   AI_INCIDENT_CATEGORY_LABELS,
   AI_INCIDENT_STATUS_LABELS,
@@ -166,6 +167,10 @@ export type AuditPackManifest = {
     aiAdsClaimsCount?: number
     aiAdsApprovalsCount?: number
     conversionTrackingReviewsCount?: number
+    authorityCooperationRequestsCount?: number
+    euDocArt47Count?: number
+    ceMarkingChecklistArt48Count?: number
+    aiGuidancePlansCount?: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -363,6 +368,8 @@ export async function buildAuditPack(
       ceMarkingChecklistArt48Count: state.generatedDocuments.filter(
         (d) => d.documentType === "ce-marking-art-48-checklist",
       ).length,
+      // Sprint 027 — AI Guidance Orchestrator plans.
+      aiGuidancePlansCount: (state.aiGuidancePlans ?? []).length,
     },
     hashAlgorithm: "sha256" as const,
   }
@@ -878,7 +885,55 @@ function buildFileContents(input: {
   // ── Sprint 026: Art. 21 + Art. 26(11) Authority Cooperation Log ──────
   pushAuthorityCooperationFiles(files, input.state)
 
+  // ── Sprint 027: AI Guidance Orchestrator history + latest plan ───────
+  pushGuidancePlanFiles(files, input.state)
+
   return files
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 027 — AI Guidance Orchestrator audit evidence
+//
+//   ai-guidance/current-plan.md — ultimul plan explicat, cu surse/omisiuni/diff.
+//   ai-guidance/history.md      — istoricul deciziilor umane asupra planurilor.
+// ────────────────────────────────────────────────────────────────────────────
+
+function pushGuidancePlanFiles(files: FileBytes[], state: AIActState): void {
+  const plans = state.aiGuidancePlans ?? []
+  const historyLines = [
+    "# AI Guidance Orchestrator — istoric planuri",
+    "",
+    "AI-ul nu execută și nu închide findings. Planurile sunt recomandări prioritizate, aprobate/respise de operator și păstrate pentru audit.",
+    "",
+    `Total planuri: ${plans.length}`,
+    "",
+  ]
+
+  if (plans.length === 0) {
+    historyLines.push("_Niciun plan AI Guidance generat._")
+  } else {
+    historyLines.push("| ID | Status | Generat | Motiv | Acțiuni top | Omise | Decizie |")
+    historyLines.push("|---|---|---|---|---:|---:|---|")
+    for (const record of plans) {
+      historyLines.push(
+        `| ${record.id} | ${record.status} | ${record.generatedAtISO} | ${escapeMarkdownCell(record.reason ?? "initial")} | ${record.plan.actions.length} | ${record.plan.omittedActions.length} | ${
+          record.acceptedAtISO ? `acceptat ${record.acceptedAtISO}` : record.rejectedAtISO ? `respins ${record.rejectedAtISO}` : "—"
+        } |`,
+      )
+    }
+  }
+
+  files.push({
+    path: "ai-guidance/history.md",
+    bytes: utf8(historyLines.join("\n") + "\n"),
+  })
+
+  if (plans[0]) {
+    files.push({
+      path: "ai-guidance/current-plan.md",
+      bytes: utf8(buildGuidancePlanMarkdown(plans[0])),
+    })
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2676,6 +2731,7 @@ function buildSignatureTxt(input: {
     `AI Ads claims:        ${input.manifest.summary.aiAdsClaimsCount ?? 0}`,
     `AI Ads approvals:     ${input.manifest.summary.aiAdsApprovalsCount ?? 0}`,
     `Tracking reviews:     ${input.manifest.summary.conversionTrackingReviewsCount ?? 0}`,
+    `AI guidance plans:    ${input.manifest.summary.aiGuidancePlansCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",
@@ -2733,6 +2789,10 @@ function slugify(value: string): string {
       .replace(/^-+|-+$/g, "")
       .slice(0, 60) || "org"
   )
+}
+
+function escapeMarkdownCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/\n/g, " ")
 }
 
 function escapeHtml(value: string): string {

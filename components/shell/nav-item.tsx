@@ -11,36 +11,21 @@ interface NavItemProps {
 
 export function NavItem({ href, label, icon, badge }: NavItemProps) {
   const pathname = usePathname()
-  const active = pathname === href || pathname.startsWith(href + "/")
+  const active =
+    href === "/dashboard"
+      ? pathname === href
+      : pathname === href || pathname.startsWith(href + "/")
 
   return (
     <Link
       href={href}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        padding: "8px 12px",
-        borderRadius: "6px",
-        fontSize: "13px",
-        fontWeight: active ? 500 : 400,
-        color: active ? "var(--ink)" : "var(--ink-muted)",
-        background: active ? "var(--bg-hover)" : "transparent",
-        textDecoration: "none",
-        transition: "background 120ms, color 120ms",
-      }}
+      aria-current={active ? "page" : undefined}
+      className={active ? "cr-nav-item is-active" : "cr-nav-item"}
     >
-      <span style={{ color: active ? "var(--cobalt-400)" : "var(--ink-dim)", flexShrink: 0 }}>{icon}</span>
-      <span style={{ flex: 1 }}>{label}</span>
+      <span className="cr-nav-item__icon">{icon}</span>
+      <span className="cr-nav-item__label">{label}</span>
       {badge != null && (
-        <span style={{
-          fontSize: "11px",
-          fontWeight: 500,
-          padding: "1px 6px",
-          borderRadius: "10px",
-          background: "var(--cobalt-soft)",
-          color: "var(--cobalt-400)",
-        }}>
+        <span className={typeof badge === "number" ? "cr-nav-count cr-nav-count--critical" : "cr-nav-count"}>
           {badge}
         </span>
       )}

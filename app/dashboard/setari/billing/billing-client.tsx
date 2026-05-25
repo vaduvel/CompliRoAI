@@ -75,23 +75,15 @@ export function BillingClient({ orgName, subscription, tierConfig, stripeReady }
   const metrics = subscription?.usageMetrics ?? {}
 
   return (
-    <div style={{ maxWidth: 880, margin: "0 auto", padding: "32px 24px" }}>
-      <header style={{ marginBottom: 28 }}>
-        <h1
-          style={{
-            fontFamily: "var(--font-display, 'Space Grotesk', sans-serif)",
-            fontSize: 28,
-            fontWeight: 700,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Facturare
-        </h1>
-        <p style={{ color: "var(--ink-muted)", marginTop: 8, fontSize: 14 }}>
+    <div className="cr-page cr-stack">
+      <header className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Setări</div>
+          <h1 className="cr-title">Facturare</h1>
+          <p className="cr-subtitle">
           Vezi tier-ul tău activ, statisticile de utilizare și gestionează abonamentul.
-        </p>
+          </p>
+        </div>
       </header>
 
       {!stripeReady && (

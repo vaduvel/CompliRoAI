@@ -198,33 +198,17 @@ export default function AuditPackPage() {
       : clients.find((c) => c.orgId === selectedClient)?.orgName ?? "client necunoscut"
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "920px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Audit Pack
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
-          Dovadă criptografică a conformității — un ZIP semnat cu hash chain SHA-256,
-          imposibil de modificat post-fact fără a rupe lanțul.
-        </p>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Rapoarte & dosar</span>
+          <h1 className="cr-title">Audit Pack</h1>
+          <p className="cr-subtitle">
+            Dovadă criptografică a conformității — un ZIP semnat cu hash chain SHA-256,
+            imposibil de modificat post-fact fără a rupe lanțul.
+          </p>
+        </div>
       </div>
 
       {/* Explainer card */}
@@ -341,16 +325,10 @@ export default function AuditPackPage() {
               <select
                 value={selectedClient}
                 onChange={(e) => setSelectedClient(e.target.value)}
+                className="cr-select"
                 style={{
                   width: "100%",
-                  padding: "8px 32px 8px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid var(--border-strong)",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  fontSize: "13px",
                   appearance: "none",
-                  cursor: "pointer",
                 }}
               >
                 <option value="__self__">Organizația ta (cabinetul)</option>
@@ -396,19 +374,7 @@ export default function AuditPackPage() {
         <button
           onClick={handleGenerate}
           disabled={generating}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 16px",
-            background: generating ? "var(--bg-hover)" : "var(--cobalt-400)",
-            color: generating ? "var(--ink-dim)" : "#fff",
-            border: "none",
-            borderRadius: "6px",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: generating ? "wait" : "pointer",
-          }}
+          className="cr-btn cr-btn--primary"
         >
           {generating ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
           {generating ? "Generăm ZIP-ul…" : `Generează pentru ${targetLabel}`}
@@ -458,30 +424,16 @@ export default function AuditPackPage() {
             value={verifyHash}
             onChange={(e) => setVerifyHash(e.target.value)}
             placeholder="ex: 5c8f3a…"
+            className="cr-input"
             style={{
               flex: 1,
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border-strong)",
-              background: "var(--bg)",
-              color: "var(--ink)",
-              fontSize: "12px",
               fontFamily: "ui-monospace, SFMono-Regular, monospace",
             }}
           />
           <button
             onClick={handleVerifyHash}
             disabled={verifying || !verifyHash.trim()}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "6px",
-              border: "1px solid var(--border-strong)",
-              background: "var(--bg)",
-              color: "var(--ink)",
-              fontSize: "12px",
-              fontWeight: 500,
-              cursor: verifying ? "wait" : "pointer",
-            }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
           >
             Verifică
           </button>
@@ -619,18 +571,7 @@ export default function AuditPackPage() {
                   <button
                     onClick={() => copyToClipboard(pack.hashRoot)}
                     title="Copiază hash root"
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border-strong)",
-                      background: "var(--bg)",
-                      color: "var(--ink-dim)",
-                      fontSize: "11px",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
+                    className="cr-btn cr-btn--secondary cr-btn--sm"
                   >
                     <Copy size={11} />
                     {copiedHash === pack.hashRoot ? "Copiat!" : "Hash"}
@@ -640,18 +581,7 @@ export default function AuditPackPage() {
                       onClick={() => handleReSign(pack.orgId)}
                       disabled={reSigning === pack.orgId}
                       title="Re-semnează cu brand-ul curent"
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: "6px",
-                        border: "1px solid var(--border-strong)",
-                        background: "var(--bg)",
-                        color: "var(--ink-dim)",
-                        fontSize: "11px",
-                        cursor: reSigning === pack.orgId ? "wait" : "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
+                      className="cr-btn cr-btn--secondary cr-btn--sm"
                     >
                       {reSigning === pack.orgId ? (
                         <Loader2 size={11} className="spin" />

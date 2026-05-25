@@ -10,7 +10,7 @@ export default async function BrandingSettingsPage() {
   const h = await headers()
   const workspaceMode = h.get("x-aiact-workspace-mode")
   if (workspaceMode !== "cabinet") {
-    redirect("/dashboard/sisteme")
+    redirect("/dashboard/module-unavailable?module=branding")
   }
   const orgId = h.get("x-aiact-org-id")
   const orgName = h.get("x-aiact-org-name") ?? ""

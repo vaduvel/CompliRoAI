@@ -8,7 +8,7 @@ export default async function MagicLinksPage() {
   const h = await headers()
   const workspaceMode = h.get("x-aiact-workspace-mode")
   if (workspaceMode !== "cabinet") {
-    redirect("/dashboard/sisteme")
+    redirect("/dashboard/module-unavailable?module=magic-links")
   }
   return <MagicLinksClient />
 }

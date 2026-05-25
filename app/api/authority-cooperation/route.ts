@@ -33,8 +33,13 @@ export async function GET() {
         })),
       },
     })
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Nu am putut citi registrul de cooperare cu autoritățile."
+    const status = message.includes("Missing org context") ? 401 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 }
 

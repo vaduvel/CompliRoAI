@@ -97,7 +97,11 @@ export function AISystemsList({
 }: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [createdLink, setCreatedLink] = useState<{ url: string; systemName: string } | null>(null)
+  const [createdLink, setCreatedLink] = useState<{
+    url: string
+    systemName: string
+    delivery: "sent" | "created"
+  } | null>(null)
 
   async function handleSendApproval(system: AISystemRecord) {
     const email = window.prompt(`Email-ul clientului pentru aprobarea sistemului "${system.name}":`)
@@ -120,7 +124,12 @@ export function AISystemsList({
         alert(data.error ?? "Generare link eșuată.")
         return
       }
-      setCreatedLink({ url: data.url, systemName: system.name })
+      const emailDelivery = data.email as { ok?: boolean; channel?: string } | null
+      setCreatedLink({
+        url: data.url,
+        systemName: system.name,
+        delivery: emailDelivery?.ok === true && emailDelivery.channel === "resend" ? "sent" : "created",
+      })
     } catch {
       alert("Eroare de rețea. Încearcă din nou.")
     } finally {
@@ -130,6 +139,7 @@ export function AISystemsList({
   if (systems.length === 0) {
     return (
       <div
+        className="cr-empty"
         style={{
           padding: "40px 24px",
           textAlign: "center",
@@ -148,6 +158,7 @@ export function AISystemsList({
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       {createdLink && (
         <div
+          className="cr-alert cr-alert--info"
           style={{
             display: "flex",
             alignItems: "center",
@@ -163,7 +174,7 @@ export function AISystemsList({
           <Send size={14} style={{ color: "var(--cobalt-400)" }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 500 }}>
-              Magic link trimis pentru &quot;{createdLink.systemName}&quot;
+              Magic link {createdLink.delivery === "sent" ? "trimis" : "creat"} pentru &quot;{createdLink.systemName}&quot;
             </div>
             <code
               style={{
@@ -410,6 +421,7 @@ export function AISystemsList({
               </div>
             )}
           <div
+            className="cr-card"
             style={{
               display: "flex",
               alignItems: "center",
@@ -542,6 +554,7 @@ export function AISystemsList({
             {/* Send for approval (cabinet only) */}
             {isCabinet && (
               <button
+                className="cr-btn cr-btn--sm"
                 onClick={() => handleSendApproval(system)}
                 disabled={busyId === system.id}
                 aria-label={`Trimite spre aprobare ${system.name}`}
@@ -569,6 +582,7 @@ export function AISystemsList({
 
             {/* Delete button */}
             <button
+              className="cr-icon-button"
               onClick={() => onDelete(system.id)}
               aria-label={`Șterge sistemul ${system.name}`}
               style={{

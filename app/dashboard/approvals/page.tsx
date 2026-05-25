@@ -166,7 +166,7 @@ export default function ApprovalsPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "60px 40px", textAlign: "center", color: "var(--ink-dim)" }}>
+      <div className="cr-page cr-empty">
         <Loader2 size={24} style={{ animation: "spin 1s linear infinite", marginBottom: 8 }} />
         <div>Se încarcă coada de aprobări…</div>
       </div>
@@ -176,20 +176,23 @@ export default function ApprovalsPage() {
   const counts = data?.counts ?? { pending: 0, approved: 0, rejected: 0, withdrawn: 0, total: 0 }
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 1280, margin: "0 auto" }}>
+    <div className="cr-page cr-page--full cr-stack">
       {/* Header */}
-      <header style={{ marginBottom: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-          <CheckSquare size={22} color="var(--ink)" />
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--ink)", margin: 0, letterSpacing: "-0.01em" }}>
-            Coadă de aprobări
-          </h1>
+      <header className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <CheckSquare size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">Colaborare</div>
+            <h1 className="cr-title">Coadă de aprobări</h1>
+            <p className="cr-subtitle">
+              Cereri inițiate de clienți care cer aprobare consultantă înainte ca schimbarea să devină definitivă.
+              Aprobă → aplică automat schimbarea pe entitate și o înregistrează în jurnalul criptografic. Respinge →
+              notifică, dar nu modifică nimic.
+            </p>
+          </div>
         </div>
-        <p style={{ fontSize: 13, color: "var(--ink-dim)", lineHeight: 1.55, maxWidth: 760, margin: 0 }}>
-          Cereri inițiate de clienți care cer aprobare consultantă înainte ca schimbarea să devină definitivă. Aprobă →
-          aplică automat schimbarea pe entitate și o înregistrează în jurnalul criptografic. Respinge → notifică, dar
-          nu modifică nimic.
-        </p>
       </header>
 
       {/* Stats row */}
@@ -217,39 +220,17 @@ export default function ApprovalsPage() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: 6,
-                border: `1px solid ${isActive ? "var(--accent)" : "var(--border)"}`,
-                background: isActive ? "var(--accent-soft)" : "transparent",
-                color: isActive ? "var(--accent)" : "var(--ink-dim)",
-                fontSize: 12,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
+              className={`cr-tab ${isActive ? "is-active" : ""}`}
             >
               {t.label}
-              <span style={{ fontSize: 10, opacity: 0.75 }}>· {count}</span>
+              <span className="cr-tab__count">· {count}</span>
             </button>
           )
         })}
         <div style={{ marginLeft: "auto" }}>
           <button
             onClick={() => void refresh()}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "1px solid var(--border)",
-              background: "transparent",
-              color: "var(--ink-dim)",
-              fontSize: 12,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
           >
             <RefreshCw size={12} />
             Reîmprospătează
@@ -438,19 +419,8 @@ export default function ApprovalsPage() {
                           type="button"
                           onClick={() => void decide(r.id, "approve")}
                           disabled={isDeciding}
-                          style={{
-                            padding: "8px 16px",
-                            borderRadius: 6,
-                            border: "1px solid #34d399",
-                            background: "rgba(52,211,153,0.14)",
-                            color: "#34d399",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            cursor: isDeciding ? "wait" : "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
+                          className="cr-btn cr-btn--success cr-btn--sm"
+                          style={{ cursor: isDeciding ? "wait" : "pointer" }}
                         >
                           {isDeciding ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={12} />}
                           Aprobă și aplică
@@ -459,19 +429,8 @@ export default function ApprovalsPage() {
                           type="button"
                           onClick={() => void decide(r.id, "reject")}
                           disabled={isDeciding}
-                          style={{
-                            padding: "8px 16px",
-                            borderRadius: 6,
-                            border: "1px solid #f87171",
-                            background: "rgba(248,113,113,0.14)",
-                            color: "#f87171",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            cursor: isDeciding ? "wait" : "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
+                          className="cr-btn cr-btn--danger cr-btn--sm"
+                          style={{ cursor: isDeciding ? "wait" : "pointer" }}
                         >
                           <XCircle size={12} />
                           Respinge
@@ -480,30 +439,16 @@ export default function ApprovalsPage() {
                           type="button"
                           onClick={() => void decide(r.id, "withdraw")}
                           disabled={isDeciding}
-                          style={{
-                            padding: "8px 14px",
-                            borderRadius: 6,
-                            border: "1px solid var(--border)",
-                            background: "transparent",
-                            color: "var(--ink-dim)",
-                            fontSize: 12,
-                            cursor: isDeciding ? "wait" : "pointer",
-                          }}
+                          className="cr-btn cr-btn--secondary cr-btn--sm"
+                          style={{ cursor: isDeciding ? "wait" : "pointer" }}
                         >
                           Retrage
                         </button>
                         {href && (
                           <a
                             href={href}
-                            style={{
-                              padding: "8px 14px",
-                              borderRadius: 6,
-                              border: "1px solid var(--border)",
-                              color: "var(--ink-dim)",
-                              fontSize: 12,
-                              textDecoration: "none",
-                              marginLeft: "auto",
-                            }}
+                            className="cr-btn cr-btn--secondary cr-btn--sm"
+                            style={{ marginLeft: "auto", textDecoration: "none" }}
                           >
                             Deschide modul →
                           </a>

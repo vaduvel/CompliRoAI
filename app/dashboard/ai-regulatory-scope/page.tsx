@@ -160,49 +160,24 @@ export default function AiRegulatoryScopePage() {
     profile && profile.nis2EntityClass !== "not_in_scope" ? true : false
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1080px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-stack">
       {/* ── Header ───────────────────────────────────────────────────────── */}
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-            color: "var(--ink)",
-            margin: 0,
-          }}
-        >
-          AI sub DORA + NIS2
-        </h1>
-        <p style={{ marginTop: "6px", fontSize: "13px", color: "var(--ink-dim)" }}>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Scope adiacent AI</div>
+          <h1 className="cr-title">AI sub DORA + NIS2</h1>
+          <p className="cr-subtitle">
           Scope și incidente AI pentru entitățile financiare (DORA) și entitățile esențiale/importante (NIS2). Doar slice AI-relevant — module pure DORA/NIS2 nu sunt incluse în CompliRoAI.
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* ── Loading / Error ─────────────────────────────────────────────── */}
       {loading && (
-        <div style={{ color: "var(--ink-dim)", fontSize: "13px" }}>Se încarcă…</div>
+        <div className="cr-muted-copy">Se încarcă…</div>
       )}
       {error && (
-        <div
-          style={{
-            color: "#f87171",
-            background: "rgba(248,113,113,0.10)",
-            padding: "10px 14px",
-            borderRadius: "6px",
-            border: "1px solid rgba(248,113,113,0.25)",
-            fontSize: "13px",
-          }}
-        >
+        <div className="cr-alert cr-alert--danger">
           {error}
         </div>
       )}
@@ -957,7 +932,7 @@ function ProfileModal({
                 <select
                   value={doraEntityType}
                   onChange={(e) => setDoraEntityType(e.target.value as DoraEntityType)}
-                  style={inputStyle}
+                  className="cr-input"
                 >
                   {ALL_DORA_TYPES.filter((t) => t !== "not_applicable").map((t) => (
                     <option key={t} value={t}>
@@ -971,7 +946,7 @@ function ProfileModal({
                   value={doraReg}
                   onChange={(e) => setDoraReg(e.target.value)}
                   placeholder="ex. BNR-1234"
-                  style={inputStyle}
+                  className="cr-input"
                 />
               </>
             )}
@@ -984,7 +959,7 @@ function ProfileModal({
             <select
               value={nis2EntityClass}
               onChange={(e) => setNis2EntityClass(e.target.value as Nis2EntityClass)}
-              style={inputStyle}
+              className="cr-input"
             >
               <option value="not_in_scope">Neaplicabil</option>
               <option value="important">Importantă (Anexa II)</option>
@@ -1017,7 +992,7 @@ function ProfileModal({
                   value={dnscReg}
                   onChange={(e) => setDnscReg(e.target.value)}
                   placeholder="ex. DNSC-RO-5678"
-                  style={inputStyle}
+                  className="cr-input"
                 />
               </>
             )}
@@ -1026,6 +1001,7 @@ function ProfileModal({
           {/* Notes */}
           <label style={fieldLabelStyle}>Note interne (opțional)</label>
           <textarea
+            className="cr-input cr-textarea"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
@@ -1056,10 +1032,10 @@ function ProfileModal({
               borderTop: "1px solid var(--border-soft)",
             }}
           >
-            <button type="button" onClick={onClose} style={ghostButtonStyle}>
+            <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
               Anulează
             </button>
-            <button type="submit" disabled={saving} style={primaryButtonStyle}>
+            <button type="submit" disabled={saving} className="cr-btn cr-btn--primary cr-btn--sm">
               {saving ? "Se salvează…" : "Salvează"}
             </button>
           </div>
@@ -1172,26 +1148,4 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid var(--border-soft)",
   borderRadius: "6px",
   color: "var(--ink)",
-}
-
-const primaryButtonStyle: React.CSSProperties = {
-  padding: "8px 16px",
-  fontSize: "13px",
-  fontWeight: 500,
-  background: "var(--accent, #60a5fa)",
-  color: "var(--ink-on-accent, #0f172a)",
-  border: "none",
-  borderRadius: "6px",
-  cursor: "pointer",
-}
-
-const ghostButtonStyle: React.CSSProperties = {
-  padding: "8px 16px",
-  fontSize: "13px",
-  fontWeight: 500,
-  background: "transparent",
-  color: "var(--ink-dim)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "6px",
-  cursor: "pointer",
 }

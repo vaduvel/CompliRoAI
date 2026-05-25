@@ -70,6 +70,7 @@ const ENTITY_LABELS: Record<ComplianceEventEntityType, string> = {
   integration: "Integrare",
   system: "Sistem",
   drift: "Drift",
+  ai_guidance: "AI Guidance",
 }
 
 const ENTITY_COLORS: Record<ComplianceEventEntityType, { bg: string; fg: string }> = {
@@ -80,6 +81,7 @@ const ENTITY_COLORS: Record<ComplianceEventEntityType, { bg: string; fg: string 
   integration: { bg: "rgba(168,85,247,0.14)", fg: "#a855f7" },
   system: { bg: "rgba(52,211,153,0.14)", fg: "#34d399" },
   drift: { bg: "rgba(251,191,36,0.16)", fg: "#fbbf24" },
+  ai_guidance: { bg: "rgba(59,130,246,0.14)", fg: "#60a5fa" },
 }
 
 // Resolve entity link from event (deep-link into the relevant module page).
@@ -269,28 +271,20 @@ export default function AuditLogPage() {
   }, [data])
 
   return (
-    <div style={{ padding: "32px", maxWidth: "1400px", margin: "0 auto" }}>
+    <div className="cr-page cr-page--full cr-stack">
       {/* Header */}
-      <div style={{ marginBottom: "24px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-          <FileSearch size={24} color="var(--accent)" />
-          <h1
-            style={{
-              fontSize: "22px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              margin: 0,
-              fontFamily: "var(--font-display-v3)",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Audit Log
-          </h1>
+      <div className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <FileSearch size={28} color="var(--cobalt-700)" />
+          <div>
+            <span className="cr-eyebrow">Rapoarte & dosar</span>
+            <h1 className="cr-title">Jurnal audit</h1>
+            <p className="cr-subtitle">
+              Ledger criptografic SHA-256 cu toate acțiunile compliance. Imutabil, exportabil,
+              verificabil cu hash chain.
+            </p>
+          </div>
         </div>
-        <p style={{ color: "var(--ink-dim)", fontSize: "13px", margin: "0 0 0 36px" }}>
-          Ledger criptografic SHA-256 cu toate acțiunile compliance. Imutabil, exportabil,
-          verificabil cu hash chain.
-        </p>
       </div>
 
       {/* Verify banner */}
@@ -353,16 +347,8 @@ export default function AuditLogPage() {
           </span>
           <button
             onClick={clearFilters}
-            style={{
-              marginLeft: "auto",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              color: "var(--ink-dim)",
-              fontSize: "11px",
-              padding: "3px 10px",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
+            style={{ marginLeft: "auto" }}
           >
             Resetează
           </button>
@@ -374,15 +360,7 @@ export default function AuditLogPage() {
             <button
               key={p}
               onClick={() => setDateRange(p)}
-              style={{
-                padding: "4px 10px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                border: `1px solid ${dateRange === p ? "var(--accent)" : "var(--border)"}`,
-                background: dateRange === p ? "var(--accent)" : "transparent",
-                color: dateRange === p ? "#fff" : "var(--ink)",
-                cursor: "pointer",
-              }}
+              className={`cr-filter-chip ${dateRange === p ? "is-active" : ""}`}
             >
               {p === "all" ? "Tot" : p === "today" ? "Azi" : p === "7d" ? "7 zile" : p === "30d" ? "30 zile" : p === "90d" ? "90 zile" : "Custom"}
             </button>
@@ -393,17 +371,17 @@ export default function AuditLogPage() {
           <div style={{ display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center" }}>
             <label style={{ fontSize: "11px", color: "var(--ink-muted)" }}>De la:</label>
             <input
+              className="cr-input"
               type="date"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              style={inputStyle}
             />
             <label style={{ fontSize: "11px", color: "var(--ink-muted)" }}>Până la:</label>
             <input
+              className="cr-input"
               type="date"
               value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              style={inputStyle}
             />
           </div>
         )}
@@ -413,9 +391,9 @@ export default function AuditLogPage() {
           <div>
             <label style={labelStyle}>Tip entitate</label>
             <select
+              className="cr-select"
               value={entityType}
               onChange={(e) => setEntityType(e.target.value)}
-              style={inputStyle}
             >
               <option value="">— Toate —</option>
               {data?.facets.entityTypes.map((t) => (
@@ -428,9 +406,9 @@ export default function AuditLogPage() {
           <div>
             <label style={labelStyle}>Actor</label>
             <select
+              className="cr-select"
               value={actorEmail}
               onChange={(e) => setActorEmail(e.target.value)}
-              style={inputStyle}
             >
               <option value="">— Toți —</option>
               {data?.facets.actors.map((a) => (
@@ -443,9 +421,9 @@ export default function AuditLogPage() {
           <div>
             <label style={labelStyle}>Tip eveniment</label>
             <select
+              className="cr-select"
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
-              style={inputStyle}
             >
               <option value="">— Toate —</option>
               {data?.facets.eventTypes.map((t) => (
@@ -469,6 +447,7 @@ export default function AuditLogPage() {
                 }}
               />
               <input
+                className="cr-input"
                 type="text"
                 placeholder="mesaj, metadata, tip..."
                 value={search}
@@ -481,25 +460,25 @@ export default function AuditLogPage() {
       </div>
 
       {/* Action bar */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
-        <button onClick={() => void fetchLog()} style={secondaryButtonStyle}>
+      <div className="cr-actions" style={{ marginBottom: "12px" }}>
+        <button onClick={() => void fetchLog()} className="cr-btn cr-btn--secondary cr-btn--sm">
           <RefreshCw size={12} />
           <span>Actualizează</span>
         </button>
-        <button onClick={handleVerifyChain} style={secondaryButtonStyle} disabled={!data}>
+        <button onClick={handleVerifyChain} className="cr-btn cr-btn--secondary cr-btn--sm" disabled={!data}>
           <Shield size={12} />
           <span>Verifică lanț</span>
         </button>
-        <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
-          <button onClick={() => exportFormat("md")} style={secondaryButtonStyle}>
+        <div className="cr-actions" style={{ marginLeft: "auto" }}>
+          <button onClick={() => exportFormat("md")} className="cr-btn cr-btn--secondary cr-btn--sm">
             <Download size={12} />
             <span>Markdown</span>
           </button>
-          <button onClick={() => exportFormat("json")} style={secondaryButtonStyle}>
+          <button onClick={() => exportFormat("json")} className="cr-btn cr-btn--secondary cr-btn--sm">
             <Download size={12} />
             <span>JSON</span>
           </button>
-          <button onClick={() => exportFormat("csv")} style={secondaryButtonStyle}>
+          <button onClick={() => exportFormat("csv")} className="cr-btn cr-btn--secondary cr-btn--sm">
             <Download size={12} />
             <span>CSV</span>
           </button>
@@ -821,20 +800,6 @@ const labelStyle: React.CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: "0.05em",
   marginBottom: "4px",
-}
-
-const secondaryButtonStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "5px",
-  padding: "5px 12px",
-  fontSize: "12px",
-  fontWeight: 500,
-  background: "var(--bg-card)",
-  border: "1px solid var(--border)",
-  borderRadius: "4px",
-  color: "var(--ink)",
-  cursor: "pointer",
 }
 
 const codeStyle: React.CSSProperties = {

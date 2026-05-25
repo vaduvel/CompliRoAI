@@ -444,51 +444,35 @@ export default function ConformitatePage() {
 
   if (loadingSystems) {
     return (
-      <div style={{ padding: "32px", display: "flex", alignItems: "center", gap: "8px", color: "var(--ink-dim)", fontSize: "13px" }}>
+      <div className="cr-page cr-inline cr-inline--start">
         <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Se încarcă...
       </div>
     )
   }
 
   return (
-    <div style={{ padding: "32px", maxWidth: "960px", display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div>
-        <h1 style={{
-          fontFamily: "var(--font-display-v3)",
-          fontSize: "22px",
-          fontWeight: 600,
-          color: "var(--ink)",
-          margin: 0,
-          letterSpacing: "-0.02em",
-        }}>
-          Evaluare Conformitate
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Discovery & risc</span>
+          <h1 className="cr-title">Evaluare conformitate</h1>
+          <p className="cr-subtitle">
           Workflow 10 întrebări · EU AI Act 2024/1689 · Identifică lacune și generează plan de remediere
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* Error / success banners */}
       {error && (
-        <div style={{
-          display: "flex", gap: "10px", padding: "12px 16px",
-          background: "var(--red-soft)", borderRadius: "8px",
-          border: "1px solid rgba(248,113,113,0.2)",
-          fontSize: "13px", color: "var(--red-400)",
-        }}>
-          <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertTriangle size={15} />
           {error}
         </div>
       )}
       {successMsg && (
-        <div style={{
-          display: "flex", gap: "10px", padding: "12px 16px",
-          background: "var(--emerald-soft)", borderRadius: "8px",
-          border: "1px solid rgba(52,211,153,0.2)",
-          fontSize: "13px", color: "var(--emerald-400)",
-        }}>
-          <CheckCircle2 size={15} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--info">
+          <CheckCircle2 size={15} />
           {successMsg}
         </div>
       )}

@@ -120,33 +120,16 @@ export function PortfolioClient() {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    background: "var(--bg-hover)",
-    border: "1px solid var(--border-strong)",
-    borderRadius: "6px",
-    padding: "9px 13px",
-    color: "var(--ink)",
-    fontSize: "13px",
-    outline: "none",
-  }
-
   return (
-    <div style={{ padding: "32px", maxWidth: "1000px", display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
-        <div>
-          <h1 style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Portofoliu · triaj</div>
+          <h1 className="cr-title">
             Portofoliu clienți
           </h1>
-          <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+          <p className="cr-subtitle">
             Gestionezi conformitatea pentru toți clienții cabinetului tău dintr-un singur loc.
           </p>
         </div>
@@ -154,20 +137,7 @@ export function PortfolioClient() {
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 16px",
-              borderRadius: "8px",
-              border: "none",
-              background: "var(--cobalt-600)",
-              color: "#fff",
-              fontSize: "13px",
-              fontWeight: 500,
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
+            className="cr-btn cr-btn--primary"
           >
             <Plus size={15} /> Adaugă client
           </button>
@@ -178,20 +148,12 @@ export function PortfolioClient() {
       {showForm && (
         <form
           onSubmit={handleAddClient}
-          style={{
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border)",
-            borderRadius: "10px",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "14px",
-          }}
+          className="cr-card cr-form-card"
         >
-          <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>Client nou</div>
+          <div className="cr-form-title">Client nou</div>
 
           <div>
-            <label style={{ fontSize: "12px", color: "var(--ink-muted)", display: "block", marginBottom: "5px" }}>
+            <label className="cr-field-label">
               Nume firmă <span style={{ color: "var(--red-400)" }}>*</span>
             </label>
             <input
@@ -200,49 +162,33 @@ export function PortfolioClient() {
               value={form.orgName}
               onChange={(e) => setForm((f) => ({ ...f, orgName: e.target.value }))}
               placeholder="Ex: Firma Client SRL"
-              style={inputStyle}
+              className="cr-input"
             />
           </div>
 
           <div>
-            <label style={{ fontSize: "12px", color: "var(--ink-muted)", display: "block", marginBottom: "5px" }}>
+            <label className="cr-field-label">
               CUI / Cod fiscal (opțional)
             </label>
             <input
               value={form.cui}
               onChange={(e) => setForm((f) => ({ ...f, cui: e.target.value }))}
               placeholder="RO12345678 sau 12345678"
-              style={inputStyle}
+              className="cr-input"
             />
           </div>
 
           {formError && (
-            <div style={{
-              fontSize: "13px",
-              color: "var(--red-400)",
-              background: "var(--red-soft)",
-              padding: "10px 12px",
-              borderRadius: "6px",
-            }}>
+            <div className="cr-alert cr-alert--danger">
               {formError}
             </div>
           )}
 
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div className="cr-actions" style={{ justifyContent: "flex-start" }}>
             <button
               type="submit"
               disabled={formLoading}
-              style={{
-                padding: "9px 18px",
-                borderRadius: "6px",
-                border: "none",
-                background: "var(--cobalt-600)",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: formLoading ? "not-allowed" : "pointer",
-                opacity: formLoading ? 0.7 : 1,
-              }}
+              className="cr-btn cr-btn--primary"
             >
               {formLoading ? "Se adaugă..." : "Adaugă client"}
             </button>
@@ -253,15 +199,7 @@ export function PortfolioClient() {
                 setFormError("")
                 setForm({ orgName: "", cui: "" })
               }}
-              style={{
-                padding: "9px 18px",
-                borderRadius: "6px",
-                border: "1px solid var(--border-strong)",
-                background: "transparent",
-                color: "var(--ink-muted)",
-                fontSize: "13px",
-                cursor: "pointer",
-              }}
+              className="cr-btn"
             >
               Anulează
             </button>
@@ -271,15 +209,7 @@ export function PortfolioClient() {
 
       {/* Intake link success banner */}
       {intakeLink && (
-        <div style={{
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          padding: "10px 14px",
-          background: "var(--cobalt-soft)",
-          border: "1px solid rgba(96,165,250,0.25)",
-          borderRadius: 8,
-        }}>
+        <div className="cr-alert cr-alert--info">
           <Send size={14} style={{ color: "var(--cobalt-400)", flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>
@@ -297,29 +227,14 @@ export function PortfolioClient() {
           </div>
           <button
             onClick={() => navigator.clipboard.writeText(intakeLink.url).catch(() => {})}
-            style={{
-              padding: "4px 8px",
-              borderRadius: 4,
-              border: "1px solid var(--border)",
-              background: "transparent",
-              color: "var(--ink-muted)",
-              fontSize: 11,
-              cursor: "pointer",
-            }}
+            className="cr-btn cr-btn--sm"
           >
             Copy
           </button>
           <button
             onClick={() => setIntakeLink(null)}
-            style={{
-              padding: "4px 8px",
-              borderRadius: 4,
-              border: "none",
-              background: "transparent",
-              color: "var(--ink-dim)",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
+            className="cr-icon-button"
+            aria-label="Închide mesaj intake"
           >
             ×
           </button>
@@ -328,7 +243,7 @@ export function PortfolioClient() {
 
       {/* Stats */}
       {!loading && clients.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+        <div className="cr-stat-strip cr-stat-strip--three">
           {[
             { label: "Total clienți", value: clients.length },
             {
@@ -342,22 +257,12 @@ export function PortfolioClient() {
           ].map((stat) => (
             <div
               key={stat.label}
-              style={{
-                padding: "16px",
-                background: "var(--bg-raised)",
-                borderRadius: "8px",
-                border: "1px solid var(--border)",
-              }}
+              className="cr-stat"
             >
-              <div style={{
-                fontSize: "22px",
-                fontWeight: 600,
-                color: "var(--ink)",
-                fontFamily: "var(--font-display-v3)",
-              }}>
+              <div className="cr-stat__value">
                 {stat.value}
               </div>
-              <div style={{ fontSize: "12px", color: "var(--ink-dim)", marginTop: "4px" }}>
+              <div className="cr-stat__label" style={{ marginTop: 8 }}>
                 {stat.label}
               </div>
             </div>
@@ -367,27 +272,12 @@ export function PortfolioClient() {
 
       {/* Clients list */}
       <div>
-        <div style={{
-          fontSize: "11px",
-          fontWeight: 500,
-          color: "var(--ink-dim)",
-          marginBottom: "8px",
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-        }}>
+        <div className="cr-section-label" style={{ marginBottom: 10 }}>
           {loading ? "Se încarcă..." : `${clients.length} client${clients.length !== 1 ? "i" : ""}`}
         </div>
 
         {!loading && clients.length === 0 ? (
-          <div
-            style={{
-              padding: "48px 24px",
-              textAlign: "center",
-              background: "var(--bg-raised)",
-              border: "1px dashed var(--border-strong)",
-              borderRadius: "10px",
-            }}
-          >
+          <div className="cr-empty">
             <Building2 size={28} style={{ color: "var(--ink-dim)", margin: "0 auto 12px" }} />
             <div style={{ fontSize: "14px", color: "var(--ink-muted)", marginBottom: "4px" }}>
               Niciun client adăugat încă
@@ -397,7 +287,7 @@ export function PortfolioClient() {
             </div>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+          <div className="cr-finding-list">
             {clients.map((c) => {
               const isSwitching = switching === c.orgId
               return (
@@ -412,20 +302,7 @@ export function PortfolioClient() {
                       handleSwitch(c.orgId)
                     }
                   }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    padding: "14px 16px",
-                    background: isSwitching ? "var(--cobalt-soft)" : "var(--bg-raised)",
-                    borderRadius: "8px",
-                    border: "none",
-                    cursor: switching ? "wait" : "pointer",
-                    width: "100%",
-                    textAlign: "left",
-                    color: "var(--ink)",
-                    transition: "background 120ms",
-                  }}
+                  className={isSwitching ? "cr-client-card cr-client-card--busy" : "cr-client-card"}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
@@ -451,31 +328,11 @@ export function PortfolioClient() {
                   </div>
 
                   {c.onboardingCompleted ? (
-                    <span style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      fontSize: "11px",
-                      color: "var(--emerald-400)",
-                      background: "var(--emerald-soft)",
-                      padding: "3px 8px",
-                      borderRadius: "4px",
-                      fontWeight: 500,
-                    }}>
+                    <span className="cr-badge cr-badge--ok">
                       <CheckCircle2 size={11} /> Onboarding OK
                     </span>
                   ) : (
-                    <span style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      fontSize: "11px",
-                      color: "var(--amber-400)",
-                      background: "var(--amber-soft)",
-                      padding: "3px 8px",
-                      borderRadius: "4px",
-                      fontWeight: 500,
-                    }}>
+                    <span className="cr-badge cr-badge--high">
                       <AlertCircle size={11} /> Onboarding incomplet
                     </span>
                   )}
@@ -484,20 +341,7 @@ export function PortfolioClient() {
                     onClick={(e) => handleSendIntake(c, e)}
                     disabled={intakeBusy === c.orgId}
                     title="Trimite intake la client"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "6px 10px",
-                      borderRadius: 6,
-                      border: "1px solid var(--border)",
-                      background: "transparent",
-                      color: "var(--cobalt-400)",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: intakeBusy === c.orgId ? "wait" : "pointer",
-                      flexShrink: 0,
-                    }}
+                    className="cr-btn cr-btn--sm"
                   >
                     <Send size={11} />
                     {intakeBusy === c.orgId ? "Se trimite…" : "Trimite intake"}

@@ -130,38 +130,23 @@ export default function PIIScanPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <Eye size={20} color="#a855f7" />
-          PII Scan — detecție deterministă date personale
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
-          Pastează text / încarcă fișier (.txt, .json, .csv, max 5MB). Scanner detectează
-          CNP, IBAN, email, telefon, card, pașaport, IP, adrese și nume. Output cu sample
-          masked. Dacă găsește identificatori sensibili, emite finding GDPR automat în{" "}
-          <strong>De rezolvat</strong>.
-        </p>
+    <div className="cr-page cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <Eye size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">Discovery & risc</div>
+            <h1 className="cr-title">PII Scan</h1>
+            <p className="cr-subtitle">
+              Pastează text sau încarcă fișier (.txt, .json, .csv, max 5MB). Scannerul
+              detectează CNP, IBAN, email, telefon, card, pașaport, IP, adrese și nume.
+              Dacă găsește identificatori sensibili, emite finding GDPR automat în{" "}
+              <strong>De rezolvat</strong>.
+            </p>
+          </div>
+        </div>
       </div>
 
       {summary && (
@@ -180,18 +165,7 @@ export default function PIIScanPage() {
       )}
 
       {err && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
+        <div className="cr-alert cr-alert--danger">
           <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
           {err}
         </div>
@@ -232,7 +206,7 @@ export default function PIIScanPage() {
             value={sourceLabel}
             onChange={(e) => setSourceLabel(e.target.value)}
             placeholder="ex: chat-log-mai-2026.json"
-            style={inputStyle}
+            className="cr-input"
           />
         </label>
 
@@ -244,12 +218,13 @@ export default function PIIScanPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Pastează aici text, conținut JSON sau CSV..."
-            style={{ ...inputStyle, minHeight: "150px", fontFamily: "ui-monospace, monospace" }}
+            className="cr-input cr-textarea"
+            style={{ minHeight: "150px", fontFamily: "ui-monospace, monospace" }}
           />
         </label>
 
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <label style={{ ...btnSecondary, cursor: "pointer" }}>
+          <label className="cr-btn cr-btn--secondary cr-btn--sm" style={{ cursor: "pointer" }}>
             <Upload size={13} /> Încarcă fișier
             <input
               type="file"
@@ -258,12 +233,12 @@ export default function PIIScanPage() {
               style={{ display: "none" }}
             />
           </label>
-          <button onClick={handleAnalyze} disabled={busy || !text.trim()} style={btnPrimary}>
+          <button onClick={handleAnalyze} disabled={busy || !text.trim()} className="cr-btn cr-btn--primary cr-btn--sm">
             {busy ? <Loader2 size={14} /> : <Search size={14} />}
             Analizează
           </button>
           {result && (
-            <button onClick={handleSave} disabled={busy} style={btnSecondary}>
+            <button onClick={handleSave} disabled={busy} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Plus size={13} /> Salvează scan + emite finding
             </button>
           )}
@@ -414,7 +389,7 @@ export default function PIIScanPage() {
                       Finding
                     </a>
                   )}
-                  <button onClick={() => handleDelete(d.id)} style={btnGhost} aria-label="Șterge scan">
+                  <button onClick={() => handleDelete(d.id)} className="cr-btn cr-btn--secondary cr-btn--sm" aria-label="Șterge scan">
                     <Trash2 size={11} />
                   </button>
                 </div>
@@ -515,59 +490,6 @@ function ConfidenceBadge({ confidence }: { confidence: "high" | "medium" | "low"
       {c.label}
     </span>
   )
-}
-
-const inputStyle: React.CSSProperties = {
-  padding: "8px 10px",
-  fontSize: "13px",
-  borderRadius: "6px",
-  border: "1px solid var(--border-soft)",
-  background: "var(--surface-2)",
-  color: "var(--ink)",
-  fontFamily: "inherit",
-  width: "100%",
-  boxSizing: "border-box",
-}
-
-const btnPrimary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  fontSize: "13px",
-  fontWeight: 500,
-  borderRadius: "6px",
-  border: "none",
-  background: "var(--cobalt-600)",
-  color: "white",
-  cursor: "pointer",
-}
-
-const btnSecondary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "6px 10px",
-  fontSize: "12px",
-  fontWeight: 500,
-  borderRadius: "6px",
-  border: "1px solid var(--border-soft)",
-  background: "var(--surface-1)",
-  color: "var(--ink)",
-  cursor: "pointer",
-}
-
-const btnGhost: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "4px",
-  padding: "4px 8px",
-  fontSize: "11px",
-  borderRadius: "6px",
-  border: "1px solid transparent",
-  background: "transparent",
-  color: "var(--ink-dim)",
-  cursor: "pointer",
 }
 
 const th: React.CSSProperties = {

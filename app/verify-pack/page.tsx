@@ -82,63 +82,27 @@ export default function VerifyPackPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "var(--bg)",
-        color: "var(--ink)",
-        padding: "40px 24px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      {/* Header */}
-      <div style={{ maxWidth: "720px", width: "100%", marginBottom: "32px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            marginBottom: "8px",
-          }}
-        >
-          <div
-            style={{
-              background: "var(--cobalt-soft)",
-              color: "var(--cobalt-400)",
-              padding: "8px",
-              borderRadius: "8px",
-              display: "inline-flex",
-            }}
-          >
+    <main className="cr-verify-page">
+      <section className="cr-verify-shell">
+        <header className="cr-verify-header">
+          <div className="cr-verify-icon" aria-hidden="true">
             <ShieldCheck size={20} />
           </div>
-          <div style={{ fontSize: "14px", color: "var(--ink-dim)" }}>
+          <div>
+            <div className="cr-section-label">
             CompliRoAI · Verificare audit pack
+            </div>
+            <h1 className="cr-verify-title">Verifică integritatea unui audit pack</h1>
+            <p className="cr-verify-copy">
+              Încarcă un fișier <code>.zip</code> emis de CompliRoAI. Pagina recalculează
+              hash chain-ul și compară cu valorile din <code>MANIFEST.json</code>. Dacă
+              rezultatul este <strong>valid</strong>, fișierele NU au fost modificate
+              de la generare.
+            </p>
           </div>
-        </div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "28px",
-            fontWeight: 600,
-            margin: "0 0 8px",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Verifică integritatea unui audit pack
-        </h1>
-        <p style={{ fontSize: "14px", color: "var(--ink-muted)", margin: 0, lineHeight: 1.6 }}>
-          Încarcă un fișier <code>.zip</code> emis de CompliRoAI. Pagina recalculează
-          hash chain-ul și compară cu valorile din <code>MANIFEST.json</code>. Dacă
-          rezultatul este <strong>valid</strong>, fișierele NU au fost modificate
-          de la generare.
-        </p>
-      </div>
+        </header>
 
-      {/* Dropzone */}
-      <div
+        <div
         onDragOver={(e) => {
           e.preventDefault()
           setDragging(true)
@@ -151,154 +115,72 @@ export default function VerifyPackPage() {
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") inputRef.current?.click()
         }}
-        style={{
-          width: "100%",
-          maxWidth: "720px",
-          border: `2px dashed ${dragging ? "var(--cobalt-400)" : "var(--border-strong)"}`,
-          background: dragging ? "var(--cobalt-soft)" : "var(--bg-card)",
-          borderRadius: "12px",
-          padding: "40px",
-          textAlign: "center",
-          cursor: "pointer",
-          transition: "all 0.15s ease",
-        }}
+        className={dragging ? "cr-verify-dropzone cr-verify-dropzone--dragging" : "cr-verify-dropzone"}
       >
         <input
           ref={inputRef}
           type="file"
           accept=".zip,application/zip"
           onChange={onPick}
-          style={{ display: "none" }}
+          className="cr-file-input"
         />
         {busy ? (
           <>
-            <Loader2 size={32} className="spin" style={{ color: "var(--cobalt-400)" }} />
-            <div style={{ marginTop: "12px", fontSize: "14px", color: "var(--ink)" }}>
-              Verificăm…
-            </div>
+            <Loader2 size={32} className="cr-spin cr-verify-dropzone__icon cr-verify-dropzone__icon--active" />
+            <div className="cr-verify-dropzone__title">Verificăm...</div>
           </>
         ) : (
           <>
             <Upload
               size={32}
-              style={{ color: dragging ? "var(--cobalt-400)" : "var(--ink-dim)" }}
+              className={dragging ? "cr-verify-dropzone__icon cr-verify-dropzone__icon--active" : "cr-verify-dropzone__icon"}
             />
-            <div
-              style={{
-                marginTop: "12px",
-                fontSize: "15px",
-                fontWeight: 500,
-                color: "var(--ink)",
-              }}
-            >
+            <div className="cr-verify-dropzone__title">
               {fileName ?? "Trage un ZIP aici sau click pentru selectare"}
             </div>
-            <div style={{ marginTop: "4px", fontSize: "12px", color: "var(--ink-dim)" }}>
+            <div className="cr-verify-dropzone__hint">
               Acceptăm doar fișiere ZIP emise de CompliRoAI · max 25 MB
             </div>
           </>
         )}
       </div>
 
-      {/* Error */}
       {error && (
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "720px",
-            marginTop: "16px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            border: "1px solid rgba(248,113,113,0.25)",
-            borderRadius: "8px",
-            color: "var(--red-400)",
-            fontSize: "13px",
-            display: "flex",
-            gap: "8px",
-            alignItems: "center",
-          }}
-        >
+        <div className="cr-alert cr-alert--danger cr-verify-alert">
           <AlertTriangle size={16} />
           {error}
         </div>
       )}
 
-      {/* Result */}
       {result && (
-        <div style={{ width: "100%", maxWidth: "720px", marginTop: "24px" }}>
-          {/* Verdict banner */}
-          <div
-            style={{
-              padding: "16px 20px",
-              borderRadius: "10px",
-              background: result.valid ? "var(--emerald-soft)" : "var(--red-soft)",
-              border: `1px solid ${
-                result.valid ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"
-              }`,
-              display: "flex",
-              gap: "12px",
-              alignItems: "center",
-            }}
-          >
+        <div className="cr-verify-result">
+          <div className={result.valid ? "cr-verify-banner cr-verify-banner--valid" : "cr-verify-banner cr-verify-banner--invalid"}>
             {result.valid ? (
-              <CheckCircle2 size={28} style={{ color: "var(--emerald-400)" }} />
+              <CheckCircle2 size={28} className="cr-verify-banner__icon" />
             ) : (
-              <XCircle size={28} style={{ color: "var(--red-400)" }} />
+              <XCircle size={28} className="cr-verify-banner__icon" />
             )}
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: result.valid ? "var(--emerald-400)" : "var(--red-400)",
-                }}
-              >
+            <div className="cr-verify-banner__body">
+              <div className="cr-verify-banner__title">
                 {result.valid ? "Pachet valid — integritate confirmată" : "Pachet INVALID"}
               </div>
-              <div style={{ fontSize: "12px", color: "var(--ink-muted)", marginTop: "2px" }}>
+              <div className="cr-verify-banner__copy">
                 {result.valid
                   ? "Hash chain corespunde — nimeni nu a modificat conținutul."
                   : "Hash chain rupt — conținutul a fost modificat sau este corupt."}
               </div>
             </div>
-            <div
-              style={{
-                background: "var(--bg-card)",
-                padding: "4px 10px",
-                borderRadius: "12px",
-                fontSize: "11px",
-                color: "var(--ink-dim)",
-                textTransform: "uppercase",
-                fontWeight: 600,
-                letterSpacing: "0.5px",
-              }}
-            >
+            <div className="cr-verify-badge">
               Verificat de CompliRoAI
             </div>
           </div>
 
-          {/* Errors list */}
           {result.errors.length > 0 && (
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "12px 16px",
-                background: "var(--bg-card)",
-                border: "1px solid var(--border)",
-                borderRadius: "8px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--ink)",
-                  marginBottom: "6px",
-                }}
-              >
+            <div className="cr-verify-panel">
+              <div className="cr-verify-panel__title">
                 Probleme detectate
               </div>
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: "var(--red-400)" }}>
+              <ul className="cr-verify-errors">
                 {result.errors.map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
@@ -306,16 +188,7 @@ export default function VerifyPackPage() {
             </div>
           )}
 
-          {/* Hash details */}
-          <div
-            style={{
-              marginTop: "12px",
-              padding: "16px 20px",
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              borderRadius: "10px",
-            }}
-          >
+          <div className="cr-verify-panel">
             <Row label="Hash root calculat" value={result.computedHash ?? "—"} mono />
             <Row label="Hash root așteptat" value={result.expectedHash ?? "—"} mono />
             {result.manifest?.signature && (
@@ -357,50 +230,22 @@ export default function VerifyPackPage() {
             )}
           </div>
 
-          {/* File checks */}
           {result.fileChecks.length > 0 && (
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "16px 20px",
-                background: "var(--bg-card)",
-                border: "1px solid var(--border)",
-                borderRadius: "10px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--ink)",
-                  marginBottom: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
+            <div className="cr-verify-panel">
+              <div className="cr-verify-panel__title cr-verify-panel__title--icon">
                 <FileArchive size={12} />
                 Verificare per fișier ({result.fileChecks.filter((c) => c.ok).length}/
                 {result.fileChecks.length} OK)
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div className="cr-verify-files">
                 {result.fileChecks.map((check) => (
-                  <div
-                    key={check.path}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "12px",
-                      padding: "4px 0",
-                    }}
-                  >
+                  <div key={check.path} className="cr-verify-file">
                     {check.ok ? (
-                      <CheckCircle2 size={12} style={{ color: "var(--emerald-400)" }} />
+                      <CheckCircle2 size={12} className="cr-verify-file__ok" />
                     ) : (
-                      <XCircle size={12} style={{ color: "var(--red-400)" }} />
+                      <XCircle size={12} className="cr-verify-file__fail" />
                     )}
-                    <code style={{ color: "var(--ink)", fontSize: "11px" }}>{check.path}</code>
+                    <code>{check.path}</code>
                   </div>
                 ))}
               </div>
@@ -409,57 +254,23 @@ export default function VerifyPackPage() {
         </div>
       )}
 
-      {/* Footer */}
-      <div
-        style={{
-          marginTop: "48px",
-          fontSize: "11px",
-          color: "var(--ink-dim)",
-          textAlign: "center",
-          maxWidth: "560px",
-        }}
-      >
+        <footer className="cr-verify-footer">
         Verificarea folosește hash chain SHA-256: <code>h[i] = SHA-256(h[i-1] || file_i)</code>.
         Orice modificare a unui singur byte rupe lanțul. Această pagină rulează verificarea
         pe server și nu stochează ZIP-ul.
-      </div>
-
-      <style jsx>{`
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-    </div>
+        </footer>
+      </section>
+    </main>
   )
 }
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: "12px",
-        padding: "6px 0",
-        borderBottom: "1px solid var(--border-soft)",
-        alignItems: "baseline",
-      }}
-    >
-      <div style={{ fontSize: "11px", color: "var(--ink-dim)", minWidth: "150px", flexShrink: 0 }}>
+    <div className="cr-verify-row">
+      <div className="cr-verify-row__label">
         {label}
       </div>
-      <div
-        style={{
-          fontSize: "12px",
-          color: "var(--ink)",
-          fontFamily: mono ? "ui-monospace, SFMono-Regular, monospace" : "inherit",
-          wordBreak: "break-all",
-        }}
-      >
+      <div className={mono ? "cr-verify-row__value cr-verify-row__value--mono" : "cr-verify-row__value"}>
         {value}
       </div>
     </div>

@@ -80,23 +80,15 @@ export function ClientsList() {
   }
 
   return (
-    <div style={{ padding: "32px 32px", maxWidth: "1100px", margin: "0 auto" }}>
-      <header style={{ marginBottom: "20px" }}>
-        <h1
-          style={{
-            margin: 0,
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Clienți
-        </h1>
-        <div style={{ fontSize: "13px", color: "var(--ink-dim)", marginTop: "4px" }}>
+    <div className="cr-page cr-stack">
+      <header className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Portofoliu</div>
+          <h1 className="cr-title">Clienți</h1>
+          <p className="cr-subtitle">
           Listă rapidă cu căutare + filtru status. Pentru gestiune completă
           (adăugare, intake) folosește pagina <a href="/dashboard/portofoliu" style={{ color: "var(--cobalt-400)" }}>Portofoliu</a>.
+          </p>
         </div>
       </header>
 
@@ -131,20 +123,15 @@ export function ClientsList() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Caută după nume sau CUI…"
+            className="cr-input"
             style={{
               width: "100%",
-              background: "var(--bg-hover)",
-              border: "1px solid var(--border-strong)",
-              borderRadius: "8px",
-              padding: "9px 12px 9px 32px",
-              color: "var(--ink)",
-              fontSize: "13px",
-              outline: "none",
+              paddingLeft: "32px",
             }}
           />
         </div>
 
-        <div style={{ display: "flex", gap: "6px" }}>
+        <div className="cr-segment-bar">
           {(["all", "onboarded", "pending"] as StatusFilter[]).map((s) => {
             const active = statusFilter === s
             const label = s === "all" ? "Toți" : s === "onboarded" ? "Onboarded" : "În așteptare"
@@ -153,18 +140,7 @@ export function ClientsList() {
                 key={s}
                 type="button"
                 onClick={() => setStatusFilter(s)}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "8px",
-                  border: active
-                    ? "1px solid var(--cobalt-500)"
-                    : "1px solid var(--border-strong)",
-                  background: active ? "var(--cobalt-soft)" : "transparent",
-                  color: active ? "var(--ink)" : "var(--ink-muted)",
-                  fontSize: "12.5px",
-                  fontWeight: active ? 500 : 400,
-                  cursor: "pointer",
-                }}
+                className={`cr-tab ${active ? "is-active" : ""}`}
               >
                 {label}
               </button>

@@ -185,7 +185,7 @@ export default function RoleAssessmentPage() {
 
   if (mode === "loading") {
     return (
-      <div style={{ padding: "32px", color: "var(--ink-muted)" }}>
+      <div className="cr-page cr-empty">
         <Loader2 size={16} className="spin" style={{ verticalAlign: "middle", marginRight: "8px" }} />
         Se încarcă evaluarea...
         <style jsx>{`
@@ -202,56 +202,22 @@ export default function RoleAssessmentPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "780px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
-        <div
-          style={{
-            background: "var(--cobalt-soft)",
-            color: "var(--cobalt-400)",
-            padding: "10px",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Compass size={20} />
-        </div>
-        <div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "22px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              margin: 0,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            AI Act Role Assessment
-          </h1>
-          <p
-            style={{
-              fontSize: "13px",
-              color: "var(--ink-muted)",
-              marginTop: "6px",
-              maxWidth: "640px",
-              lineHeight: 1.55,
-            }}
-          >
+      <div className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <Compass size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">Discovery & risc</div>
+            <h1 className="cr-title">AI Act Role Assessment</h1>
+            <p className="cr-subtitle">
             Răspuns la întrebarea juridică #1 din EU AI Act:{" "}
             <strong>cine sunt eu — provider, deployer, importer, distributor sau manufacturer?</strong>{" "}
             Răspunde la 8 întrebări scurte (~5 minute) — vei primi un memo cu rolul tău, obligațiile aplicabile și pașii imediați.
-          </p>
+            </p>
+          </div>
         </div>
       </div>
 

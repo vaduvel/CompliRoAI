@@ -19,18 +19,6 @@ interface AIInventoryPanelProps {
   onAdded: () => void
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 10px",
-  background: "var(--bg)",
-  border: "1px solid var(--border)",
-  borderRadius: "6px",
-  fontSize: "13px",
-  color: "var(--ink)",
-  outline: "none",
-  boxSizing: "border-box",
-}
-
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: "10px",
@@ -111,6 +99,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
   if (!open) {
     return (
       <button
+        className="cr-btn cr-btn--primary"
         onClick={() => setOpen(true)}
         style={{
           display: "flex",
@@ -141,6 +130,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
 
   return (
     <div
+      className="cr-form-card"
       style={{
         background: "var(--bg-raised)",
         border: "1px solid var(--border)",
@@ -163,6 +153,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
           Sistem AI nou
         </span>
         <button
+          className="cr-icon-button"
           onClick={handleCancel}
           aria-label="Închide formularul"
           style={{
@@ -192,7 +183,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
           <div>
             <label style={labelStyle}>Nume sistem *</label>
             <input
-              style={inputStyle}
+              className="cr-input"
               type="text"
               required
               placeholder="HR Scorer, Chatbot Intern..."
@@ -203,7 +194,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
           <div>
             <label style={labelStyle}>Scop / Categorie</label>
             <select
-              style={inputStyle}
+              className="cr-select"
               value={form.purpose}
               onChange={(e) => setForm((p) => ({ ...p, purpose: e.target.value as AISystemPurpose }))}
             >
@@ -219,7 +210,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
           <div>
             <label style={labelStyle}>Vendor (opțional)</label>
             <input
-              style={inputStyle}
+              className="cr-input"
               type="text"
               placeholder="OpenAI, Google, intern..."
               value={form.vendor}
@@ -229,7 +220,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
           <div>
             <label style={labelStyle}>Tip model (opțional)</label>
             <input
-              style={inputStyle}
+              className="cr-input"
               type="text"
               placeholder="GPT-4, LLaMA, XGBoost..."
               value={form.modelType}
@@ -281,6 +272,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
         {/* Error */}
         {error && (
           <div
+            className="cr-alert cr-alert--danger"
             style={{
               padding: "8px 12px",
               background: "var(--red-soft)",
@@ -297,6 +289,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
         {/* Actions */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
           <button
+            className="cr-btn"
             type="button"
             onClick={handleCancel}
             style={{
@@ -312,6 +305,7 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
             Anulează
           </button>
           <button
+            className="cr-btn cr-btn--primary"
             type="submit"
             disabled={loading || !form.name.trim()}
             style={{

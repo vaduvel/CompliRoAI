@@ -26,6 +26,148 @@ The product is sold to three role/workflow groups:
 
 Verticals such as chatbot, copilot, HR, credit, medical, e-commerce, AI Ads / LLM commerce, and agentic automation are not separate products. They are use-case categories inside one general compliance OS.
 
+### 0.1 Market validation — PwC Czech AI Compliance Tool
+
+PwC Czech publicly positions an "AI Compliance Tool" as a single platform that helps technical, business, risk, and compliance teams cooperate, document compliance for separate AI projects, and maintain an auditable trail for AI Act implementation.
+
+This validates the category, but does not change our scope.
+
+CompliRoAI must match the useful product pattern:
+
+- one governance point for AI projects across an organisation;
+- overview of risk profile, stage of development, and compliance status per AI project;
+- collaborative workspace for technical, business, legal, DPO/privacy, risk, and management roles;
+- task allocation and responsibility ownership;
+- auditable paper trail of answers, actions, uploaded documents, approvals, and exports;
+- modular AI Act requirements broken into actionable steps per AI project;
+- tailored guidance based on risk profile and the organisation's role;
+- templates and evidence requirements attached to each obligation;
+- exportable Audit Pack / Evidence Pack for internal and external audit.
+
+CompliRoAI must win against Big4-style tools through:
+
+- Romanian-first UX and copy;
+- faster onboarding;
+- lower price point for Romanian SMEs, AI builders, DPO cabinets, lawyers, and agencies;
+- multi-client cabinet workflow;
+- AI Act + GDPR/DPO operational infrastructure, not only a classifier;
+- article-level legal matrix and evidence mapping;
+- API/SDK for AI builders;
+- Audit Pack that proves who answered what, what changed, and which evidence supports each obligation.
+
+Do not copy Big4 enterprise complexity. Use the validation, not the bloat.
+
+### 0.2 Architecture guardrail — 3 workflows, not 10 roles
+
+We explicitly avoid repeating the CompliScan mistake of creating 10 role products that become weak for everyone.
+
+CompliRoAI has exactly 3 workspace workflows:
+
+1. `imm-classic` — the organisation that uses AI and needs to prove compliance.
+2. `ai-builder` — the organisation that builds, deploys, or sells AI systems/agents/automations.
+3. `cabinet` — the consultant, DPO, lawyer, AI compliance specialist, or agency that manages multiple clients.
+
+Everything else is a use-case category inside one of these workflows:
+
+- chatbot;
+- copilot;
+- agentic automation;
+- HR AI;
+- credit/fintech AI;
+- medical AI;
+- e-commerce / AI Ads / LLM commerce;
+- cyber/critical infrastructure AI;
+- education AI;
+- public-sector AI.
+
+Use cases may change questions, examples, risk hints, templates, and suggested owners. They must not create new top-level products, separate workspaces, or separate architectures.
+
+The legal engine remains general:
+
+```text
+AI project -> role assessment -> risk classification -> obligations -> evidence -> approvals -> audit pack
+```
+
+The UI may adapt per workspace and per use case, but the data model, findings lifecycle, evidence model, and Audit Pack remain shared.
+
+### 0.3 Research update — 19 mai 2026: horizontal product, role-aware execution, vertical overlays only
+
+This update locks the product direction after the latest EU AI Act market and competitor research.
+
+Decision:
+
+- Keep one horizontal AI Act + GDPR Compliance OS.
+- Keep exactly three operational workspaces: `imm-classic`, `ai-builder`, `cabinet`.
+- Do not split the product into vertical SaaS apps such as HR, fintech, medical, e-commerce, marketing, legal, or public sector.
+- Use verticals only as overlays: examples, intake questions, risk hints, templates, sector-specific warning copy, suggested owners, and Audit Pack sections.
+- Improve existing functionality in the context of each role instead of creating more top-level roles.
+
+The core product chain remains:
+
+```text
+AI project -> legal role -> risk class -> obligations -> evidence -> approval -> audit pack
+```
+
+Commercial reading of the current product:
+
+- Strongest wedge now: DPOs, privacy consultants, AI compliance consultants, tech/privacy lawyers, and cabinets that need repeatable client deliverables.
+- Second wedge: AI automation agencies / AI builders that want to deliver projects with a compliance pack attached.
+- Third wedge: mid-market deployers, preferably through advisors or agencies first.
+- Avoid opening sales with "complete AI Compliance OS for every AI Act operator" until the provider-grade technical evidence gaps below are implemented.
+
+Positioning to use now:
+
+```text
+CompliRoAI is an AI Act + GDPR workspace for DPOs, consultants, cabinets, and AI builders who need to inventory AI systems, classify roles and risks, collect evidence, and export audit-ready compliance packs.
+```
+
+Internal category can remain:
+
+```text
+AI Compliance OS
+```
+
+but external promise must be evidence-first and role-aware, not universal-enterprise-overclaim.
+
+#### AI Act gaps to add before provider-grade positioning
+
+The product already covers a strong deployer/advisor workflow, but provider-grade and GPAI-grade positioning requires deeper evidence modules.
+
+Priority backlog:
+
+| Priority | Gap | Legal anchor | Required product output | Applies most to |
+| --- | --- | --- | --- | --- |
+| P0 | Data & Model Evidence Layer | AI Act Art. 10 + GDPR Art. 5/6/9/25/35 | Dataset register, provenance map, lawful basis/purpose compatibility, representativeness/bias checklist, data quality evidence | `ai-builder`, high-risk providers, privacy-heavy deployers |
+| P0 | Accuracy / Robustness / Cybersecurity Evidence | AI Act Art. 15 | Metrics registry, eval/test plan, robustness/security testing evidence, threshold sign-off, residual risk log | `ai-builder`, high-risk providers |
+| P0 | Provider Instructions Pack | AI Act Art. 13 | Versioned deployer instruction pack: intended use, limits, performance, resources, oversight, logs, misuse warnings | `ai-builder`, agencies, providers |
+| P1 | EU Declaration of Conformity | AI Act Art. 47 + Annex V | Declaration generator, approval/signature flow, version control, Audit Pack section | high-risk providers |
+| P1 | Value-chain / role-switch workflows | AI Act Art. 23-25 | Importer/distributor checklist, substantial modification wizard, upstream evidence request room, role-switch alerts | agencies, resellers, builders |
+| P1 | Explanation Workflow | AI Act Art. 86 + GDPR Art. 22 | Request intake, explanation builder, evidence retrieval, review/approval, response log | HR, credit/scoring, high-impact deployers |
+| P2 | GPAI Pack | AI Act Art. 53-55 | Downstream information pack, copyright policy, training-data summary, systemic-risk path if applicable | future GPAI/provider tier |
+| P2 | Technical content labeling evidence | AI Act Art. 50 | Machine-readable marking checklist/connectors, watermark/metadata evidence, label application audit | content/media builders, marketing/e-commerce |
+
+Do not expand AI Ads, dashboards, or visual analytics before P0/P1 evidence gaps unless a paying customer explicitly demands it. AI Ads can remain as an existing pack, but it must not distract from the core legal evidence engine.
+
+#### Role relevance rule
+
+Each workspace keeps the same modules, but the orchestration, default page, task labels, and suggested owners must adapt:
+
+- `imm-classic`: "firma ta foloseste AI"; default to inventory, vendor evidence, AI literacy, transparency, DPIA/FRIA if applicable, Audit Pack.
+- `cabinet`: "lucrezi pentru client"; default to portfolio triage, AI guidance plan, client intake, evidence requests, approvals, reports, white-label Audit Pack.
+- `ai-builder`: "construiesti/livrezi AI"; default to role-switch detection, provider instructions, Annex IV, Art. 10/13/15 evidence, QMS, logging, PMM, EU DB, API/SDK.
+
+Human-role onboarding can be added later as a layer above these workspaces:
+
+```text
+DPO intern -> imm-classic
+DPO extern / consultant -> cabinet
+Avocat tech/privacy -> cabinet
+AI automation agency / builder -> ai-builder or cabinet+ai-builder depending on whether they manage clients
+IMM owner / management -> imm-classic
+```
+
+This mapping must not create new operational workspaces.
+
 ---
 
 ## 1. Absolute Rules For Opus / Any Agent

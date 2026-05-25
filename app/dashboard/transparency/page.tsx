@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -20,7 +20,7 @@ import {
   Upload,
   Video,
   X,
-} from "lucide-react"
+} from "lucide-react";
 
 import type {
   AIContentAssetType,
@@ -33,33 +33,33 @@ import type {
   TransparencyNoticeRequirement,
   TransparencyNoticeType,
   TransparencyPlacement,
-} from "@/lib/compliance/types"
+} from "@/lib/compliance/types";
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Local types — duplicate of API response shape
 // ────────────────────────────────────────────────────────────────────────────
 
 type AnnotatedRequirement = TransparencyNoticeRequirement & {
-  implemented: boolean
-  implementation: TransparencyImplementation | null
-}
+  implemented: boolean;
+  implementation: TransparencyImplementation | null;
+};
 
 type SystemAnalysis = {
-  systemId: string
-  systemName: string
-  requirements: AnnotatedRequirement[]
-}
+  systemId: string;
+  systemName: string;
+  requirements: AnnotatedRequirement[];
+};
 
 type AllRequiredResponse = {
-  role: string | null
-  systems: SystemAnalysis[]
+  role: string | null;
+  systems: SystemAnalysis[];
   stats: {
-    totalSystems: number
-    pendingSystems: number
-    pendingNotices: number
-  }
-  implementations: TransparencyImplementation[]
-}
+    totalSystems: number;
+    pendingSystems: number;
+    pendingNotices: number;
+  };
+  implementations: TransparencyImplementation[];
+};
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Constants — friendly labels
@@ -72,7 +72,7 @@ const NOTICE_TYPE_LABELS: Record<TransparencyNoticeType, string> = {
   "personalization-notice": "Notificare personalizare",
   "emotion-recognition-notice": "Notificare recunoaștere emoții",
   "automated-decision-notice": "Notificare decizie automatizată",
-}
+};
 
 const PLACEMENT_LABELS: Record<TransparencyPlacement, string> = {
   popup: "Popup",
@@ -84,7 +84,7 @@ const PLACEMENT_LABELS: Record<TransparencyPlacement, string> = {
   advertisement: "Reclamă plătită",
   "social-post": "Post social media",
   broadcast: "Email broadcast",
-}
+};
 
 const ALL_PLACEMENTS: TransparencyPlacement[] = [
   "popup",
@@ -96,441 +96,324 @@ const ALL_PLACEMENTS: TransparencyPlacement[] = [
   "advertisement",
   "social-post",
   "broadcast",
-]
+];
 
-const ALL_LANGUAGES: TransparencyLanguage[] = ["ro", "en"]
+const ALL_LANGUAGES: TransparencyLanguage[] = ["ro", "en"];
 
-function severityColor(severity: "critical" | "high" | "medium"): {
-  bg: string
-  fg: string
-  border: string
-} {
+function severityStatusClass(severity: "critical" | "high" | "medium") {
   switch (severity) {
     case "critical":
-      return { bg: "rgba(248,113,113,0.12)", fg: "#dc2626", border: "rgba(248,113,113,0.3)" }
+      return "cr-status-pill--danger";
     case "high":
-      return { bg: "rgba(251,146,60,0.12)", fg: "#c2410c", border: "rgba(251,146,60,0.3)" }
+      return "cr-status-pill--warning";
     case "medium":
     default:
-      return { bg: "rgba(250,204,21,0.12)", fg: "#a16207", border: "rgba(250,204,21,0.3)" }
+      return "cr-status-pill--info";
   }
+}
+
+function TransparencyField({
+  label,
+  children,
+  spanTwo = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  spanTwo?: boolean;
+}) {
+  return (
+    <div className={`cr-field${spanTwo ? " cr-field--span-2" : ""}`}>
+      <label className="cr-field-label">{label}</label>
+      {children}
+    </div>
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Page
 // ────────────────────────────────────────────────────────────────────────────
 
-type TabKey = "notices" | "content-register"
+type TabKey = "notices" | "content-register";
 
 export default function TransparencyPage() {
-  const [activeTab, setActiveTab] = useState<TabKey>("notices")
-  const [data, setData] = useState<AllRequiredResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [openSystemId, setOpenSystemId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<TabKey>("notices");
+  const [data, setData] = useState<AllRequiredResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [openSystemId, setOpenSystemId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/transparency/all-required", { cache: "no-store" })
+      const res = await fetch("/api/transparency/all-required", {
+        cache: "no-store",
+      });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setError(body?.error || `HTTP ${res.status}`)
-        setLoading(false)
-        return
+        const body = await res.json().catch(() => ({}));
+        setError(body?.error || `HTTP ${res.status}`);
+        setLoading(false);
+        return;
       }
-      const json = (await res.json()) as AllRequiredResponse
-      setData(json)
+      const json = (await res.json()) as AllRequiredResponse;
+      setData(json);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Eroare la încărcare")
+      setError(e instanceof Error ? e.message : "Eroare la încărcare");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    void load()
-  }, [load])
+    void load();
+  }, [load]);
 
-  const totals = data?.stats ?? { totalSystems: 0, pendingSystems: 0, pendingNotices: 0 }
-  const totalRequired = useMemo(() => {
-    if (!data) return 0
-    return data.systems.reduce((acc, s) => acc + s.requirements.length, 0)
-  }, [data])
+  const totals = data?.stats ?? {
+    totalSystems: 0,
+    pendingSystems: 0,
+    pendingNotices: 0,
+  };
+  const systemsWithRequirements = useMemo(() => {
+    return (
+      data?.systems.filter((system) => system.requirements.length > 0) ?? []
+    );
+  }, [data]);
   const totalImplemented = useMemo(() => {
-    if (!data) return 0
+    if (!data) return 0;
     return data.systems.reduce(
       (acc, s) => acc + s.requirements.filter((r) => r.implemented).length,
-      0
-    )
-  }, [data])
+      0,
+    );
+  }, [data]);
 
-  const openSystem = data?.systems.find((s) => s.systemId === openSystemId) ?? null
+  const openSystem =
+    data?.systems.find((s) => s.systemId === openSystemId) ?? null;
+  const systemTableColumns = {
+    "--cr-data-columns": "1.4fr 1fr 1fr 1fr",
+  } as React.CSSProperties;
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
-      }}
-    >
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Transparency · Art. 50 EU AI Act
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
-          Generează notice-uri de transparență RO + EN gata de copy-paste pentru sistemele AI care
-          interacționează cu persoane fizice sau produc conținut sintetic. În tabul „Content
-          Register” poți înregistra individual fiecare piesă de conținut AI (imagine, video,
-          deepfake, text public-interest, chatbot) cu dovada provider + deployer duty.
-        </p>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate</span>
+          <h1 className="cr-title">Notificări transparență · Art. 50</h1>
+          <p className="cr-subtitle">
+            Generează notice-uri de transparență RO + EN gata de copy-paste
+            pentru sistemele AI care interacționează cu persoane fizice sau
+            produc conținut sintetic. În tabul „Content Register” poți
+            înregistra individual fiecare piesă de conținut AI (imagine, video,
+            deepfake, text public-interest, chatbot) cu dovada provider +
+            deployer duty.
+          </p>
+        </div>
       </div>
 
       {/* Tab switcher */}
-      <div
-        role="tablist"
-        aria-label="Tabs transparency"
-        style={{
-          display: "flex",
-          gap: "4px",
-          borderBottom: "1px solid var(--border-soft)",
-          paddingBottom: "0",
-        }}
-      >
-        {([
-          { key: "notices" as TabKey, label: "Notice-uri per sistem" },
-          { key: "content-register" as TabKey, label: "Content Register (per asset)" },
-        ]).map((tab) => {
-          const isActive = activeTab === tab.key
-          return (
-            <button
-              key={tab.key}
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: "10px 16px",
-                background: "transparent",
-                border: "none",
-                borderBottom: isActive
-                  ? "2px solid var(--cobalt-600)"
-                  : "2px solid transparent",
-                color: isActive ? "var(--ink)" : "var(--ink-muted)",
-                fontWeight: isActive ? 600 : 500,
-                fontSize: "13px",
-                cursor: "pointer",
-                marginBottom: "-1px",
-              }}
-            >
-              {tab.label}
-            </button>
-          )
-        })}
+      <div className="cr-toolbar">
+        <div
+          role="tablist"
+          aria-label="Tabs transparency"
+          className="cr-segment-bar"
+        >
+          {[
+            { key: "notices" as TabKey, label: "Notice-uri per sistem" },
+            {
+              key: "content-register" as TabKey,
+              label: "Content Register (per asset)",
+            },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.key)}
+                className={`cr-tab${isActive ? " is-active" : ""}`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {activeTab === "content-register" && <ContentRegisterTab />}
 
       {activeTab === "notices" && (
-      <>
-      {/* Deadline banner */}
-      <div
-        role="status"
-        style={{
-          display: "flex",
-          gap: "12px",
-          padding: "14px 16px",
-          background: "rgba(251,191,36,0.10)",
-          borderRadius: "8px",
-          border: "1px solid rgba(251,191,36,0.30)",
-          alignItems: "flex-start",
-        }}
-      >
-        <AlertTriangle size={16} style={{ color: "#b45309", flexShrink: 0, marginTop: "2px" }} />
-        <div>
-          <div style={{ fontSize: "13px", fontWeight: 600, color: "#92400e" }}>
-            Art. 50 EU AI Act devine executoriu la 2 decembrie 2026
-          </div>
-          <div style={{ fontSize: "12px", color: "#92400e", marginTop: "3px", opacity: 0.85 }}>
-            Extindere prin Omnibus (mai 2026) de la 2 august 2026 → 2 decembrie 2026.
-            Sancțiuni: până la 15 mil EUR sau 3% din cifra de afaceri globală.
-          </div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        {[
-          { label: "Sisteme AI total", value: totals.totalSystems },
-          { label: "Cu obligații Art. 50", value: totals.pendingSystems + (totalImplemented > 0 ? data?.systems.filter((s) => s.requirements.length > 0 && s.requirements.every((r) => r.implemented)).length ?? 0 : 0) },
-          { label: "Notice-uri implementate", value: totalImplemented },
-          { label: "Notice-uri pending", value: totals.pendingNotices },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            style={{
-              padding: "16px",
-              background: "var(--bg-raised)",
-              borderRadius: "8px",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "24px",
-                fontWeight: 600,
-                color: "var(--ink)",
-                fontFamily: "var(--font-display-v3)",
-              }}
-            >
-              {stat.value}
-            </div>
-            <div style={{ fontSize: "12px", color: "var(--ink-dim)", marginTop: "4px" }}>
-              {stat.label}
+        <>
+          {/* Deadline banner */}
+          <div role="status" className="cr-alert cr-alert--warning">
+            <AlertTriangle size={16} className="tp-alert-icon" />
+            <div>
+              <div className="tp-banner-title">
+                Art. 50 EU AI Act devine executoriu la 2 decembrie 2026
+              </div>
+              <div className="tp-banner-copy">
+                Extindere prin Omnibus (mai 2026) de la 2 august 2026 → 2
+                decembrie 2026. Sancțiuni: până la 15 mil EUR sau 3% din cifra
+                de afaceri globală.
+              </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Role info */}
-      {data?.role && (
-        <div
-          style={{
-            fontSize: "12px",
-            color: "var(--ink-muted)",
-            padding: "8px 12px",
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border-soft)",
-            borderRadius: "6px",
-          }}
-        >
-          Rol organizație detectat: <strong style={{ color: "var(--ink)" }}>{data.role}</strong>
-        </div>
-      )}
-
-      {/* States */}
-      {loading && (
-        <div style={{ fontSize: "13px", color: "var(--ink-dim)", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
-          Se încarcă obligațiile de transparență…
-        </div>
-      )}
-
-      {error && !loading && (
-        <div
-          style={{
-            padding: "14px 16px",
-            background: "var(--red-soft, rgba(248,113,113,0.12))",
-            border: "1px solid rgba(248,113,113,0.30)",
-            borderRadius: "8px",
-            fontSize: "13px",
-            color: "var(--red-400, #dc2626)",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {/* Systems table */}
-      {!loading && !error && data && data.systems.length === 0 && (
-        <div
-          style={{
-            padding: "32px",
-            background: "var(--bg-raised)",
-            border: "1px dashed var(--border)",
-            borderRadius: "8px",
-            textAlign: "center",
-            color: "var(--ink-muted)",
-            fontSize: "13px",
-          }}
-        >
-          Nu ai sisteme AI în inventar. Adaugă mai întâi sisteme în secțiunea{" "}
-          <a
-            href="/dashboard/sisteme"
-            style={{ color: "var(--cobalt-600)", textDecoration: "underline" }}
-          >
-            Sisteme AI
-          </a>{" "}
-          ca să vezi ce notice-uri Art. 50 trebuie publicate.
-        </div>
-      )}
-
-      {!loading && !error && data && data.systems.length > 0 && (
-        <div
-          style={{
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border)",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              padding: "12px 16px",
-              borderBottom: "1px solid var(--border-soft)",
-              fontSize: "12px",
-              color: "var(--ink-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              display: "grid",
-              gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
-              gap: "12px",
-            }}
-          >
-            <div>Sistem AI</div>
-            <div>Notice obligatorii</div>
-            <div>Status</div>
-            <div style={{ textAlign: "right" }}>Acțiuni</div>
-          </div>
-
-          {data.systems.map((sys) => {
-            const total = sys.requirements.length
-            const implemented = sys.requirements.filter((r) => r.implemented).length
-            const pending = total - implemented
-            const isFullyOk = total === 0
-            const isComplete = total > 0 && pending === 0
-
-            return (
-              <div
-                key={sys.systemId}
-                style={{
-                  padding: "14px 16px",
-                  borderBottom: "1px solid var(--border-soft)",
-                  display: "grid",
-                  gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
-                  gap: "12px",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink)" }}>
-                    {sys.systemName}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--ink-dim)", marginTop: "2px" }}>
-                    {sys.systemId}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  {isFullyOk ? (
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        color: "var(--ink-dim)",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Niciunul (nu intră sub Art. 50)
-                    </span>
-                  ) : (
-                    sys.requirements.map((req) => {
-                      const c = severityColor(req.severity)
-                      return (
-                        <span
-                          key={req.noticeType}
-                          title={req.obligation}
-                          style={{
-                            fontSize: "11px",
-                            padding: "3px 8px",
-                            borderRadius: "999px",
-                            background: c.bg,
-                            color: c.fg,
-                            border: `1px solid ${c.border}`,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {NOTICE_TYPE_LABELS[req.noticeType]}
-                        </span>
-                      )
-                    })
-                  )}
-                </div>
-
-                <div>
-                  {isFullyOk ? (
-                    <span style={{ fontSize: "12px", color: "var(--ink-dim)" }}>—</span>
-                  ) : isComplete ? (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        fontSize: "12px",
-                        color: "var(--emerald-400, #059669)",
-                      }}
-                    >
-                      <CheckCircle2 size={12} /> Toate implementate
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        fontSize: "12px",
-                        color: "var(--red-400, #dc2626)",
-                      }}
-                    >
-                      <AlertTriangle size={12} /> {pending} / {total} pending
-                    </span>
-                  )}
-                </div>
-
-                <div style={{ textAlign: "right" }}>
-                  {!isFullyOk && (
-                    <button
-                      onClick={() => setOpenSystemId(sys.systemId)}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: "6px",
-                        border: "1px solid var(--cobalt-600)",
-                        background: "var(--cobalt-600)",
-                        color: "#fff",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        fontWeight: 500,
-                      }}
-                    >
-                      Vezi notice-uri
-                    </button>
-                  )}
+          {/* Stats */}
+          <div className="cr-stat-strip cr-stat-strip--four">
+            {[
+              { label: "Sisteme AI total", value: totals.totalSystems },
+              {
+                label: "Cu obligații Art. 50",
+                value: systemsWithRequirements.length,
+              },
+              { label: "Notice-uri implementate", value: totalImplemented },
+              { label: "Notice-uri pending", value: totals.pendingNotices },
+            ].map((stat) => (
+              <div key={stat.label} className="cr-stat">
+                <div className="cr-stat__label">{stat.label}</div>
+                <div className="cr-stat__value">{stat.value}</div>
+                <div className="cr-stat__sub">
+                  {stat.label === "Sisteme AI total" &&
+                    "Inventar scanat în workspace"}
+                  {stat.label === "Cu obligații Art. 50" &&
+                    "Sisteme unde transparența trebuie publicată"}
+                  {stat.label === "Notice-uri implementate" &&
+                    "Notice-uri deja confirmate cu dovadă"}
+                  {stat.label === "Notice-uri pending" &&
+                    "Notice-uri care mai trebuie publicate"}
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+            ))}
+          </div>
 
-      {/* Modal */}
-      {openSystem && (
-        <SystemNoticesModal
-          system={openSystem}
-          onClose={() => setOpenSystemId(null)}
-          onChanged={load}
-        />
-      )}
-      </>
-      )}
+          {/* Role info */}
+          {data?.role && (
+            <div className="cr-inline-note">
+              Rol organizație detectat: <strong>{data.role}</strong>
+            </div>
+          )}
 
-      <style jsx global>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+          {/* States */}
+          {loading && (
+            <div className="cr-inline-note">
+              <Loader2 size={14} className="tp-spin" />
+              Se încarcă obligațiile de transparență…
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="cr-alert cr-alert--danger">{error}</div>
+          )}
+
+          {/* Systems table */}
+          {!loading && !error && data && data.systems.length === 0 && (
+            <div className="cr-empty">
+              <div>
+                Nu ai sisteme AI în inventar. Adaugă mai întâi sisteme în
+                secțiunea{" "}
+                <a href="/dashboard/sisteme" className="cr-link">
+                  Sisteme AI
+                </a>{" "}
+                ca să vezi ce notice-uri Art. 50 trebuie publicate.
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && data && data.systems.length > 0 && (
+            <div className="cr-data-shell" style={systemTableColumns}>
+              <div className="cr-data-head">
+                <div className="cr-data-cell">Sistem AI</div>
+                <div className="cr-data-cell">Notice obligatorii</div>
+                <div className="cr-data-cell">Status</div>
+                <div className="cr-data-cell cr-data-cell--actions">
+                  Acțiuni
+                </div>
+              </div>
+
+              {data.systems.map((sys) => {
+                const total = sys.requirements.length;
+                const implemented = sys.requirements.filter(
+                  (r) => r.implemented,
+                ).length;
+                const pending = total - implemented;
+                const isFullyOk = total === 0;
+                const isComplete = total > 0 && pending === 0;
+
+                return (
+                  <div key={sys.systemId} className="cr-data-row">
+                    <div className="cr-data-cell">
+                      <div className="tp-row-title">{sys.systemName}</div>
+                      <div className="tp-row-subline">{sys.systemId}</div>
+                    </div>
+
+                    <div className="cr-data-cell cr-pill-group">
+                      {isFullyOk ? (
+                        <span className="cr-muted tp-meta-note">
+                          Niciunul (nu intră sub Art. 50)
+                        </span>
+                      ) : (
+                        sys.requirements.map((req) => {
+                          const statusClass =
+                            req.severity === "critical"
+                              ? "cr-status-pill--danger"
+                              : req.severity === "high"
+                                ? "cr-status-pill--warning"
+                                : "cr-status-pill--info";
+                          return (
+                            <span
+                              key={req.noticeType}
+                              title={req.obligation}
+                              className={`cr-status-pill ${statusClass}`}
+                            >
+                              {NOTICE_TYPE_LABELS[req.noticeType]}
+                            </span>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="cr-data-cell">
+                      {isFullyOk ? (
+                        <span className="cr-muted">—</span>
+                      ) : isComplete ? (
+                        <span className="cr-status-pill cr-status-pill--ok">
+                          <CheckCircle2 size={12} /> Toate implementate
+                        </span>
+                      ) : (
+                        <span className="cr-status-pill cr-status-pill--danger">
+                          <AlertTriangle size={12} /> {pending} / {total}{" "}
+                          pending
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="cr-data-cell cr-data-cell--actions">
+                      {!isFullyOk && (
+                        <button
+                          onClick={() => setOpenSystemId(sys.systemId)}
+                          className="cr-btn cr-btn--primary cr-btn--sm"
+                        >
+                          Vezi notice-uri
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Modal */}
+          {openSystem && (
+            <SystemNoticesModal
+              system={openSystem}
+              onClose={() => setOpenSystemId(null)}
+              onChanged={load}
+            />
+          )}
+        </>
+      )}
     </div>
-  )
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -542,79 +425,34 @@ function SystemNoticesModal({
   onClose,
   onChanged,
 }: {
-  system: SystemAnalysis
-  onClose: () => void
-  onChanged: () => void | Promise<void>
+  system: SystemAnalysis;
+  onClose: () => void;
+  onChanged: () => void | Promise<void>;
 }) {
-  const [activeNoticeIdx, setActiveNoticeIdx] = useState(0)
-  const active = system.requirements[activeNoticeIdx]
+  const [activeNoticeIdx, setActiveNoticeIdx] = useState(0);
+  const active = system.requirements[activeNoticeIdx];
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(15,23,42,0.55)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "center",
-        padding: "48px 16px",
-        overflowY: "auto",
-      }}
-    >
+    <div onClick={onClose} className="cr-modal-backdrop">
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%",
-          maxWidth: "880px",
-          background: "var(--bg)",
-          border: "1px solid var(--border)",
-          borderRadius: "12px",
-          overflow: "hidden",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
-        }}
+        className="cr-modal cr-modal--lg"
       >
         {/* Header */}
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid var(--border-soft)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "16px",
-          }}
-        >
+        <div className="cr-modal__header">
           <div>
-            <div
-              style={{
-                fontFamily: "var(--font-display-v3)",
-                fontSize: "16px",
-                fontWeight: 600,
-                color: "var(--ink)",
-              }}
-            >
+            <h2 className="cr-modal__title">
               Notice-uri pentru: {system.systemName}
-            </div>
-            <div style={{ fontSize: "12px", color: "var(--ink-dim)", marginTop: "2px" }}>
-              {system.requirements.length} obligație(i) de transparență sub Art. 50 EU AI Act
+            </h2>
+            <div className="cr-modal__subtitle">
+              {system.requirements.length} obligație(i) de transparență sub Art.
+              50 EU AI Act
             </div>
           </div>
           <button
             onClick={onClose}
             aria-label="Închide"
-            style={{
-              padding: "6px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink-muted)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-            }}
+            className="cr-icon-button cr-modal__close"
           >
             <X size={14} />
           </button>
@@ -622,54 +460,29 @@ function SystemNoticesModal({
 
         {/* Tabs notice types */}
         {system.requirements.length > 1 && (
-          <div
-            style={{
-              display: "flex",
-              gap: "4px",
-              padding: "12px 20px 0",
-              borderBottom: "1px solid var(--border-soft)",
-              overflowX: "auto",
-            }}
-          >
-            {system.requirements.map((req, idx) => {
-              const isActive = idx === activeNoticeIdx
-              return (
-                <button
-                  key={req.noticeType}
-                  onClick={() => setActiveNoticeIdx(idx)}
-                  style={{
-                    padding: "8px 12px",
-                    border: "none",
-                    borderBottom: isActive
-                      ? "2px solid var(--cobalt-600)"
-                      : "2px solid transparent",
-                    background: "transparent",
-                    color: isActive ? "var(--ink)" : "var(--ink-muted)",
-                    fontSize: "12px",
-                    fontWeight: isActive ? 600 : 400,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {NOTICE_TYPE_LABELS[req.noticeType]}
-                  {req.implemented && (
-                    <CheckCircle2
-                      size={12}
-                      style={{
-                        marginLeft: "6px",
-                        verticalAlign: "middle",
-                        color: "var(--emerald-400, #059669)",
-                      }}
-                    />
-                  )}
-                </button>
-              )
-            })}
+          <div className="tp-modal-tabs">
+            <div className="cr-segment-bar tp-modal-tabs-bar">
+              {system.requirements.map((req, idx) => {
+                const isActive = idx === activeNoticeIdx;
+                return (
+                  <button
+                    key={req.noticeType}
+                    onClick={() => setActiveNoticeIdx(idx)}
+                    className={`cr-tab tp-no-wrap${isActive ? " is-active" : ""}`}
+                  >
+                    {NOTICE_TYPE_LABELS[req.noticeType]}
+                    {req.implemented && (
+                      <CheckCircle2 size={12} className="tp-tab-check" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
         {/* Body */}
-        <div style={{ padding: "20px", maxHeight: "70vh", overflowY: "auto" }}>
+        <div className="cr-modal__body tp-modal-scroll">
           {active && (
             <NoticeDetail
               key={active.noticeType}
@@ -681,7 +494,7 @@ function SystemNoticesModal({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -693,46 +506,47 @@ function NoticeDetail({
   requirement,
   onChanged,
 }: {
-  systemId: string
-  requirement: AnnotatedRequirement
-  onChanged: () => void | Promise<void>
+  systemId: string;
+  requirement: AnnotatedRequirement;
+  onChanged: () => void | Promise<void>;
 }) {
   // Sane defaults: prefer existing implementation's combo, else RO+popup (or first available).
   const defaultLang: TransparencyLanguage =
     requirement.implementation?.language ||
-    (requirement.templates.some((t) => t.language === "ro") ? "ro" : "en")
+    (requirement.templates.some((t) => t.language === "ro") ? "ro" : "en");
   const defaultPlacement: TransparencyPlacement =
     requirement.implementation?.placement ||
     requirement.templates[0]?.placement ||
-    "popup"
+    "popup";
 
-  const [language, setLanguage] = useState<TransparencyLanguage>(defaultLang)
-  const [placement, setPlacement] = useState<TransparencyPlacement>(defaultPlacement)
-  const [contactEmail, setContactEmail] = useState("")
-  const [settingsUrl, setSettingsUrl] = useState("")
-  const [notes, setNotes] = useState(requirement.implementation?.notes ?? "")
+  const [language, setLanguage] = useState<TransparencyLanguage>(defaultLang);
+  const [placement, setPlacement] =
+    useState<TransparencyPlacement>(defaultPlacement);
+  const [contactEmail, setContactEmail] = useState("");
+  const [settingsUrl, setSettingsUrl] = useState("");
+  const [notes, setNotes] = useState(requirement.implementation?.notes ?? "");
 
   const [generated, setGenerated] = useState<{
-    text: string
-    shortText?: string
-    html?: string
-  } | null>(null)
-  const [generating, setGenerating] = useState(false)
-  const [implementing, setImplementing] = useState(false)
-  const [copyState, setCopyState] = useState<"idle" | "html" | "text">("idle")
-  const [feedback, setFeedback] = useState<string | null>(null)
+    text: string;
+    shortText?: string;
+    html?: string;
+  } | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [implementing, setImplementing] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "html" | "text">("idle");
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   const availablePlacements = useMemo(() => {
-    const set = new Set<TransparencyPlacement>()
-    requirement.templates.forEach((t) => set.add(t.placement))
+    const set = new Set<TransparencyPlacement>();
+    requirement.templates.forEach((t) => set.add(t.placement));
     // Permite și placement-uri care nu au template direct — fallback la limba.
-    ALL_PLACEMENTS.forEach((p) => set.add(p))
-    return Array.from(set)
-  }, [requirement.templates])
+    ALL_PLACEMENTS.forEach((p) => set.add(p));
+    return Array.from(set);
+  }, [requirement.templates]);
 
   const generate = useCallback(async () => {
-    setGenerating(true)
-    setFeedback(null)
+    setGenerating(true);
+    setFeedback(null);
     try {
       const res = await fetch("/api/transparency/notices/generate", {
         method: "POST",
@@ -747,43 +561,50 @@ function NoticeDetail({
             settingsUrl: settingsUrl || undefined,
           },
         }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
       if (!res.ok) {
-        setFeedback(data?.error || `Eroare ${res.status}`)
-        setGenerated(null)
+        setFeedback(data?.error || `Eroare ${res.status}`);
+        setGenerated(null);
       } else {
         setGenerated({
           text: data.template?.text ?? "",
           shortText: data.template?.shortText,
           html: data.template?.html,
-        })
+        });
       }
     } catch (e) {
-      setFeedback(e instanceof Error ? e.message : "Eroare la generare")
+      setFeedback(e instanceof Error ? e.message : "Eroare la generare");
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
-  }, [systemId, requirement.noticeType, placement, language, contactEmail, settingsUrl])
+  }, [
+    systemId,
+    requirement.noticeType,
+    placement,
+    language,
+    contactEmail,
+    settingsUrl,
+  ]);
 
   // Auto-generate when tabs change
   useEffect(() => {
-    void generate()
-  }, [generate])
+    void generate();
+  }, [generate]);
 
   async function copy(payload: string, which: "html" | "text") {
     try {
-      await navigator.clipboard.writeText(payload)
-      setCopyState(which)
-      setTimeout(() => setCopyState("idle"), 1500)
+      await navigator.clipboard.writeText(payload);
+      setCopyState(which);
+      setTimeout(() => setCopyState("idle"), 1500);
     } catch {
-      setFeedback("Clipboard indisponibil — selectează manual textul.")
+      setFeedback("Clipboard indisponibil — selectează manual textul.");
     }
   }
 
   async function markImplemented() {
-    setImplementing(true)
-    setFeedback(null)
+    setImplementing(true);
+    setFeedback(null);
     try {
       const res = await fetch("/api/transparency/notices/implement", {
         method: "POST",
@@ -795,177 +616,107 @@ function NoticeDetail({
           language,
           notes: notes || undefined,
         }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
       if (!res.ok) {
-        setFeedback(data?.error || `Eroare ${res.status}`)
+        setFeedback(data?.error || `Eroare ${res.status}`);
       } else {
-        setFeedback("✓ Marcat ca implementat.")
-        await onChanged()
+        setFeedback("✓ Marcat ca implementat.");
+        await onChanged();
       }
     } catch (e) {
-      setFeedback(e instanceof Error ? e.message : "Eroare la marcare")
+      setFeedback(e instanceof Error ? e.message : "Eroare la marcare");
     } finally {
-      setImplementing(false)
+      setImplementing(false);
     }
   }
 
   async function unmarkImplemented() {
-    if (!requirement.implementation) return
-    setImplementing(true)
-    setFeedback(null)
+    if (!requirement.implementation) return;
+    setImplementing(true);
+    setFeedback(null);
     try {
       const res = await fetch(
         `/api/transparency/notices/implement?id=${encodeURIComponent(
-          requirement.implementation.id
+          requirement.implementation.id,
         )}`,
-        { method: "DELETE" }
-      )
-      const data = await res.json()
+        { method: "DELETE" },
+      );
+      const data = await res.json();
       if (!res.ok) {
-        setFeedback(data?.error || `Eroare ${res.status}`)
+        setFeedback(data?.error || `Eroare ${res.status}`);
       } else {
-        setFeedback("Implementare ștearsă.")
-        await onChanged()
+        setFeedback("Implementare ștearsă.");
+        await onChanged();
       }
     } catch (e) {
-      setFeedback(e instanceof Error ? e.message : "Eroare")
+      setFeedback(e instanceof Error ? e.message : "Eroare");
     } finally {
-      setImplementing(false)
+      setImplementing(false);
     }
   }
 
-  const severity = severityColor(requirement.severity)
+  const severityClass = severityStatusClass(requirement.severity);
+  const severityPanelClass =
+    requirement.severity === "critical"
+      ? "tp-panel-tone-danger"
+      : requirement.severity === "high"
+        ? "tp-panel-tone-warning"
+        : "tp-panel-tone-info";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div className="cr-stack tp-stack-tight">
       {/* Requirement summary */}
-      <div
-        style={{
-          padding: "14px 16px",
-          background: severity.bg,
-          border: `1px solid ${severity.border}`,
-          borderRadius: "8px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            marginBottom: "6px",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "11px",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              color: severity.fg,
-              fontWeight: 600,
-            }}
-          >
-            {requirement.severity} · {requirement.article}
-          </span>
-          {requirement.implemented && (
-            <span
-              style={{
-                fontSize: "11px",
-                color: "var(--emerald-400, #059669)",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "3px",
-              }}
-            >
-              <CheckCircle2 size={11} /> Implementat
+      <section className={`cr-panel ${severityPanelClass}`}>
+        <div className="cr-panel__body">
+          <div className="cr-inline-between tp-inline-start">
+            <span className={`cr-status-pill ${severityClass}`}>
+              {requirement.severity} · {requirement.article}
             </span>
-          )}
-        </div>
-        <div style={{ fontSize: "13px", color: "var(--ink)", lineHeight: 1.5 }}>
-          {requirement.obligation}
-        </div>
-        <div
-          style={{
-            fontSize: "11px",
-            color: "var(--ink-muted)",
-            marginTop: "8px",
-            fontStyle: "italic",
-          }}
-        >
-          {requirement.triggeredBy}
-        </div>
-        <div style={{ fontSize: "11px", color: "var(--ink-dim)", marginTop: "4px" }}>
-          Deadline aplicabilitate: <strong>{requirement.deadline}</strong>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-        <div>
-          <div
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              marginBottom: "6px",
-            }}
-          >
-            Limba
+            {requirement.implemented && (
+              <span className="cr-status-pill cr-status-pill--ok">
+                <CheckCircle2 size={11} /> Implementat
+              </span>
+            )}
           </div>
-          <div style={{ display: "flex", gap: "4px" }}>
+          <div className="cr-muted-copy tp-copy-strong">
+            {requirement.obligation}
+          </div>
+          <div className="tp-meta-stack">
+            <div className="tp-meta-note">{requirement.triggeredBy}</div>
+            <div className="cr-summary-row">
+              <span>Deadline aplicabilitate:</span>
+              <strong>{requirement.deadline}</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="cr-form-grid">
+        <TransparencyField label="Limba">
+          <div className="cr-segment-bar tp-segment-fill">
             {ALL_LANGUAGES.map((lang) => {
-              const isActive = lang === language
+              const isActive = lang === language;
               return (
                 <button
                   key={lang}
                   onClick={() => setLanguage(lang)}
-                  style={{
-                    flex: 1,
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: isActive
-                      ? "1px solid var(--cobalt-600)"
-                      : "1px solid var(--border)",
-                    background: isActive ? "var(--cobalt-600)" : "var(--bg-raised)",
-                    color: isActive ? "#fff" : "var(--ink)",
-                    fontSize: "12px",
-                    fontWeight: isActive ? 600 : 400,
-                    cursor: "pointer",
-                    textTransform: "uppercase",
-                  }}
+                  className={`cr-tab tp-tab-fill${isActive ? " is-active" : ""}`}
                 >
-                  {lang}
+                  {lang.toUpperCase()}
                 </button>
-              )
+              );
             })}
           </div>
-        </div>
+        </TransparencyField>
 
-        <div>
-          <div
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              marginBottom: "6px",
-            }}
-          >
-            Placement
-          </div>
+        <TransparencyField label="Placement">
           <select
+            className="cr-input"
             value={placement}
-            onChange={(e) => setPlacement(e.target.value as TransparencyPlacement)}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink)",
-              fontSize: "12px",
-            }}
+            onChange={(e) =>
+              setPlacement(e.target.value as TransparencyPlacement)
+            }
           >
             {availablePlacements.map((p) => (
               <option key={p} value={p}>
@@ -973,304 +724,136 @@ function NoticeDetail({
               </option>
             ))}
           </select>
-        </div>
+        </TransparencyField>
       </div>
 
-      {/* Optional substitutions */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-        <div>
-          <label
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              display: "block",
-              marginBottom: "6px",
-            }}
-          >
-            Email contact (opțional)
-          </label>
+      <div className="cr-form-grid">
+        <TransparencyField label="Email contact (opțional)">
           <input
+            className="cr-input"
             type="email"
             value={contactEmail}
             onChange={(e) => setContactEmail(e.target.value)}
             placeholder="contact@firma.ro"
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink)",
-              fontSize: "12px",
-            }}
           />
-        </div>
-        <div>
-          <label
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              display: "block",
-              marginBottom: "6px",
-            }}
-          >
-            URL preferințe (opțional)
-          </label>
+        </TransparencyField>
+
+        <TransparencyField label="URL preferințe (opțional)">
           <input
+            className="cr-input"
             type="url"
             value={settingsUrl}
             onChange={(e) => setSettingsUrl(e.target.value)}
             placeholder="https://firma.ro/preferinte"
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink)",
-              fontSize: "12px",
-            }}
           />
-        </div>
+        </TransparencyField>
       </div>
 
-      {/* Preview */}
-      <div>
-        <div
-          style={{
-            fontSize: "11px",
-            color: "var(--ink-dim)",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-            marginBottom: "6px",
-          }}
-        >
-          Text notice
+      <section className="cr-panel">
+        <div className="cr-panel__header">
+          <div>
+            <h3 className="cr-panel__title">Text notice</h3>
+            <p className="cr-panel__subtitle">
+              Preview generat pentru combinația limbă + placement selectată.
+            </p>
+          </div>
         </div>
-        <div
-          style={{
-            padding: "14px 16px",
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border)",
-            borderRadius: "8px",
-            fontSize: "13px",
-            color: "var(--ink)",
-            lineHeight: 1.5,
-            minHeight: "60px",
-            whiteSpace: "pre-wrap",
-            position: "relative",
-          }}
-        >
-          {generating ? (
-            <span
-              style={{
-                color: "var(--ink-dim)",
-                fontStyle: "italic",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
-              Se generează…
-            </span>
-          ) : (
-            generated?.text || "—"
-          )}
+        <div className="cr-panel__body">
+          <div className="tp-preview-block">
+            {generating ? (
+              <span className="cr-inline">
+                <Loader2 size={12} className="tp-spin" />
+                <span className="cr-muted">Se generează…</span>
+              </span>
+            ) : (
+              generated?.text || "—"
+            )}
+          </div>
+          <div className="cr-toolbar tp-toolbar-end">
+            <div className="cr-toolbar__actions">
+              <button
+                onClick={() => generated?.text && copy(generated.text, "text")}
+                disabled={!generated?.text}
+                className="cr-btn cr-btn--secondary cr-btn--sm"
+              >
+                <Copy size={12} />
+                {copyState === "text" ? "Copiat!" : "Copiază text"}
+              </button>
+              <button
+                onClick={() => generated?.html && copy(generated.html, "html")}
+                disabled={!generated?.html}
+                className="cr-btn cr-btn--secondary cr-btn--sm"
+              >
+                <Copy size={12} />
+                {copyState === "html" ? "Copiat!" : "Copiază HTML snippet"}
+              </button>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-          <button
-            onClick={() => generated?.text && copy(generated.text, "text")}
-            disabled={!generated?.text}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink)",
-              fontSize: "12px",
-              fontWeight: 500,
-              cursor: generated?.text ? "pointer" : "not-allowed",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              opacity: generated?.text ? 1 : 0.5,
-            }}
-          >
-            <Copy size={12} />
-            {copyState === "text" ? "Copiat!" : "Copiază text"}
-          </button>
-          <button
-            onClick={() => generated?.html && copy(generated.html, "html")}
-            disabled={!generated?.html}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink)",
-              fontSize: "12px",
-              fontWeight: 500,
-              cursor: generated?.html ? "pointer" : "not-allowed",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              opacity: generated?.html ? 1 : 0.5,
-            }}
-          >
-            <Copy size={12} />
-            {copyState === "html" ? "Copiat!" : "Copiază HTML snippet"}
-          </button>
-        </div>
-      </div>
-
-      {/* HTML preview */}
       {generated?.html && (
-        <details>
-          <summary
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              cursor: "pointer",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              marginBottom: "6px",
-            }}
-          >
-            HTML source (click)
-          </summary>
-          <pre
-            style={{
-              fontFamily: "ui-monospace, SF Mono, Consolas, monospace",
-              fontSize: "11px",
-              padding: "12px",
-              background: "var(--bg-code, #0f172a)",
-              color: "#e2e8f0",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              overflowX: "auto",
-              margin: "6px 0 0",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-all",
-            }}
-          >
-            {generated.html}
-          </pre>
+        <details className="cr-panel tp-details">
+          <summary className="tp-details-summary">HTML source</summary>
+          <div className="cr-panel__body">
+            <pre className="tp-code-block">{generated.html}</pre>
+          </div>
         </details>
       )}
 
-      {/* Notes + implement controls */}
-      <div>
-        <label
-          style={{
-            fontSize: "11px",
-            color: "var(--ink-dim)",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-            display: "block",
-            marginBottom: "6px",
-          }}
-        >
-          Note implementare (opțional — unde ai pus notice-ul)
-        </label>
-        <input
-          type="text"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="ex: footer pe /chat, popup la prima vizită"
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            borderRadius: "6px",
-            border: "1px solid var(--border)",
-            background: "var(--bg-raised)",
-            color: "var(--ink)",
-            fontSize: "12px",
-          }}
-        />
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          paddingTop: "8px",
-          borderTop: "1px solid var(--border-soft)",
-        }}
-      >
-        <button
-          onClick={markImplemented}
-          disabled={implementing || generating}
-          style={{
-            padding: "9px 14px",
-            borderRadius: "6px",
-            border: "1px solid var(--cobalt-600)",
-            background: "var(--cobalt-600)",
-            color: "#fff",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: implementing ? "wait" : "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            opacity: implementing ? 0.7 : 1,
-          }}
-        >
-          {implementing ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={12} />}
-          {requirement.implemented ? "Actualizează implementare" : "Marchează ca implementat"}
-        </button>
-        {requirement.implementation && (
-          <button
-            onClick={unmarkImplemented}
-            disabled={implementing}
-            style={{
-              padding: "9px 14px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink-muted)",
-              fontSize: "13px",
-              cursor: "pointer",
-            }}
-          >
-            Anulează marcaj
-          </button>
-        )}
-      </div>
+      <section className="cr-panel">
+        <div className="cr-panel__body">
+          <TransparencyField label="Note implementare (opțional — unde ai pus notice-ul)">
+            <input
+              className="cr-input"
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="ex: footer pe /chat, popup la prima vizită"
+            />
+          </TransparencyField>
+        </div>
+        <div className="cr-panel__footer">
+          <div className="cr-toolbar__actions">
+            <button
+              onClick={markImplemented}
+              disabled={implementing || generating}
+              className="cr-btn cr-btn--primary"
+            >
+              {implementing ? (
+                <Loader2 size={12} className="tp-spin" />
+              ) : (
+                <CheckCircle2 size={12} />
+              )}
+              {requirement.implemented
+                ? "Actualizează implementare"
+                : "Marchează ca implementat"}
+            </button>
+            {requirement.implementation && (
+              <button
+                onClick={unmarkImplemented}
+                disabled={implementing}
+                className="cr-btn cr-btn--secondary"
+              >
+                Anulează marcaj
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
 
       {feedback && (
-        <div
-          style={{
-            fontSize: "12px",
-            padding: "10px 12px",
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border)",
-            borderRadius: "6px",
-            color: "var(--ink)",
-          }}
-        >
-          {feedback}
-        </div>
+        <div className="cr-inline-note tp-inline-note-wrap">{feedback}</div>
       )}
 
       {requirement.implementation && (
-        <div
-          style={{
-            fontSize: "11px",
-            color: "var(--ink-dim)",
-            padding: "8px 12px",
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border-soft)",
-            borderRadius: "6px",
-          }}
-        >
-          Ultima implementare: {new Date(requirement.implementation.implementedAtISO).toLocaleString("ro-RO")} ·{" "}
-          {requirement.implementation.implementedByEmail} · {requirement.implementation.placement} ·{" "}
+        <div className="cr-inline-note tp-inline-note-wrap">
+          Ultima implementare:{" "}
+          {new Date(requirement.implementation.implementedAtISO).toLocaleString(
+            "ro-RO",
+          )}{" "}
+          · {requirement.implementation.implementedByEmail} ·{" "}
+          {requirement.implementation.placement} ·{" "}
           {requirement.implementation.language.toUpperCase()}
           {requirement.implementation.notes && (
             <>
@@ -1281,30 +864,17 @@ function NoticeDetail({
         </div>
       )}
 
-      {/* Helpful link */}
       <a
         href="https://eur-lex.europa.eu/eli/reg/2024/1689/oj"
         target="_blank"
         rel="noopener noreferrer"
-        style={{
-          fontSize: "11px",
-          color: "var(--cobalt-600)",
-          textDecoration: "none",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "4px",
-        }}
+        className="cr-link tp-link-inline"
       >
         <ExternalLink size={11} />
         Textul oficial EU AI Act (EUR-Lex)
       </a>
-
-      {/* Silence unused-import linting */}
-      <span style={{ display: "none" }}>
-        <MessageSquare size={1} />
-      </span>
     </div>
-  )
+  );
 }
 
 // ============================================================================
@@ -1312,29 +882,29 @@ function NoticeDetail({
 // ============================================================================
 
 type AnnotatedAsset = AIContentLabeledAsset & {
-  gap: { providerGap?: string; deployerGap?: string; editorialGap?: string }
-  hasAnyGap: boolean
-  appliedDutyType: "provider_marking" | "deployer_disclosure" | "both"
-}
+  gap: { providerGap?: string; deployerGap?: string; editorialGap?: string };
+  hasAnyGap: boolean;
+  appliedDutyType: "provider_marking" | "deployer_disclosure" | "both";
+};
 
 type ContentRegisterResponse = {
-  assets: AnnotatedAsset[]
+  assets: AnnotatedAsset[];
   summary: {
-    total: number
-    withProviderMarking: number
-    withDeployerDisclosure: number
-    publicInterestReviewed: number
-    unresolvedGaps: number
-    byType: Partial<Record<AIContentAssetType, number>>
-  }
+    total: number;
+    withProviderMarking: number;
+    withDeployerDisclosure: number;
+    publicInterestReviewed: number;
+    unresolvedGaps: number;
+    byType: Partial<Record<AIContentAssetType, number>>;
+  };
   schema: {
-    version: string
-    assetTypes: AIContentAssetType[]
-    standards: ContentLabelingStandard[]
-    placements: TransparencyPlacement[]
-    languages: TransparencyLanguage[]
-  }
-}
+    version: string;
+    assetTypes: AIContentAssetType[];
+    standards: ContentLabelingStandard[];
+    placements: TransparencyPlacement[];
+    languages: TransparencyLanguage[];
+  };
+};
 
 const ASSET_TYPE_LABELS: Record<AIContentAssetType, string> = {
   image: "Imagine sintetică",
@@ -1345,7 +915,7 @@ const ASSET_TYPE_LABELS: Record<AIContentAssetType, string> = {
   public_interest_text: "Text public-interest (Art. 50(4)(b))",
   chatbot_interaction: "Sesiune chatbot (Art. 50(1))",
   other: "Altul",
-}
+};
 
 const STANDARD_LABELS: Record<ContentLabelingStandard, string> = {
   c2pa: "C2PA",
@@ -1354,7 +924,7 @@ const STANDARD_LABELS: Record<ContentLabelingStandard, string> = {
   watermark_invisible: "Watermark invizibil (SynthID etc.)",
   metadata_only: "Metadata generică",
   none: "— niciunul —",
-}
+};
 
 const PLACEMENT_LABELS_FULL: Record<TransparencyPlacement, string> = {
   popup: "Popup / modal",
@@ -1366,7 +936,7 @@ const PLACEMENT_LABELS_FULL: Record<TransparencyPlacement, string> = {
   advertisement: "Reclamă plătită",
   "social-post": "Post social media",
   broadcast: "Email broadcast / newsletter / push",
-}
+};
 
 const EVIDENCE_TYPE_LABELS: Record<AIContentEvidenceType, string> = {
   screenshot: "Screenshot disclosure",
@@ -1375,78 +945,80 @@ const EVIDENCE_TYPE_LABELS: Record<AIContentEvidenceType, string> = {
   editorial_log: "Log editorial",
   watermark_test: "Test watermark",
   other: "Altul",
-}
+};
 
 function iconForType(type: AIContentAssetType): React.ReactNode {
   switch (type) {
     case "image":
-      return <ImageIcon size={14} />
+      return <ImageIcon size={14} />;
     case "video":
-      return <Video size={14} />
+      return <Video size={14} />;
     case "audio":
-      return <Music size={14} />
+      return <Music size={14} />;
     case "deepfake":
-      return <ShieldAlert size={14} style={{ color: "#dc2626" }} />
+      return <ShieldAlert size={14} className="tp-danger-icon" />;
     case "chatbot_interaction":
-      return <MessageSquare size={14} />
+      return <MessageSquare size={14} />;
     default:
-      return <FileText size={14} />
+      return <FileText size={14} />;
   }
 }
 
 function ContentRegisterTab() {
-  const [data, setData] = useState<ContentRegisterResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showCreate, setShowCreate] = useState(false)
-  const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null)
-  const [filterType, setFilterType] = useState<AIContentAssetType | "all">("all")
-  const [filterGap, setFilterGap] = useState<"all" | "with-gap" | "no-gap">("all")
+  const [data, setData] = useState<ContentRegisterResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<AIContentAssetType | "all">(
+    "all",
+  );
+  const [filterGap, setFilterGap] = useState<"all" | "with-gap" | "no-gap">(
+    "all",
+  );
 
   const load = useCallback(async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const res = await fetch("/api/transparency/content-assets", {
         cache: "no-store",
-      })
+      });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setError(body?.error || `HTTP ${res.status}`)
-        return
+        const body = await res.json().catch(() => ({}));
+        setError(body?.error || `HTTP ${res.status}`);
+        return;
       }
-      const json = (await res.json()) as ContentRegisterResponse
-      setData(json)
-      setError(null)
+      const json = (await res.json()) as ContentRegisterResponse;
+      setData(json);
+      setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Eroare la încărcare")
+      setError(e instanceof Error ? e.message : "Eroare la încărcare");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    void load()
-  }, [load])
+    void load();
+  }, [load]);
 
   const filtered = useMemo(() => {
-    if (!data) return []
-    let out = data.assets
-    if (filterType !== "all") out = out.filter((a) => a.assetType === filterType)
-    if (filterGap === "with-gap") out = out.filter((a) => a.hasAnyGap)
-    if (filterGap === "no-gap") out = out.filter((a) => !a.hasAnyGap)
-    return out
-  }, [data, filterType, filterGap])
+    if (!data) return [];
+    let out = data.assets;
+    if (filterType !== "all")
+      out = out.filter((a) => a.assetType === filterType);
+    if (filterGap === "with-gap") out = out.filter((a) => a.hasAnyGap);
+    if (filterGap === "no-gap") out = out.filter((a) => !a.hasAnyGap);
+    return out;
+  }, [data, filterType, filterGap]);
+
+  const assetTableColumns = {
+    "--cr-data-columns": "auto 1.8fr 1fr 1fr 1fr auto",
+  } as React.CSSProperties;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* Stats grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: "10px",
-        }}
-      >
+    <div className="cr-stack tp-stack-tight">
+      <div className="cr-stat-strip tp-stat-strip-five">
         {[
           { label: "Total assets", value: data?.summary.total ?? 0 },
           {
@@ -1469,60 +1041,38 @@ function ContentRegisterTab() {
         ].map((stat) => (
           <div
             key={stat.label}
-            style={{
-              padding: "12px",
-              background: "var(--bg-raised)",
-              borderRadius: "8px",
-              border: `1px solid ${stat.danger ? "rgba(248,113,113,0.4)" : "var(--border)"}`,
-            }}
+            className={`cr-stat${stat.danger ? " tp-stat-card-danger" : ""}`}
           >
             <div
-              style={{
-                fontSize: "22px",
-                fontWeight: 600,
-                color: stat.danger ? "#dc2626" : "var(--ink)",
-                fontFamily: "var(--font-display-v3)",
-              }}
+              className={`cr-stat__value${stat.danger ? " tp-stat-value-danger" : ""}`}
             >
               {stat.value}
             </div>
-            <div
-              style={{
-                fontSize: "11px",
-                color: "var(--ink-dim)",
-                marginTop: "2px",
-              }}
-            >
-              {stat.label}
+            <div className="cr-stat__label">{stat.label}</div>
+            <div className="cr-stat__sub">
+              {stat.label === "Total assets" &&
+                "Toate asset-urile AI înregistrate"}
+              {stat.label === "Cu provider marking" &&
+                "Assets cu marcaj tehnic machine-readable"}
+              {stat.label === "Cu deployer disclosure" &&
+                "Assets cu disclosure vizibil publicat"}
+              {stat.label === "Public-interest review" &&
+                "Cazuri cu review editorial documentat"}
+              {stat.label === "Unresolved gaps" &&
+                "Gap-uri Art. 50 încă deschise"}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Filters + add button */}
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <div className="cr-toolbar">
+        <div className="cr-toolbar__filters">
           <select
+            className="cr-input tp-toolbar-select"
             value={filterType}
             onChange={(e) =>
               setFilterType(e.target.value as AIContentAssetType | "all")
             }
-            style={{
-              padding: "6px 10px",
-              border: "1px solid var(--border)",
-              borderRadius: "6px",
-              background: "var(--bg)",
-              color: "var(--ink)",
-              fontSize: "12px",
-            }}
           >
             <option value="all">Toate tipurile</option>
             {Object.entries(ASSET_TYPE_LABELS).map(([k, label]) => (
@@ -1532,18 +1082,11 @@ function ContentRegisterTab() {
             ))}
           </select>
           <select
+            className="cr-input tp-toolbar-select"
             value={filterGap}
             onChange={(e) =>
               setFilterGap(e.target.value as "all" | "with-gap" | "no-gap")
             }
-            style={{
-              padding: "6px 10px",
-              border: "1px solid var(--border)",
-              borderRadius: "6px",
-              background: "var(--bg)",
-              color: "var(--ink)",
-              fontSize: "12px",
-            }}
           >
             <option value="all">Toate gap-urile</option>
             <option value="with-gap">Doar cu gap nerezolvat</option>
@@ -1552,181 +1095,111 @@ function ContentRegisterTab() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          style={{
-            padding: "8px 14px",
-            borderRadius: "6px",
-            border: "1px solid var(--cobalt-600)",
-            background: "var(--cobalt-600)",
-            color: "#fff",
-            fontSize: "13px",
-            fontWeight: 500,
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
+          className="cr-btn cr-btn--primary"
         >
           <Plus size={14} />
           Adaugă asset
         </button>
       </div>
 
-      {/* Loading / error */}
       {loading && (
-        <div
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-dim)",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+        <div className="cr-inline-note">
+          <Loader2 size={14} className="tp-spin" />
           Se încarcă registrul de content assets…
         </div>
       )}
       {error && !loading && (
-        <div
-          role="alert"
-          style={{
-            padding: "12px 14px",
-            background: "rgba(248,113,113,0.10)",
-            border: "1px solid rgba(248,113,113,0.30)",
-            borderRadius: "8px",
-            fontSize: "13px",
-            color: "#dc2626",
-          }}
-        >
+        <div role="alert" className="cr-alert cr-alert--danger">
           {error}
         </div>
       )}
 
-      {/* Asset list */}
       {!loading && !error && data && filtered.length === 0 && (
-        <div
-          style={{
-            padding: "32px",
-            background: "var(--bg-raised)",
-            border: "1px dashed var(--border)",
-            borderRadius: "8px",
-            textAlign: "center",
-            color: "var(--ink-muted)",
-            fontSize: "13px",
-          }}
-        >
+        <div className="cr-empty">
           Niciun asset înregistrat. Înregistrează prima piesă de conținut AI
           (imagine, video, deepfake, text public-interest, chatbot) cu butonul
           „Adaugă asset".
         </div>
       )}
+
       {!loading && !error && data && filtered.length > 0 && (
         <div
-          style={{
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border)",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
+          className="cr-data-shell cr-data-shell--accordion"
+          style={assetTableColumns}
         >
+          <div className="cr-data-head">
+            <div className="cr-data-cell">Tip</div>
+            <div className="cr-data-cell">Asset</div>
+            <div className="cr-data-cell">Provider duty</div>
+            <div className="cr-data-cell">Deployer duty</div>
+            <div className="cr-data-cell">Gap</div>
+            <div className="cr-data-cell cr-data-cell--actions">Detalii</div>
+          </div>
           {filtered.map((asset) => {
-            const isExpanded = expandedAssetId === asset.id
+            const isExpanded = expandedAssetId === asset.id;
             return (
-              <div
-                key={asset.id}
-                style={{
-                  borderBottom: "1px solid var(--border-soft)",
-                }}
-              >
+              <div key={asset.id} className="tp-asset-entry">
                 <button
+                  type="button"
                   onClick={() =>
                     setExpandedAssetId(isExpanded ? null : asset.id)
                   }
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "grid",
-                    gridTemplateColumns: "auto 1.6fr 1fr 1fr 1fr auto",
-                    gap: "12px",
-                    alignItems: "center",
-                    textAlign: "left",
-                    color: "var(--ink)",
-                  }}
+                  className={`cr-data-row tp-asset-row${isExpanded ? " tp-asset-row--expanded" : ""}`}
                 >
-                  {iconForType(asset.assetType)}
-                  <div>
-                    <div style={{ fontSize: "13px", fontWeight: 500 }}>
-                      {asset.title}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        color: "var(--ink-dim)",
-                        marginTop: "2px",
-                      }}
-                    >
+                  <div className="cr-data-cell tp-asset-icon-cell">
+                    {iconForType(asset.assetType)}
+                  </div>
+                  <div className="cr-data-cell">
+                    <div className="tp-row-title">{asset.title}</div>
+                    <div className="tp-row-subline">
                       {ASSET_TYPE_LABELS[asset.assetType]}
                       {asset.distributionContext.length > 0 &&
                         ` · ${asset.distributionContext.join(", ")}`}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      color: asset.providerMarkingApplied
-                        ? "var(--emerald-400, #059669)"
-                        : "var(--ink-dim)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    {asset.providerMarkingApplied ? (
-                      <ShieldCheck size={12} />
-                    ) : (
-                      <ShieldAlert size={12} />
-                    )}
-                    {asset.providerMarkingApplied
-                      ? STANDARD_LABELS[asset.providerMarkingStandard]
-                      : "Fără mark"}
+                  <div className="cr-data-cell">
+                    <span
+                      className={`cr-status-pill ${
+                        asset.providerMarkingApplied
+                          ? "cr-status-pill--ok"
+                          : "cr-status-pill--neutral"
+                      }`}
+                    >
+                      {asset.providerMarkingApplied ? (
+                        <ShieldCheck size={12} />
+                      ) : (
+                        <ShieldAlert size={12} />
+                      )}
+                      {asset.providerMarkingApplied
+                        ? STANDARD_LABELS[asset.providerMarkingStandard]
+                        : "Fără mark"}
+                    </span>
                   </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      color: asset.deployerDisclosureApplied
-                        ? "var(--emerald-400, #059669)"
-                        : "var(--ink-dim)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    {asset.deployerDisclosureApplied ? (
-                      <CheckCircle2 size={12} />
-                    ) : (
-                      <X size={12} />
-                    )}
-                    {asset.deployerDisclosureApplied
-                      ? (asset.deployerDisclosurePlacement
-                          ? PLACEMENT_LABELS_FULL[asset.deployerDisclosurePlacement]
-                          : "DA")
-                      : "Fără disclosure"}
+                  <div className="cr-data-cell">
+                    <span
+                      className={`cr-status-pill ${
+                        asset.deployerDisclosureApplied
+                          ? "cr-status-pill--ok"
+                          : "cr-status-pill--neutral"
+                      }`}
+                    >
+                      {asset.deployerDisclosureApplied ? (
+                        <CheckCircle2 size={12} />
+                      ) : (
+                        <X size={12} />
+                      )}
+                      {asset.deployerDisclosureApplied
+                        ? asset.deployerDisclosurePlacement
+                          ? PLACEMENT_LABELS_FULL[
+                              asset.deployerDisclosurePlacement
+                            ]
+                          : "DA"
+                        : "Fără disclosure"}
+                    </span>
                   </div>
-                  <div>
+                  <div className="cr-data-cell">
                     {asset.hasAnyGap ? (
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          padding: "2px 6px",
-                          borderRadius: "999px",
-                          background: "rgba(248,113,113,0.12)",
-                          color: "#dc2626",
-                          border: "1px solid rgba(248,113,113,0.30)",
-                        }}
-                      >
+                      <span className="cr-status-pill cr-status-pill--danger">
                         {[
                           asset.gap.providerGap ? "provider" : null,
                           asset.gap.deployerGap ? "deployer" : null,
@@ -1736,26 +1209,26 @@ function ContentRegisterTab() {
                           .join(", ")}
                       </span>
                     ) : (
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          color: "var(--emerald-400, #059669)",
-                          display: "inline-flex",
-                          gap: "4px",
-                          alignItems: "center",
-                        }}
-                      >
+                      <span className="cr-status-pill cr-status-pill--ok">
                         <CheckCircle2 size={11} /> Complet
                       </span>
                     )}
                   </div>
-                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  <div className="cr-data-cell cr-data-cell--actions">
+                    {isExpanded ? (
+                      <ChevronUp size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    )}
+                  </div>
                 </button>
                 {isExpanded && (
-                  <ContentAssetDetails asset={asset} onChanged={load} />
+                  <div className="cr-data-row__detail">
+                    <ContentAssetDetails asset={asset} onChanged={load} />
+                  </div>
                 )}
               </div>
-            )
+            );
           })}
         </div>
       )}
@@ -1766,13 +1239,13 @@ function ContentRegisterTab() {
           schema={data.schema}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
-            setShowCreate(false)
-            void load()
+            setShowCreate(false);
+            void load();
           }}
         />
       )}
     </div>
-  )
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1783,16 +1256,16 @@ function ContentAssetDetails({
   asset,
   onChanged,
 }: {
-  asset: AnnotatedAsset
-  onChanged: () => void | Promise<void>
+  asset: AnnotatedAsset;
+  onChanged: () => void | Promise<void>;
 }) {
-  const [showEvidence, setShowEvidence] = useState(false)
-  const [busy, setBusy] = useState<string | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
+  const [showEvidence, setShowEvidence] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const markProviderApplied = async () => {
-    setBusy("provider")
-    setActionError(null)
+    setBusy("provider");
+    setActionError(null);
     try {
       const res = await fetch(`/api/transparency/content-assets/${asset.id}`, {
         method: "PATCH",
@@ -1804,22 +1277,22 @@ function ContentAssetDetails({
               ? "c2pa"
               : asset.providerMarkingStandard,
         }),
-      })
+      });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body?.error || `HTTP ${res.status}`)
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `HTTP ${res.status}`);
       }
-      await onChanged()
+      await onChanged();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Eroare")
+      setActionError(e instanceof Error ? e.message : "Eroare");
     } finally {
-      setBusy(null)
+      setBusy(null);
     }
-  }
+  };
 
   const markDeployerApplied = async () => {
-    setBusy("deployer")
-    setActionError(null)
+    setBusy("deployer");
+    setActionError(null);
     try {
       const res = await fetch(`/api/transparency/content-assets/${asset.id}`, {
         method: "PATCH",
@@ -1829,18 +1302,18 @@ function ContentAssetDetails({
           deployerDisclosurePlacement:
             asset.deployerDisclosurePlacement ?? "footer",
         }),
-      })
+      });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body?.error || `HTTP ${res.status}`)
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `HTTP ${res.status}`);
       }
-      await onChanged()
+      await onChanged();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Eroare")
+      setActionError(e instanceof Error ? e.message : "Eroare");
     } finally {
-      setBusy(null)
+      setBusy(null);
     }
-  }
+  };
 
   const deleteAsset = async () => {
     if (
@@ -1848,82 +1321,42 @@ function ContentAssetDetails({
         `Ștergi asset-ul „${asset.title}"? Toate findings linkate se închid automat.`,
       )
     )
-      return
-    setBusy("delete")
-    setActionError(null)
+      return;
+    setBusy("delete");
+    setActionError(null);
     try {
       const res = await fetch(`/api/transparency/content-assets/${asset.id}`, {
         method: "DELETE",
-      })
+      });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body?.error || `HTTP ${res.status}`)
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `HTTP ${res.status}`);
       }
-      await onChanged()
+      await onChanged();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Eroare")
+      setActionError(e instanceof Error ? e.message : "Eroare");
     } finally {
-      setBusy(null)
+      setBusy(null);
     }
-  }
+  };
 
   return (
-    <div
-      style={{
-        padding: "16px 24px 20px",
-        background: "var(--bg)",
-        borderTop: "1px solid var(--border-soft)",
-      }}
-    >
-      {/* Gap warnings */}
+    <div className="cr-stack tp-stack-tight">
       {asset.hasAnyGap && (
-        <div
-          style={{
-            marginBottom: "16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
+        <div className="cr-stack tp-stack-compact">
           {asset.gap.providerGap && (
-            <div
-              style={{
-                padding: "10px 12px",
-                background: "rgba(251,146,60,0.12)",
-                borderRadius: "6px",
-                border: "1px solid rgba(251,146,60,0.30)",
-                fontSize: "12px",
-                color: "#c2410c",
-              }}
-            >
-              <strong>Provider gap (Art. 50(2)):</strong> {asset.gap.providerGap}
+            <div className="cr-alert cr-alert--warning">
+              <strong>Provider gap (Art. 50(2)):</strong>{" "}
+              {asset.gap.providerGap}
             </div>
           )}
           {asset.gap.deployerGap && (
-            <div
-              style={{
-                padding: "10px 12px",
-                background: "rgba(248,113,113,0.12)",
-                borderRadius: "6px",
-                border: "1px solid rgba(248,113,113,0.30)",
-                fontSize: "12px",
-                color: "#dc2626",
-              }}
-            >
+            <div className="cr-alert cr-alert--danger">
               <strong>Deployer gap:</strong> {asset.gap.deployerGap}
             </div>
           )}
           {asset.gap.editorialGap && (
-            <div
-              style={{
-                padding: "10px 12px",
-                background: "rgba(250,204,21,0.12)",
-                borderRadius: "6px",
-                border: "1px solid rgba(250,204,21,0.30)",
-                fontSize: "12px",
-                color: "#a16207",
-              }}
-            >
+            <div className="cr-alert cr-alert--warning">
               <strong>Editorial gap (Art. 50(4)(b)):</strong>{" "}
               {asset.gap.editorialGap}
             </div>
@@ -1931,263 +1364,190 @@ function ContentAssetDetails({
         </div>
       )}
 
-      {/* Sections grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "16px",
-          fontSize: "12px",
-          color: "var(--ink)",
-        }}
-      >
-        <div>
-          <div style={{ fontWeight: 600, marginBottom: "6px" }}>
-            A. Provider duty (Art. 50(2))
-          </div>
-          <div style={{ color: "var(--ink-muted)" }}>
-            Marcaj aplicat: <strong>{asset.providerMarkingApplied ? "DA" : "NU"}</strong>
-          </div>
-          <div style={{ color: "var(--ink-muted)" }}>
-            Standard: <strong>{STANDARD_LABELS[asset.providerMarkingStandard]}</strong>
-          </div>
-          {asset.providerMarkingProof && (
-            <div style={{ color: "var(--ink-muted)", marginTop: "4px" }}>
-              Dovadă: <span>{asset.providerMarkingProof}</span>
+      <div className="cr-kv-grid tp-detail-grid">
+        <section className="cr-panel">
+          <div className="cr-panel__body">
+            <div className="tp-section-title">
+              A. Provider duty (Art. 50(2))
             </div>
-          )}
-        </div>
-        <div>
-          <div style={{ fontWeight: 600, marginBottom: "6px" }}>
-            B. Deployer duty (Art. 50(1)/(3)/(4))
+            <div className="cr-summary-row">
+              <span>Marcaj aplicat:</span>
+              <strong>{asset.providerMarkingApplied ? "DA" : "NU"}</strong>
+            </div>
+            <div className="cr-summary-row">
+              <span>Standard:</span>
+              <strong>{STANDARD_LABELS[asset.providerMarkingStandard]}</strong>
+            </div>
+            {asset.providerMarkingProof && (
+              <div className="cr-summary-row">
+                <span>Dovadă:</span>
+                <span>{asset.providerMarkingProof}</span>
+              </div>
+            )}
           </div>
-          <div style={{ color: "var(--ink-muted)" }}>
-            Disclosure aplicat:{" "}
-            <strong>{asset.deployerDisclosureApplied ? "DA" : "NU"}</strong>
+        </section>
+
+        <section className="cr-panel">
+          <div className="cr-panel__body">
+            <div className="tp-section-title">
+              B. Deployer duty (Art. 50(1)/(3)/(4))
+            </div>
+            <div className="cr-summary-row">
+              <span>Disclosure aplicat:</span>
+              <strong>{asset.deployerDisclosureApplied ? "DA" : "NU"}</strong>
+            </div>
+            {asset.deployerDisclosurePlacement && (
+              <div className="cr-summary-row">
+                <span>Placement:</span>
+                <strong>
+                  {PLACEMENT_LABELS_FULL[asset.deployerDisclosurePlacement]}
+                </strong>
+              </div>
+            )}
+            {asset.deployerDisclosureLanguage && (
+              <div className="cr-summary-row">
+                <span>Limbă:</span>
+                <strong>
+                  {asset.deployerDisclosureLanguage.toUpperCase()}
+                </strong>
+              </div>
+            )}
+            {asset.deployerDisclosureText && (
+              <div className="tp-quote-block">
+                „{asset.deployerDisclosureText}”
+              </div>
+            )}
           </div>
-          {asset.deployerDisclosurePlacement && (
-            <div style={{ color: "var(--ink-muted)" }}>
-              Placement:{" "}
-              <strong>
-                {PLACEMENT_LABELS_FULL[asset.deployerDisclosurePlacement]}
-              </strong>
-            </div>
-          )}
-          {asset.deployerDisclosureLanguage && (
-            <div style={{ color: "var(--ink-muted)" }}>
-              Limbă:{" "}
-              <strong>{asset.deployerDisclosureLanguage.toUpperCase()}</strong>
-            </div>
-          )}
-          {asset.deployerDisclosureText && (
-            <div style={{ color: "var(--ink-muted)", marginTop: "4px" }}>
-              Text: <em>„{asset.deployerDisclosureText}"</em>
-            </div>
-          )}
-        </div>
+        </section>
+
         {(asset.assetType === "public_interest_text" ||
           asset.isPublicInterest) && (
-          <div>
-            <div style={{ fontWeight: 600, marginBottom: "6px" }}>
-              C. Editorial review (Art. 50(4)(b))
-            </div>
-            <div style={{ color: "var(--ink-muted)" }}>
-              Editorial responsibility claim:{" "}
-              <strong>{asset.editorialResponsibilityClaim ? "DA" : "NU"}</strong>
-            </div>
-            {asset.editorialReviewBy && (
-              <div style={{ color: "var(--ink-muted)" }}>
-                Editor: <strong>{asset.editorialReviewBy}</strong>
+          <section className="cr-panel">
+            <div className="cr-panel__body">
+              <div className="tp-section-title">
+                C. Editorial review (Art. 50(4)(b))
               </div>
-            )}
-            {asset.editorialReviewAtISO && (
-              <div style={{ color: "var(--ink-muted)" }}>
-                Data revizuire: <strong>{asset.editorialReviewAtISO}</strong>
+              <div className="cr-summary-row">
+                <span>Editorial responsibility claim:</span>
+                <strong>
+                  {asset.editorialResponsibilityClaim ? "DA" : "NU"}
+                </strong>
               </div>
-            )}
-          </div>
+              {asset.editorialReviewBy && (
+                <div className="cr-summary-row">
+                  <span>Editor:</span>
+                  <strong>{asset.editorialReviewBy}</strong>
+                </div>
+              )}
+              {asset.editorialReviewAtISO && (
+                <div className="cr-summary-row">
+                  <span>Data revizuire:</span>
+                  <strong>{asset.editorialReviewAtISO}</strong>
+                </div>
+              )}
+            </div>
+          </section>
         )}
-        <div>
-          <div style={{ fontWeight: 600, marginBottom: "6px" }}>
-            D. Evidence ({asset.evidenceItems.length})
-          </div>
-          {asset.evidenceItems.length === 0 ? (
-            <div style={{ color: "var(--ink-dim)", fontStyle: "italic" }}>
-              Nicio dovadă atașată.
+
+        <section className="cr-panel">
+          <div className="cr-panel__body">
+            <div className="tp-section-title">
+              D. Evidence ({asset.evidenceItems.length})
             </div>
-          ) : (
-            <ul
-              style={{
-                margin: 0,
-                paddingLeft: "16px",
-                color: "var(--ink-muted)",
-              }}
-            >
-              {asset.evidenceItems.map((ev) => (
-                <li key={ev.id} style={{ marginBottom: "4px" }}>
-                  <strong>{EVIDENCE_TYPE_LABELS[ev.type]}:</strong>{" "}
-                  {ev.description}
-                  {ev.url && (
-                    <>
-                      {" "}
-                      <a
-                        href={ev.url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        style={{ color: "var(--cobalt-600)" }}
-                      >
-                        link
-                      </a>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+            {asset.evidenceItems.length === 0 ? (
+              <div className="tp-meta-note">Nicio dovadă atașată.</div>
+            ) : (
+              <ul className="tp-evidence-list">
+                {asset.evidenceItems.map((ev) => (
+                  <li key={ev.id}>
+                    <strong>{EVIDENCE_TYPE_LABELS[ev.type]}:</strong>{" "}
+                    {ev.description}
+                    {ev.url && (
+                      <>
+                        {" "}
+                        <a
+                          href={ev.url}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="cr-link"
+                        >
+                          link
+                        </a>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
       </div>
 
-      {/* Findings linked */}
       {asset.linkedFindingIds.length > 0 && (
-        <div
-          style={{
-            marginTop: "12px",
-            fontSize: "11px",
-            color: "var(--ink-dim)",
-          }}
-        >
+        <div className="cr-inline-note tp-inline-note-wrap">
           Findings linkate:{" "}
           {asset.linkedFindingIds.map((fid) => (
-            <a
-              key={fid}
-              href={`/dashboard/resolve/${fid}`}
-              style={{
-                color: "var(--cobalt-600)",
-                marginRight: "8px",
-                textDecoration: "underline",
-              }}
-            >
+            <a key={fid} href={`/dashboard/resolve/${fid}`} className="cr-link">
               {fid}
             </a>
           ))}
         </div>
       )}
 
-      {/* Actions */}
-      <div
-        style={{
-          marginTop: "16px",
-          display: "flex",
-          gap: "8px",
-          flexWrap: "wrap",
-        }}
-      >
-        {!asset.providerMarkingApplied && (
-          <button
-            onClick={markProviderApplied}
-            disabled={busy !== null}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink)",
-              fontSize: "12px",
-              cursor: busy ? "not-allowed" : "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            {busy === "provider" ? (
-              <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
-            ) : (
-              <ShieldCheck size={12} />
-            )}
-            Marchează provider mark aplicat
-          </button>
-        )}
-        {!asset.deployerDisclosureApplied && (
-          <button
-            onClick={markDeployerApplied}
-            disabled={busy !== null}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink)",
-              fontSize: "12px",
-              cursor: busy ? "not-allowed" : "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            {busy === "deployer" ? (
-              <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
-            ) : (
-              <CheckCircle2 size={12} />
-            )}
-            Marchează deployer disclosure aplicat
-          </button>
-        )}
-        <button
-          onClick={() => setShowEvidence(true)}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
-            border: "1px solid var(--border)",
-            background: "var(--bg-raised)",
-            color: "var(--ink)",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          <Upload size={12} />
-          Atașează dovadă
-        </button>
-        <button
-          onClick={deleteAsset}
-          disabled={busy !== null}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "6px",
-            border: "1px solid rgba(248,113,113,0.30)",
-            background: "rgba(248,113,113,0.06)",
-            color: "#dc2626",
-            fontSize: "12px",
-            cursor: busy ? "not-allowed" : "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          {busy === "delete" ? (
-            <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
-          ) : (
-            <Trash2 size={12} />
+      <div className="cr-toolbar tp-toolbar-end">
+        <div className="cr-toolbar__actions">
+          {!asset.providerMarkingApplied && (
+            <button
+              onClick={markProviderApplied}
+              disabled={busy !== null}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
+            >
+              {busy === "provider" ? (
+                <Loader2 size={12} className="tp-spin" />
+              ) : (
+                <ShieldCheck size={12} />
+              )}
+              Marchează provider mark aplicat
+            </button>
           )}
-          Șterge
-        </button>
+          {!asset.deployerDisclosureApplied && (
+            <button
+              onClick={markDeployerApplied}
+              disabled={busy !== null}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
+            >
+              {busy === "deployer" ? (
+                <Loader2 size={12} className="tp-spin" />
+              ) : (
+                <CheckCircle2 size={12} />
+              )}
+              Marchează deployer disclosure aplicat
+            </button>
+          )}
+          <button
+            onClick={() => setShowEvidence(true)}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
+          >
+            <Upload size={12} />
+            Atașează dovadă
+          </button>
+          <button
+            onClick={deleteAsset}
+            disabled={busy !== null}
+            className="cr-btn cr-btn--danger cr-btn--sm"
+          >
+            {busy === "delete" ? (
+              <Loader2 size={12} className="tp-spin" />
+            ) : (
+              <Trash2 size={12} />
+            )}
+            Șterge
+          </button>
+        </div>
       </div>
 
       {actionError && (
-        <div
-          role="alert"
-          style={{
-            marginTop: "10px",
-            padding: "8px 10px",
-            background: "rgba(248,113,113,0.10)",
-            border: "1px solid rgba(248,113,113,0.30)",
-            borderRadius: "6px",
-            fontSize: "12px",
-            color: "#dc2626",
-          }}
-        >
+        <div role="alert" className="cr-alert cr-alert--danger">
           {actionError}
         </div>
       )}
@@ -2197,13 +1557,13 @@ function ContentAssetDetails({
           assetId={asset.id}
           onClose={() => setShowEvidence(false)}
           onAttached={() => {
-            setShowEvidence(false)
-            void onChanged()
+            setShowEvidence(false);
+            void onChanged();
           }}
         />
       )}
     </div>
-  )
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2215,41 +1575,42 @@ function ContentAssetCreateModal({
   onClose,
   onCreated,
 }: {
-  schema: ContentRegisterResponse["schema"]
-  onClose: () => void
-  onCreated: () => void | Promise<void>
+  schema: ContentRegisterResponse["schema"];
+  onClose: () => void;
+  onCreated: () => void | Promise<void>;
 }) {
-  const [title, setTitle] = useState("")
-  const [assetType, setAssetType] = useState<AIContentAssetType>("image")
-  const [distributionContext, setDistributionContext] = useState("")
-  const [providerMarkingApplied, setProviderMarkingApplied] = useState(false)
+  const [title, setTitle] = useState("");
+  const [assetType, setAssetType] = useState<AIContentAssetType>("image");
+  const [distributionContext, setDistributionContext] = useState("");
+  const [providerMarkingApplied, setProviderMarkingApplied] = useState(false);
   const [providerMarkingStandard, setProviderMarkingStandard] =
-    useState<ContentLabelingStandard>("none")
-  const [providerMarkingProof, setProviderMarkingProof] = useState("")
-  const [deployerDisclosureApplied, setDeployerDisclosureApplied] = useState(false)
+    useState<ContentLabelingStandard>("none");
+  const [providerMarkingProof, setProviderMarkingProof] = useState("");
+  const [deployerDisclosureApplied, setDeployerDisclosureApplied] =
+    useState(false);
   const [deployerDisclosurePlacement, setDeployerDisclosurePlacement] =
-    useState<TransparencyPlacement>("footer")
-  const [deployerDisclosureText, setDeployerDisclosureText] = useState("")
+    useState<TransparencyPlacement>("footer");
+  const [deployerDisclosureText, setDeployerDisclosureText] = useState("");
   const [deployerDisclosureLanguage, setDeployerDisclosureLanguage] =
-    useState<TransparencyLanguage>("ro")
-  const [isPublicInterest, setIsPublicInterest] = useState(false)
-  const [editorialReviewBy, setEditorialReviewBy] = useState("")
+    useState<TransparencyLanguage>("ro");
+  const [isPublicInterest, setIsPublicInterest] = useState(false);
+  const [editorialReviewBy, setEditorialReviewBy] = useState("");
   const [editorialResponsibilityClaim, setEditorialResponsibilityClaim] =
-    useState(false)
-  const [notes, setNotes] = useState("")
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+    useState(false);
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const showPublicInterestSection =
-    assetType === "public_interest_text" || isPublicInterest
+    assetType === "public_interest_text" || isPublicInterest;
 
   const submit = async () => {
-    setError(null)
+    setError(null);
     if (!title.trim()) {
-      setError("Titlul este obligatoriu.")
-      return
+      setError("Titlul este obligatoriu.");
+      return;
     }
-    setSubmitting(true)
+    setSubmitting(true);
     try {
       const res = await fetch("/api/transparency/content-assets", {
         method: "POST",
@@ -2281,147 +1642,62 @@ function ContentAssetCreateModal({
             : undefined,
           notes: notes.trim() || undefined,
         }),
-      })
+      });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body?.error || `HTTP ${res.status}`)
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `HTTP ${res.status}`);
       }
-      await onCreated()
+      await onCreated();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Eroare")
+      setError(e instanceof Error ? e.message : "Eroare");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(15,23,42,0.55)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "center",
-        padding: "48px 16px",
-        overflowY: "auto",
-      }}
-    >
+    <div onClick={onClose} className="cr-modal-backdrop">
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%",
-          maxWidth: "720px",
-          background: "var(--bg)",
-          border: "1px solid var(--border)",
-          borderRadius: "12px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
-        }}
+        className="cr-modal cr-modal--lg"
       >
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid var(--border-soft)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "16px",
-              fontWeight: 600,
-              color: "var(--ink)",
-            }}
-          >
-            Adaugă asset — Content Register Art. 50
+        <div className="cr-modal__header">
+          <div>
+            <h2 className="cr-modal__title">
+              Adaugă asset — Content Register Art. 50
+            </h2>
+            <div className="cr-modal__subtitle">
+              Înregistrează provider duty, deployer disclosure și review
+              editorial în același flux.
+            </div>
           </div>
           <button
             onClick={onClose}
             aria-label="Închide"
-            style={{
-              padding: "6px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink-muted)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-            }}
+            className="cr-icon-button cr-modal__close"
           >
             <X size={14} />
           </button>
         </div>
 
-        <div
-          style={{
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-            maxHeight: "70vh",
-            overflowY: "auto",
-          }}
-        >
-          {/* Identification */}
-          <div>
-            <label
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "var(--ink)",
-                display: "block",
-                marginBottom: "6px",
-              }}
-            >
-              Titlu asset *
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="ex: Banner reclamă produs X — generat Midjourney"
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                background: "var(--bg)",
-                color: "var(--ink)",
-                fontSize: "13px",
-              }}
-            />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-            <div>
-              <label
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--ink)",
-                  display: "block",
-                  marginBottom: "6px",
-                }}
-              >
-                Tip asset *
-              </label>
+        <div className="cr-modal__body tp-modal-scroll">
+          <div className="cr-form-grid">
+            <TransparencyField label="Titlu asset *" spanTwo>
+              <input
+                className="cr-input"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="ex: Banner reclamă produs X — generat Midjourney"
+              />
+            </TransparencyField>
+
+            <TransparencyField label="Tip asset *">
               <select
+                className="cr-input"
                 value={assetType}
                 onChange={(e) =>
                   setAssetType(e.target.value as AIContentAssetType)
                 }
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "6px",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  fontSize: "13px",
-                }}
               >
                 {schema.assetTypes.map((t) => (
                   <option key={t} value={t}>
@@ -2429,473 +1705,223 @@ function ContentAssetCreateModal({
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "var(--ink)",
-                  display: "block",
-                  marginBottom: "6px",
-                }}
-              >
-                Canale distribuție (separate prin virgulă)
-              </label>
+            </TransparencyField>
+
+            <TransparencyField label="Canale distribuție (separate prin virgulă)">
               <input
+                className="cr-input"
                 value={distributionContext}
                 onChange={(e) => setDistributionContext(e.target.value)}
                 placeholder="ex: LinkedIn Ads, Website hero, Newsletter"
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "6px",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  fontSize: "13px",
-                }}
               />
-            </div>
+            </TransparencyField>
           </div>
 
-          {/* Provider section */}
-          <div
-            style={{
-              padding: "14px",
-              background: "var(--bg-raised)",
-              borderRadius: "8px",
-              border: "1px solid var(--border-soft)",
-            }}
-          >
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: "13px",
-                color: "var(--ink)",
-                marginBottom: "8px",
-              }}
-            >
-              A. Provider duty (Art. 50(2))
-            </div>
-            <label
-              style={{
-                fontSize: "12px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                color: "var(--ink)",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={providerMarkingApplied}
-                onChange={(e) => setProviderMarkingApplied(e.target.checked)}
-              />
-              Marcaj tehnic machine-readable aplicat
-            </label>
-            <div style={{ marginTop: "8px" }}>
-              <label
-                style={{
-                  fontSize: "12px",
-                  color: "var(--ink-muted)",
-                  display: "block",
-                  marginBottom: "4px",
-                }}
-              >
-                Standard
-              </label>
-              <select
-                value={providerMarkingStandard}
-                onChange={(e) =>
-                  setProviderMarkingStandard(
-                    e.target.value as ContentLabelingStandard,
-                  )
-                }
-                style={{
-                  width: "100%",
-                  padding: "6px 10px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "6px",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  fontSize: "12px",
-                }}
-              >
-                {schema.standards.map((s) => (
-                  <option key={s} value={s}>
-                    {STANDARD_LABELS[s]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div style={{ marginTop: "8px" }}>
-              <label
-                style={{
-                  fontSize: "12px",
-                  color: "var(--ink-muted)",
-                  display: "block",
-                  marginBottom: "4px",
-                }}
-              >
-                Dovadă marcaj (URL sau notă)
-              </label>
-              <input
-                value={providerMarkingProof}
-                onChange={(e) => setProviderMarkingProof(e.target.value)}
-                placeholder="ex: https://verify.c2pa.org/asset/xyz sau IPTC Digital Source Type=trainedAlgorithmicMedia"
-                style={{
-                  width: "100%",
-                  padding: "6px 10px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "6px",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  fontSize: "12px",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Deployer section */}
-          <div
-            style={{
-              padding: "14px",
-              background: "var(--bg-raised)",
-              borderRadius: "8px",
-              border: "1px solid var(--border-soft)",
-            }}
-          >
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: "13px",
-                color: "var(--ink)",
-                marginBottom: "8px",
-              }}
-            >
-              B. Deployer duty (Art. 50(1)/(3)/(4))
-            </div>
-            <label
-              style={{
-                fontSize: "12px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                color: "var(--ink)",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={deployerDisclosureApplied}
-                onChange={(e) =>
-                  setDeployerDisclosureApplied(e.target.checked)
-                }
-              />
-              Disclosure vizibil aplicat către utilizatori
-            </label>
-            {deployerDisclosureApplied && (
-              <>
-                <div
-                  style={{
-                    marginTop: "8px",
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr",
-                    gap: "8px",
-                  }}
-                >
-                  <div>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        color: "var(--ink-muted)",
-                        display: "block",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      Placement
-                    </label>
-                    <select
-                      value={deployerDisclosurePlacement}
-                      onChange={(e) =>
-                        setDeployerDisclosurePlacement(
-                          e.target.value as TransparencyPlacement,
-                        )
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "6px 10px",
-                        border: "1px solid var(--border)",
-                        borderRadius: "6px",
-                        background: "var(--bg)",
-                        color: "var(--ink)",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {schema.placements.map((p) => (
-                        <option key={p} value={p}>
-                          {PLACEMENT_LABELS_FULL[p]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        color: "var(--ink-muted)",
-                        display: "block",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      Limbă
-                    </label>
-                    <select
-                      value={deployerDisclosureLanguage}
-                      onChange={(e) =>
-                        setDeployerDisclosureLanguage(
-                          e.target.value as TransparencyLanguage,
-                        )
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "6px 10px",
-                        border: "1px solid var(--border)",
-                        borderRadius: "6px",
-                        background: "var(--bg)",
-                        color: "var(--ink)",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {schema.languages.map((l) => (
-                        <option key={l} value={l}>
-                          {l.toUpperCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div style={{ marginTop: "8px" }}>
-                  <label
-                    style={{
-                      fontSize: "12px",
-                      color: "var(--ink-muted)",
-                      display: "block",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Text disclosure (cum apare vizibil)
-                  </label>
-                  <textarea
-                    value={deployerDisclosureText}
-                    onChange={(e) => setDeployerDisclosureText(e.target.value)}
-                    rows={2}
-                    placeholder="ex: „Conținut generat cu AI — Art. 50(2) EU AI Act"
-                    style={{
-                      width: "100%",
-                      padding: "6px 10px",
-                      border: "1px solid var(--border)",
-                      borderRadius: "6px",
-                      background: "var(--bg)",
-                      color: "var(--ink)",
-                      fontSize: "12px",
-                      fontFamily: "inherit",
-                      resize: "vertical",
-                    }}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Public-interest editorial (collapsed when not applicable) */}
-          {(assetType === "public_interest_text" ||
-            assetType === "text_synthetic") && (
-            <div
-              style={{
-                padding: "14px",
-                background: "var(--bg-raised)",
-                borderRadius: "8px",
-                border: "1px solid var(--border-soft)",
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  color: "var(--ink)",
-                  marginBottom: "8px",
-                }}
-              >
-                C. Public-interest editorial (Art. 50(4)(b))
+          <section className="cr-panel">
+            <div className="cr-panel__body">
+              <div className="tp-section-title">
+                A. Provider duty (Art. 50(2))
               </div>
-              <label
-                style={{
-                  fontSize: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  color: "var(--ink)",
-                }}
-              >
+              <label className="cr-checkbox-row">
                 <input
                   type="checkbox"
-                  checked={isPublicInterest}
-                  onChange={(e) => setIsPublicInterest(e.target.checked)}
+                  checked={providerMarkingApplied}
+                  onChange={(e) => setProviderMarkingApplied(e.target.checked)}
                 />
-                Conținutul este pe un subiect de interes public
+                <span>Marcaj tehnic machine-readable aplicat</span>
               </label>
-              {showPublicInterestSection && (
-                <>
-                  <label
-                    style={{
-                      fontSize: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      color: "var(--ink)",
-                      marginTop: "8px",
-                    }}
+              <div className="cr-form-grid">
+                <TransparencyField label="Standard">
+                  <select
+                    className="cr-input"
+                    value={providerMarkingStandard}
+                    onChange={(e) =>
+                      setProviderMarkingStandard(
+                        e.target.value as ContentLabelingStandard,
+                      )
+                    }
                   >
-                    <input
-                      type="checkbox"
-                      checked={editorialResponsibilityClaim}
-                      onChange={(e) =>
-                        setEditorialResponsibilityClaim(e.target.checked)
-                      }
-                    />
-                    Editorul își asumă responsabilitatea editorială (derogare
-                    Art. 50(4)(b))
-                  </label>
-                  <div style={{ marginTop: "8px" }}>
-                    <label
-                      style={{
-                        fontSize: "12px",
-                        color: "var(--ink-muted)",
-                        display: "block",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      Editor responsabil (email)
-                    </label>
-                    <input
-                      value={editorialReviewBy}
-                      onChange={(e) => setEditorialReviewBy(e.target.value)}
-                      placeholder="editor@news.ro"
-                      style={{
-                        width: "100%",
-                        padding: "6px 10px",
-                        border: "1px solid var(--border)",
-                        borderRadius: "6px",
-                        background: "var(--bg)",
-                        color: "var(--ink)",
-                        fontSize: "12px",
-                      }}
-                    />
+                    {schema.standards.map((s) => (
+                      <option key={s} value={s}>
+                        {STANDARD_LABELS[s]}
+                      </option>
+                    ))}
+                  </select>
+                </TransparencyField>
+
+                <TransparencyField label="Dovadă marcaj (URL sau notă)">
+                  <input
+                    className="cr-input"
+                    value={providerMarkingProof}
+                    onChange={(e) => setProviderMarkingProof(e.target.value)}
+                    placeholder="ex: https://verify.c2pa.org/asset/xyz sau IPTC Digital Source Type=trainedAlgorithmicMedia"
+                  />
+                </TransparencyField>
+              </div>
+            </div>
+          </section>
+
+          <section className="cr-panel">
+            <div className="cr-panel__body">
+              <div className="tp-section-title">
+                B. Deployer duty (Art. 50(1)/(3)/(4))
+              </div>
+              <label className="cr-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={deployerDisclosureApplied}
+                  onChange={(e) =>
+                    setDeployerDisclosureApplied(e.target.checked)
+                  }
+                />
+                <span>Disclosure vizibil aplicat către utilizatori</span>
+              </label>
+
+              {deployerDisclosureApplied && (
+                <>
+                  <div className="cr-form-grid">
+                    <TransparencyField label="Placement">
+                      <select
+                        className="cr-input"
+                        value={deployerDisclosurePlacement}
+                        onChange={(e) =>
+                          setDeployerDisclosurePlacement(
+                            e.target.value as TransparencyPlacement,
+                          )
+                        }
+                      >
+                        {schema.placements.map((p) => (
+                          <option key={p} value={p}>
+                            {PLACEMENT_LABELS_FULL[p]}
+                          </option>
+                        ))}
+                      </select>
+                    </TransparencyField>
+
+                    <TransparencyField label="Limbă">
+                      <select
+                        className="cr-input"
+                        value={deployerDisclosureLanguage}
+                        onChange={(e) =>
+                          setDeployerDisclosureLanguage(
+                            e.target.value as TransparencyLanguage,
+                          )
+                        }
+                      >
+                        {schema.languages.map((l) => (
+                          <option key={l} value={l}>
+                            {l.toUpperCase()}
+                          </option>
+                        ))}
+                      </select>
+                    </TransparencyField>
                   </div>
+
+                  <TransparencyField
+                    label="Text disclosure (cum apare vizibil)"
+                    spanTwo
+                  >
+                    <textarea
+                      className="cr-input tp-textarea"
+                      value={deployerDisclosureText}
+                      onChange={(e) =>
+                        setDeployerDisclosureText(e.target.value)
+                      }
+                      rows={2}
+                      placeholder="ex: „Conținut generat cu AI — Art. 50(2) EU AI Act”"
+                    />
+                  </TransparencyField>
                 </>
               )}
             </div>
+          </section>
+
+          {(assetType === "public_interest_text" ||
+            assetType === "text_synthetic") && (
+            <section className="cr-panel">
+              <div className="cr-panel__body">
+                <div className="tp-section-title">
+                  C. Public-interest editorial (Art. 50(4)(b))
+                </div>
+                <label className="cr-checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={isPublicInterest}
+                    onChange={(e) => setIsPublicInterest(e.target.checked)}
+                  />
+                  <span>Conținutul este pe un subiect de interes public</span>
+                </label>
+
+                {showPublicInterestSection && (
+                  <>
+                    <label className="cr-checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={editorialResponsibilityClaim}
+                        onChange={(e) =>
+                          setEditorialResponsibilityClaim(e.target.checked)
+                        }
+                      />
+                      <span>
+                        Editorul își asumă responsabilitatea editorială
+                        (derogare Art. 50(4)(b))
+                      </span>
+                    </label>
+
+                    <TransparencyField label="Editor responsabil (email)">
+                      <input
+                        className="cr-input"
+                        value={editorialReviewBy}
+                        onChange={(e) => setEditorialReviewBy(e.target.value)}
+                        placeholder="editor@news.ro"
+                      />
+                    </TransparencyField>
+                  </>
+                )}
+              </div>
+            </section>
           )}
 
-          <div>
-            <label
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "var(--ink)",
-                display: "block",
-                marginBottom: "6px",
-              }}
-            >
-              Note interne
-            </label>
+          <TransparencyField label="Note interne" spanTwo>
             <textarea
+              className="cr-input tp-textarea"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="(opțional) context, decizii editoriale, etc."
-              style={{
-                width: "100%",
-                padding: "6px 10px",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                background: "var(--bg)",
-                color: "var(--ink)",
-                fontSize: "12px",
-                fontFamily: "inherit",
-                resize: "vertical",
-              }}
             />
-          </div>
+          </TransparencyField>
 
           {error && (
-            <div
-              role="alert"
-              style={{
-                padding: "10px 12px",
-                background: "rgba(248,113,113,0.10)",
-                border: "1px solid rgba(248,113,113,0.30)",
-                borderRadius: "6px",
-                fontSize: "12px",
-                color: "#dc2626",
-              }}
-            >
+            <div role="alert" className="cr-alert cr-alert--danger">
               {error}
             </div>
           )}
         </div>
 
-        <div
-          style={{
-            padding: "12px 20px",
-            borderTop: "1px solid var(--border-soft)",
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "8px",
-          }}
-        >
-          <button
-            onClick={onClose}
-            disabled={submitting}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink-muted)",
-              fontSize: "13px",
-              cursor: submitting ? "not-allowed" : "pointer",
-            }}
-          >
-            Anulează
-          </button>
-          <button
-            onClick={submit}
-            disabled={submitting}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "6px",
-              border: "1px solid var(--cobalt-600)",
-              background: "var(--cobalt-600)",
-              color: "#fff",
-              fontSize: "13px",
-              fontWeight: 500,
-              cursor: submitting ? "not-allowed" : "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            {submitting && (
-              <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
-            )}
-            Salvează asset
-          </button>
+        <div className="cr-modal__footer">
+          <div />
+          <div className="cr-toolbar__actions">
+            <button
+              onClick={onClose}
+              disabled={submitting}
+              className="cr-btn cr-btn--secondary"
+            >
+              Anulează
+            </button>
+            <button
+              onClick={submit}
+              disabled={submitting}
+              className="cr-btn cr-btn--primary"
+            >
+              {submitting && <Loader2 size={12} className="tp-spin" />}
+              Salvează asset
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2907,25 +1933,25 @@ function AttachEvidenceModal({
   onClose,
   onAttached,
 }: {
-  assetId: string
-  onClose: () => void
-  onAttached: () => void | Promise<void>
+  assetId: string;
+  onClose: () => void;
+  onAttached: () => void | Promise<void>;
 }) {
-  const [type, setType] = useState<AIContentEvidenceType>("screenshot")
-  const [description, setDescription] = useState("")
-  const [url, setUrl] = useState("")
-  const [fileName, setFileName] = useState("")
-  const [fileHash, setFileHash] = useState("")
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [type, setType] = useState<AIContentEvidenceType>("screenshot");
+  const [description, setDescription] = useState("");
+  const [url, setUrl] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [fileHash, setFileHash] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const submit = async () => {
-    setError(null)
+    setError(null);
     if (description.trim().length < 3) {
-      setError("Descriere min 3 caractere.")
-      return
+      setError("Descriere min 3 caractere.");
+      return;
     }
-    setSubmitting(true)
+    setSubmitting(true);
     try {
       const res = await fetch(
         `/api/transparency/content-assets/${assetId}/evidence`,
@@ -2940,112 +1966,45 @@ function AttachEvidenceModal({
             fileHash: fileHash.trim() || undefined,
           }),
         },
-      )
+      );
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body?.error || `HTTP ${res.status}`)
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `HTTP ${res.status}`);
       }
-      await onAttached()
+      await onAttached();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Eroare")
+      setError(e instanceof Error ? e.message : "Eroare");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(15,23,42,0.55)",
-        zIndex: 1100,
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "center",
-        padding: "48px 16px",
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%",
-          maxWidth: "520px",
-          background: "var(--bg)",
-          border: "1px solid var(--border)",
-          borderRadius: "12px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
-        }}
-      >
-        <div
-          style={{
-            padding: "14px 18px",
-            borderBottom: "1px solid var(--border-soft)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "var(--ink)",
-            }}
-          >
-            Atașează dovadă Art. 50
+    <div onClick={onClose} className="cr-modal-backdrop">
+      <div onClick={(e) => e.stopPropagation()} className="cr-modal">
+        <div className="cr-modal__header">
+          <div>
+            <h2 className="cr-modal__title">Atașează dovadă Art. 50</h2>
+            <div className="cr-modal__subtitle">
+              Păstrează artefactele de verificare pentru provider și deployer
+              duty.
+            </div>
           </div>
           <button
             onClick={onClose}
             aria-label="Închide"
-            style={{
-              padding: "4px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink-muted)",
-              cursor: "pointer",
-            }}
+            className="cr-icon-button cr-modal__close"
           >
             <X size={14} />
           </button>
         </div>
 
-        <div
-          style={{
-            padding: "16px 18px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-          }}
-        >
-          <div>
-            <label
-              style={{
-                fontSize: "12px",
-                color: "var(--ink)",
-                display: "block",
-                marginBottom: "4px",
-              }}
-            >
-              Tip dovadă
-            </label>
+        <div className="cr-modal__body">
+          <TransparencyField label="Tip dovadă">
             <select
+              className="cr-input"
               value={type}
-              onChange={(e) =>
-                setType(e.target.value as AIContentEvidenceType)
-              }
-              style={{
-                width: "100%",
-                padding: "6px 10px",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                background: "var(--bg)",
-                color: "var(--ink)",
-                fontSize: "12px",
-              }}
+              onChange={(e) => setType(e.target.value as AIContentEvidenceType)}
             >
               {Object.entries(EVIDENCE_TYPE_LABELS).map(([k, label]) => (
                 <option key={k} value={k}>
@@ -3053,182 +2012,75 @@ function AttachEvidenceModal({
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: "12px",
-                color: "var(--ink)",
-                display: "block",
-                marginBottom: "4px",
-              }}
-            >
-              Descriere *
-            </label>
+          </TransparencyField>
+
+          <TransparencyField label="Descriere *" spanTwo>
             <textarea
+              className="cr-input tp-textarea"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              placeholder={"ex: Screenshot post LinkedIn cu eticheta „Generated by AI” vizibilă în footer."}
-              style={{
-                width: "100%",
-                padding: "6px 10px",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                background: "var(--bg)",
-                color: "var(--ink)",
-                fontSize: "12px",
-                fontFamily: "inherit",
-                resize: "vertical",
-              }}
+              placeholder="ex: Screenshot post LinkedIn cu eticheta „Generated by AI” vizibilă în footer."
             />
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: "12px",
-                color: "var(--ink)",
-                display: "block",
-                marginBottom: "4px",
-              }}
-            >
-              URL dovadă (opțional)
-            </label>
+          </TransparencyField>
+
+          <TransparencyField label="URL dovadă (opțional)" spanTwo>
             <input
+              className="cr-input"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://…"
-              style={{
-                width: "100%",
-                padding: "6px 10px",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                background: "var(--bg)",
-                color: "var(--ink)",
-                fontSize: "12px",
-              }}
             />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div>
-              <label
-                style={{
-                  fontSize: "12px",
-                  color: "var(--ink)",
-                  display: "block",
-                  marginBottom: "4px",
-                }}
-              >
-                Nume fișier (opțional)
-              </label>
+          </TransparencyField>
+
+          <div className="cr-form-grid">
+            <TransparencyField label="Nume fișier (opțional)">
               <input
+                className="cr-input"
                 value={fileName}
                 onChange={(e) => setFileName(e.target.value)}
                 placeholder="screenshot.png"
-                style={{
-                  width: "100%",
-                  padding: "6px 10px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "6px",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  fontSize: "12px",
-                }}
               />
-            </div>
-            <div>
-              <label
-                style={{
-                  fontSize: "12px",
-                  color: "var(--ink)",
-                  display: "block",
-                  marginBottom: "4px",
-                }}
-              >
-                SHA-256 hash (opțional)
-              </label>
+            </TransparencyField>
+
+            <TransparencyField label="SHA-256 hash (opțional)">
               <input
+                className="cr-input tp-input-mono"
                 value={fileHash}
                 onChange={(e) => setFileHash(e.target.value)}
                 placeholder="ex: f3a8…"
-                style={{
-                  width: "100%",
-                  padding: "6px 10px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "6px",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  fontSize: "12px",
-                  fontFamily: "monospace",
-                }}
               />
-            </div>
+            </TransparencyField>
           </div>
+
           {error && (
-            <div
-              role="alert"
-              style={{
-                padding: "8px 10px",
-                background: "rgba(248,113,113,0.10)",
-                border: "1px solid rgba(248,113,113,0.30)",
-                borderRadius: "6px",
-                fontSize: "12px",
-                color: "#dc2626",
-              }}
-            >
+            <div role="alert" className="cr-alert cr-alert--danger">
               {error}
             </div>
           )}
         </div>
 
-        <div
-          style={{
-            padding: "12px 18px",
-            borderTop: "1px solid var(--border-soft)",
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "8px",
-          }}
-        >
-          <button
-            onClick={onClose}
-            disabled={submitting}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "var(--bg-raised)",
-              color: "var(--ink-muted)",
-              fontSize: "12px",
-              cursor: submitting ? "not-allowed" : "pointer",
-            }}
-          >
-            Anulează
-          </button>
-          <button
-            onClick={submit}
-            disabled={submitting}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--cobalt-600)",
-              background: "var(--cobalt-600)",
-              color: "#fff",
-              fontSize: "12px",
-              fontWeight: 500,
-              cursor: submitting ? "not-allowed" : "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            {submitting && (
-              <Loader2 size={11} style={{ animation: "spin 1s linear infinite" }} />
-            )}
-            Atașează
-          </button>
+        <div className="cr-modal__footer">
+          <div />
+          <div className="cr-toolbar__actions">
+            <button
+              onClick={onClose}
+              disabled={submitting}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
+            >
+              Anulează
+            </button>
+            <button
+              onClick={submit}
+              disabled={submitting}
+              className="cr-btn cr-btn--primary cr-btn--sm"
+            >
+              {submitting && <Loader2 size={11} className="tp-spin" />}
+              Atașează
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

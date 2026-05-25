@@ -35,7 +35,7 @@ export async function GET() {
       version: "1.0.0",
       contact: {
         name: "CompliRoAI",
-        url: "https://compliscanag.vercel.app",
+        url: "https://eu-ai-act-beige.vercel.app",
       },
       license: { name: "Proprietary" },
     },

@@ -28,6 +28,7 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react"
@@ -58,26 +59,11 @@ const STATUS_LABELS: Record<StatusKey, string> = {
   under_monitoring: "Monitorizare",
 }
 
-const STATUS_COLORS: Record<StatusKey, { bg: string; fg: string }> = {
-  open: { bg: "rgba(96,165,250,0.12)", fg: "#60a5fa" },
-  confirmed: { bg: "rgba(251,191,36,0.14)", fg: "#fbbf24" },
-  dismissed: { bg: "rgba(148,163,184,0.16)", fg: "#94a3b8" },
-  resolved: { bg: "rgba(52,211,153,0.14)", fg: "#34d399" },
-  under_monitoring: { bg: "rgba(168,85,247,0.14)", fg: "#a855f7" },
-}
-
 const SEVERITY_LABELS: Record<ComplianceSeverity, string> = {
   critical: "Critic",
-  high: "Inalt",
+  high: "Înalt",
   medium: "Mediu",
-  low: "Scazut",
-}
-
-const SEVERITY_COLORS: Record<ComplianceSeverity, { bg: string; fg: string }> = {
-  critical: { bg: "rgba(248,113,113,0.18)", fg: "#f87171" },
-  high: { bg: "rgba(251,146,60,0.16)", fg: "#fb923c" },
-  medium: { bg: "rgba(251,191,36,0.14)", fg: "#fbbf24" },
-  low: { bg: "rgba(96,165,250,0.10)", fg: "#60a5fa" },
+  low: "Scăzut",
 }
 
 // E_FACTURA: legacy union value preserved în types pentru migrare din state-uri
@@ -152,6 +138,18 @@ export default function ResolvePage() {
     void load()
   }, [load])
 
+  async function regenerateGuidanceAfterAction(reason: string) {
+    try {
+      await fetch("/api/ai-guidance", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "regenerate", reason }),
+      })
+    } catch {
+      // Guidance este suport decizional, nu blochează lifecycle-ul finding-ului.
+    }
+  }
+
   // Per mandate Rule 3 — no fiscal/e-Factura surface în UI. Categoria E_FACTURA
   // rămâne în type union pentru migrare state legacy, dar nu se mai expune ca
   // filter chip pentru utilizatori. Findings legacy E_FACTURA, dacă există,
@@ -172,7 +170,10 @@ export default function ResolvePage() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ action }),
     })
-    if (res.ok) await load()
+    if (res.ok) {
+      await regenerateGuidanceAfterAction(`finding_${action}`)
+      await load()
+    }
   }
 
   async function handleAttachEvidence(
@@ -188,6 +189,7 @@ export default function ResolvePage() {
       const d = await res.json().catch(() => ({ error: "Eroare necunoscuta" }))
       throw new Error(d.error || "Nu am putut atasa dovada.")
     }
+    await regenerateGuidanceAfterAction("finding_evidence_attached")
     await load()
   }
 
@@ -196,6 +198,7 @@ export default function ResolvePage() {
     const res = await fetch(`/api/findings/${id}`, { method: "DELETE" })
     if (res.ok) {
       if (expandedId === id) setExpandedId(null)
+      await regenerateGuidanceAfterAction("finding_deleted")
       await load()
     }
   }
@@ -210,6 +213,7 @@ export default function ResolvePage() {
       const data = await res.json().catch(() => ({ error: "Eroare necunoscuta" }))
       throw new Error(data.error || "Nu am putut crea risc-ul.")
     }
+    await regenerateGuidanceAfterAction("finding_created")
     await load()
     setShowCreate(false)
   }
@@ -222,43 +226,21 @@ export default function ResolvePage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-page--full cr-stack">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
-        <div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "22px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              margin: 0,
-              letterSpacing: "-0.02em",
-            }}
-          >
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Cockpit de execuție</span>
+          <h1 className="cr-title">
             De rezolvat
           </h1>
-          <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
-            Toate risc-urile active aici. Confirma, atasaza dovada, marcheaza rezolvat.
+          <p className="cr-subtitle">
+            Toate riscurile active aici. Confirmă, atașează dovada, marchează rezolvat.
           </p>
         </div>
         <Link
           href="/dashboard/resolve/support"
-          style={{
-            ...btnGhost,
-            padding: "6px 12px",
-            fontSize: "12px",
-            color: "var(--ink-muted)",
-            textDecoration: "none",
-          }}
+          className="cr-btn"
         >
           <HelpCircle size={13} /> Ghid lifecycle
         </Link>
@@ -269,48 +251,29 @@ export default function ResolvePage() {
 
       {/* Error */}
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
 
       {/* Filters + CTA */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "12px",
-            flexWrap: "wrap",
-          }}
-        >
+      <div className="cr-stack">
+        <div className="cr-inline-between">
           <StatusTabs value={statusFilter} stats={stats} onChange={setStatusFilter} />
-          <button onClick={() => setShowCreate(true)} style={btnPrimary}>
-            <Plus size={14} /> Adauga risc manual
+          <button onClick={() => setShowCreate(true)} className="cr-btn cr-btn--primary">
+            <Plus size={14} /> Adaugă risc manual
           </button>
         </div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+        <div className="cr-filter-row">
           <FilterChips
             label="Severitate"
             items={[
               { key: "all", label: "Toate" },
-              { key: "critical", label: SEVERITY_LABELS.critical, color: SEVERITY_COLORS.critical.fg },
-              { key: "high", label: SEVERITY_LABELS.high, color: SEVERITY_COLORS.high.fg },
-              { key: "medium", label: SEVERITY_LABELS.medium, color: SEVERITY_COLORS.medium.fg },
-              { key: "low", label: SEVERITY_LABELS.low, color: SEVERITY_COLORS.low.fg },
+              { key: "critical", label: SEVERITY_LABELS.critical },
+              { key: "high", label: SEVERITY_LABELS.high },
+              { key: "medium", label: SEVERITY_LABELS.medium },
+              { key: "low", label: SEVERITY_LABELS.low },
             ]}
             value={severityFilter}
             onChange={(v) => setSeverityFilter(v as SeverityFilter)}
@@ -336,13 +299,13 @@ export default function ResolvePage() {
 
       {/* List */}
       {loading ? (
-        <div style={{ fontSize: "13px", color: "var(--ink-dim)", padding: "24px 0" }}>
-          Se incarca risc-urile...
+        <div className="cr-empty">
+          Se încarcă riscurile...
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState hasAny={findings.length > 0} onCreate={() => setShowCreate(true)} />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div className="cr-finding-list">
           {filtered.map((f) => (
             <FindingRow
               key={f.id}
@@ -368,17 +331,11 @@ export default function ResolvePage() {
 
 function StatsBar({ stats }: { stats: Stats }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-        gap: "10px",
-      }}
-    >
+    <div className="cr-stat-strip">
       <StatCard label="Total" value={stats.total} />
       <StatCard label="Active" value={stats.open + stats.confirmed + stats.under_monitoring} accent="cobalt" />
       <StatCard label="Critice" value={stats.critical} accent={stats.critical > 0 ? "red" : undefined} />
-      <StatCard label="Inalte" value={stats.high} accent={stats.high > 0 ? "amber" : undefined} />
+      <StatCard label="Înalte" value={stats.high} accent={stats.high > 0 ? "amber" : undefined} />
       <StatCard label="Rezolvate" value={stats.resolved} />
     </div>
   )
@@ -393,42 +350,20 @@ function StatCard({
   value: number
   accent?: "cobalt" | "amber" | "red"
 }) {
-  const accentColor =
+  const accentClass =
     accent === "amber"
-      ? "#fbbf24"
+      ? "cr-stat--warning"
       : accent === "red"
-        ? "#f87171"
+        ? "cr-stat--critical"
         : accent === "cobalt"
-          ? "var(--cobalt-400)"
-          : "var(--ink)"
+          ? "cr-stat--info"
+          : ""
   return (
-    <div
-      style={{
-        padding: "14px 16px",
-        background: "var(--surface-1)",
-        borderRadius: "10px",
-        border: "1px solid var(--border-soft)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "10px",
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          color: "var(--ink-dim)",
-          marginBottom: "6px",
-        }}
-      >
+    <div className={`cr-stat ${accentClass}`}>
+      <div className="cr-stat__label">
         {label}
       </div>
-      <div
-        style={{
-          fontSize: "22px",
-          fontWeight: 600,
-          color: accentColor,
-          fontFamily: "var(--font-display-v3)",
-        }}
-      >
+      <div className="cr-stat__value">
         {value}
       </div>
     </div>
@@ -457,31 +392,17 @@ function StatusTabs({
     { key: "dismissed", label: STATUS_LABELS.dismissed, count: stats?.dismissed ?? 0 },
   ]
   return (
-    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+    <div className="cr-segment-bar">
       {tabs.map((t) => {
         const active = t.key === value
         return (
           <button
             key={t.key}
             onClick={() => onChange(t.key)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 12px",
-              fontSize: "12px",
-              fontWeight: active ? 600 : 500,
-              color: active ? "var(--cobalt-400)" : "var(--ink-muted)",
-              background: active ? "rgba(96,165,250,0.10)" : "transparent",
-              border: "1px solid",
-              borderColor: active ? "rgba(96,165,250,0.3)" : "var(--border-soft)",
-              borderRadius: "999px",
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
+            className={`cr-tab${active ? " is-active" : ""}`}
           >
             {t.label}
-            <span style={{ fontSize: "11px", color: "var(--ink-dim)", fontVariantNumeric: "tabular-nums" }}>
+            <span className="cr-tab__count">
               {t.count}
             </span>
           </button>
@@ -498,40 +419,20 @@ function FilterChips({
   onChange,
 }: {
   label: string
-  items: Array<{ key: string; label: string; color?: string }>
+  items: Array<{ key: string; label: string }>
   value: string
   onChange: (v: string) => void
 }) {
   return (
-    <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-      <span
-        style={{
-          fontSize: "10px",
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          color: "var(--ink-dim)",
-        }}
-      >
-        {label}
-      </span>
+    <div className="cr-chip-group">
+      <span className="cr-eyebrow">{label}</span>
       {items.map((item) => {
         const active = item.key === value
         return (
           <button
             key={item.key}
             onClick={() => onChange(item.key)}
-            style={{
-              padding: "4px 10px",
-              fontSize: "11px",
-              fontWeight: active ? 600 : 500,
-              color: active ? (item.color ?? "var(--ink)") : "var(--ink-muted)",
-              background: active ? "var(--surface-2)" : "transparent",
-              border: "1px solid var(--border-soft)",
-              borderRadius: "999px",
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
+            className={`cr-filter-chip${active ? " is-active" : ""}`}
           >
             {item.label}
           </button>
@@ -547,35 +448,17 @@ function FilterChips({
 
 function EmptyState({ hasAny, onCreate }: { hasAny: boolean; onCreate: () => void }) {
   return (
-    <div
-      style={{
-        padding: "40px 24px",
-        background: "var(--surface-1)",
-        borderRadius: "10px",
-        border: "1px dashed var(--border-soft)",
-        textAlign: "center",
-      }}
-    >
-      <ShieldCheck size={28} style={{ color: "#34d399", margin: "0 auto 12px" }} />
-      <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)", marginBottom: "6px" }}>
-        {hasAny ? "Niciun risc in acest filtru" : "Nu exista risc-uri active"}
-      </div>
-      <div
-        style={{
-          fontSize: "12px",
-          color: "var(--ink-muted)",
-          marginBottom: "16px",
-          maxWidth: "440px",
-          margin: "0 auto 16px",
-        }}
-      >
+    <div className="cr-empty">
+      <ShieldCheck size={28} className="cr-empty__icon" />
+      <div className="cr-empty__title">{hasAny ? "Niciun risc în acest filtru" : "Nu există riscuri active"}</div>
+      <div className="cr-empty__copy">
         {hasAny
           ? "Schimba filtrul sau reseteaza la \"Toate\"."
-          : "Ruleaza discovery / DPIA screening sau adauga manual un risc identificat ca sa-l inregistrezi in registru."}
+          : "Rulează discovery / DPIA screening sau adaugă manual un risc identificat ca să-l înregistrezi în registru."}
       </div>
       {!hasAny && (
-        <button onClick={onCreate} style={btnPrimary}>
-          <Plus size={14} /> Adauga primul risc
+        <button onClick={onCreate} className="cr-btn cr-btn--primary">
+          <Plus size={14} /> Adaugă primul risc
         </button>
       )}
     </div>
@@ -607,62 +490,23 @@ function FindingRow({
 }) {
   const status = (finding.findingStatus ?? "open") as StatusKey
   const sev = finding.severity
-  const statusColor = STATUS_COLORS[status]
-  const sevColor = SEVERITY_COLORS[sev]
 
   return (
-    <div
-      style={{
-        background: "var(--surface-1)",
-        borderRadius: "10px",
-        border: "1px solid var(--border-soft)",
-        overflow: "hidden",
-      }}
-    >
+    <div className={`cr-finding-card cr-finding-card--${sev}`}>
       <button
         onClick={onToggle}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "14px",
-          padding: "14px 16px",
-          width: "100%",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          textAlign: "left",
-          color: "var(--ink)",
-        }}
+        className="cr-finding-row"
       >
-        {/* Severity icon */}
         <SeverityIcon severity={sev} />
 
-        {/* Title + tags */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <span
-              style={{
-                fontSize: "14px",
-                fontWeight: 500,
-                color: "var(--ink)",
-              }}
-            >
-              {finding.title}
-            </span>
-            <Badge bg={sevColor.bg} fg={sevColor.fg}>{SEVERITY_LABELS[sev]}</Badge>
-            <Badge bg="var(--surface-2)" fg="var(--ink-muted)">{CATEGORY_LABELS[finding.category]}</Badge>
-            <Badge bg={statusColor.bg} fg={statusColor.fg}>{STATUS_LABELS[status]}</Badge>
+        <div className="cr-finding-main">
+          <div className="cr-finding-heading">
+            <span className="cr-finding-title">{finding.title}</span>
+            <Badge tone={severityBadgeTone(sev)}>{SEVERITY_LABELS[sev]}</Badge>
+            <StatusPill tone={categoryPillTone(finding.category)}>{CATEGORY_LABELS[finding.category]}</StatusPill>
+            <StatusPill tone={statusPillTone(status)}>{STATUS_LABELS[status]}</StatusPill>
           </div>
-          <div
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              marginTop: "3px",
-              display: "flex",
-              gap: "8px",
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="cr-finding-meta">
             <span title={new Date(finding.createdAtISO).toLocaleString("ro-RO")}>
               {timeAgo(finding.createdAtISO)}
             </span>
@@ -682,9 +526,9 @@ function FindingRow({
         </div>
 
         {expanded ? (
-          <ChevronUp size={16} style={{ color: "var(--ink-dim)", flexShrink: 0 }} />
+          <ChevronUp size={16} className="cr-finding-chevron" />
         ) : (
-          <ChevronDown size={16} style={{ color: "var(--ink-dim)", flexShrink: 0 }} />
+          <ChevronDown size={16} className="cr-finding-chevron" />
         )}
       </button>
 
@@ -703,30 +547,52 @@ function FindingRow({
 }
 
 function SeverityIcon({ severity }: { severity: ComplianceSeverity }) {
-  const color = SEVERITY_COLORS[severity].fg
-  if (severity === "critical") return <ShieldAlert size={18} style={{ color, flexShrink: 0 }} />
-  if (severity === "high") return <AlertTriangle size={18} style={{ color, flexShrink: 0 }} />
-  if (severity === "medium") return <AlertCircle size={18} style={{ color, flexShrink: 0 }} />
-  return <Shield size={18} style={{ color, flexShrink: 0 }} />
+  if (severity === "critical") return <ShieldAlert size={18} className="cr-finding-icon cr-finding-icon--critical" />
+  if (severity === "high") return <AlertTriangle size={18} className="cr-finding-icon cr-finding-icon--high" />
+  if (severity === "medium") return <AlertCircle size={18} className="cr-finding-icon cr-finding-icon--medium" />
+  return <Shield size={18} className="cr-finding-icon cr-finding-icon--low" />
 }
 
-function Badge({ bg, fg, children }: { bg: string; fg: string; children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        fontSize: "10px",
-        fontWeight: 600,
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
-        padding: "2px 8px",
-        borderRadius: "999px",
-        background: bg,
-        color: fg,
-      }}
-    >
-      {children}
-    </span>
-  )
+function severityBadgeTone(severity: ComplianceSeverity): "critical" | "high" | "medium" | "info" {
+  if (severity === "critical") return "critical"
+  if (severity === "high") return "high"
+  if (severity === "medium") return "medium"
+  return "info"
+}
+
+function statusPillTone(status: StatusKey): "ok" | "warning" | "danger" | "info" | "neutral" {
+  if (status === "resolved") return "ok"
+  if (status === "dismissed") return "neutral"
+  if (status === "under_monitoring") return "info"
+  if (status === "open") return "danger"
+  return "warning"
+}
+
+function categoryPillTone(category: FindingCategory): "ok" | "warning" | "danger" | "info" | "neutral" {
+  if (category === "EU_AI_ACT") return "info"
+  if (category === "GDPR") return "ok"
+  if (category === "NIS2") return "warning"
+  return "neutral"
+}
+
+function Badge({
+  tone = "info",
+  children,
+}: {
+  tone?: "critical" | "high" | "medium" | "info" | "ok"
+  children: React.ReactNode
+}) {
+  return <span className={`cr-badge cr-badge--${tone}`}>{children}</span>
+}
+
+function StatusPill({
+  tone = "neutral",
+  children,
+}: {
+  tone?: "ok" | "warning" | "danger" | "info" | "neutral"
+  children: React.ReactNode
+}) {
+  return <span className={`cr-status-pill cr-status-pill--${tone}`}>{children}</span>
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -776,112 +642,96 @@ function ExpandedDetail({
   }
 
   return (
-    <div
-      style={{
-        borderTop: "1px solid var(--border-soft)",
-        padding: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
-        background: "var(--surface-0)",
-      }}
-    >
-      {/* Detail / resolution */}
-      <div>
-        <SectionLabel>Problema</SectionLabel>
-        <p style={paragraphStyle}>{finding.resolution?.problem ?? finding.detail}</p>
-        {finding.resolution?.impact && (
-          <>
-            <SectionLabel>Impact</SectionLabel>
-            <p style={paragraphStyle}>{finding.resolution.impact}</p>
-          </>
-        )}
-        {(finding.resolution?.action ?? finding.remediationHint) && (
-          <>
-            <SectionLabel>Actiune recomandata</SectionLabel>
-            <p style={paragraphStyle}>
-              {finding.resolution?.action ?? finding.remediationHint}
-            </p>
-          </>
-        )}
-      </div>
+    <div className="cr-finding-expanded">
+      <InlineGuidanceCard finding={finding} />
 
-      {/* Legal reference */}
-      {(finding.legalReference || (finding.legalMappings && finding.legalMappings.length > 0)) && (
-        <div>
-          <SectionLabel>Referinta legala</SectionLabel>
-          {finding.legalReference && (
-            <p style={paragraphStyle}>{finding.legalReference}</p>
-          )}
-          {finding.legalMappings?.map((m, i) => (
-            <div
-              key={i}
-              style={{
-                fontSize: "11px",
-                color: "var(--ink-muted)",
-                marginTop: "4px",
-                padding: "8px 10px",
-                background: "var(--surface-1)",
-                borderRadius: "6px",
-                border: "1px solid var(--border-soft)",
-              }}
-            >
-              <strong style={{ color: "var(--ink)" }}>
-                {m.regulation} · {m.article}
-              </strong>{" "}
-              — {m.label}
-              <div style={{ fontSize: "11px", color: "var(--ink-dim)", marginTop: "3px" }}>
-                {m.reason}
+      <div className="cr-detail-grid">
+        <section className="cr-panel">
+          <div className="cr-panel__body cr-detail-stack">
+            <div>
+              <SectionLabel>Problema</SectionLabel>
+              <p className="cr-paragraph">{finding.resolution?.problem ?? finding.detail}</p>
+            </div>
+
+            {finding.resolution?.impact && (
+              <div>
+                <SectionLabel>Impact</SectionLabel>
+                <p className="cr-paragraph">{finding.resolution.impact}</p>
+              </div>
+            )}
+
+            {(finding.resolution?.action ?? finding.remediationHint) && (
+              <div>
+                <SectionLabel>Actiune recomandata</SectionLabel>
+                <p className="cr-paragraph">{finding.resolution?.action ?? finding.remediationHint}</p>
+              </div>
+            )}
+
+            {(finding.legalReference || (finding.legalMappings && finding.legalMappings.length > 0)) && (
+              <div className="cr-detail-stack">
+                <SectionLabel>Referință legală</SectionLabel>
+                {finding.legalReference ? <p className="cr-paragraph">{finding.legalReference}</p> : null}
+                {finding.legalMappings?.map((mapping, index) => (
+                  <div key={index} className="cr-note-box">
+                    <strong>
+                      {mapping.regulation} · {mapping.article}
+                    </strong>{" "}
+                    — {mapping.label}
+                    <div className="cr-note-box__sub">{mapping.reason}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="cr-panel">
+          <div className="cr-panel__body cr-detail-stack">
+            <div>
+              <SectionLabel>Semnale de execuție</SectionLabel>
+              <div className="cr-pill-group">
+                {typeof finding.confidenceScore === "number" ? (
+                  <MetaPill label="Confidence" value={`${finding.confidenceScore}%`} />
+                ) : null}
+                {finding.driftStatus ? <MetaPill label="Drift" value={finding.driftStatus} /> : null}
+                {finding.nextMonitoringDateISO ? (
+                  <MetaPill
+                    label="Următoarea monitorizare"
+                    value={new Date(finding.nextMonitoringDateISO).toLocaleDateString("ro-RO")}
+                  />
+                ) : null}
+                {finding.findingStatusUpdatedAtISO ? (
+                  <MetaPill label="Ultima actualizare" value={timeAgo(finding.findingStatusUpdatedAtISO)} />
+                ) : null}
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* Lifecycle stats */}
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-        {typeof finding.confidenceScore === "number" && (
-          <MetaPill label="Confidence" value={`${finding.confidenceScore}%`} />
-        )}
-        {finding.driftStatus && (
-          <MetaPill label="Drift" value={finding.driftStatus} />
-        )}
-        {finding.nextMonitoringDateISO && (
-          <MetaPill
-            label="Urmatoarea monitorizare"
-            value={new Date(finding.nextMonitoringDateISO).toLocaleDateString("ro-RO")}
-          />
-        )}
-        {finding.findingStatusUpdatedAtISO && (
-          <MetaPill
-            label="Ultima actualizare"
-            value={timeAgo(finding.findingStatusUpdatedAtISO)}
-          />
-        )}
+            {(finding.closeCondition ||
+              (finding.requiredEvidenceKinds && finding.requiredEvidenceKinds.length > 0) ||
+              finding.evidenceRequired) && (
+              <div className="cr-detail-stack">
+                <SectionLabel>Condiții de închidere</SectionLabel>
+                {finding.closeCondition ? <p className="cr-paragraph">{finding.closeCondition}</p> : null}
+                {finding.evidenceRequired ? <p className="cr-paragraph">{finding.evidenceRequired}</p> : null}
+                {finding.requiredEvidenceKinds && finding.requiredEvidenceKinds.length > 0 ? (
+                  <div className="cr-pill-group">
+                    {finding.requiredEvidenceKinds.map((kind) => (
+                      <StatusPill key={kind} tone="neutral">
+                        {kind}
+                      </StatusPill>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
 
-      {/* Close condition + required evidence */}
-      {(finding.closeCondition || (finding.requiredEvidenceKinds && finding.requiredEvidenceKinds.length > 0) || finding.evidenceRequired) && (
-        <div>
-          <SectionLabel>Conditii de inchidere</SectionLabel>
-          {finding.closeCondition && <p style={paragraphStyle}>{finding.closeCondition}</p>}
-          {finding.evidenceRequired && <p style={paragraphStyle}>{finding.evidenceRequired}</p>}
-          {finding.requiredEvidenceKinds && finding.requiredEvidenceKinds.length > 0 && (
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "6px" }}>
-              {finding.requiredEvidenceKinds.map((k) => (
-                <Badge key={k} bg="var(--surface-2)" fg="var(--ink-muted)">
-                  {k}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Actions */}
-      <div>
-        <SectionLabel>Actiuni</SectionLabel>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "10px" }}>
+      <section className="cr-panel">
+        <div className="cr-panel__body">
+          <SectionLabel>Acțiuni</SectionLabel>
+          <div className="cr-action-row">
           <ActionButton
             onClick={() => onAction("confirm")}
             disabled={status === "confirmed" || status === "resolved"}
@@ -925,83 +775,32 @@ function ExpandedDetail({
             {sharing ? <Loader2 size={12} className="animate-spin" /> : <Link2 size={12} />}
             {copied ? "Copiat" : shareUrl ? "Copiaza link" : "Genereaza share"}
           </ActionButton>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Evidence */}
-      <EvidenceSection
-        finding={finding}
-        onAttach={onAttachEvidence}
-      />
+      <EvidenceSection finding={finding} onAttach={onAttachEvidence} />
 
-      {/* Audit trail mini */}
       {relatedEvents.length > 0 && (
-        <div>
-          <SectionLabel>Audit trail (ultimele 5)</SectionLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "10px" }}>
+        <section className="cr-panel">
+          <div className="cr-panel__body">
+            <SectionLabel>Audit trail (ultimele 5)</SectionLabel>
+            <div className="cr-audit-list">
             {relatedEvents.map((e) => (
-              <div
-                key={e.id}
-                style={{
-                  fontSize: "11px",
-                  color: "var(--ink-muted)",
-                  padding: "8px 10px",
-                  background: "var(--surface-1)",
-                  borderRadius: "6px",
-                  border: "1px solid var(--border-soft)",
-                  display: "flex",
-                  gap: "10px",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "10px",
-                    color: "var(--ink-dim)",
-                    fontVariantNumeric: "tabular-nums",
-                    minWidth: "100px",
-                  }}
-                >
-                  {new Date(e.createdAtISO).toLocaleString("ro-RO")}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "ui-monospace, SFMono-Regular, monospace",
-                    fontSize: "10px",
-                    color: "var(--cobalt-400)",
-                    background: "rgba(96,165,250,0.08)",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                  }}
-                >
-                  {e.type}
-                </span>
-                <span style={{ color: "var(--ink)" }}>{e.message}</span>
-                {e.actorLabel && (
-                  <span style={{ marginLeft: "auto", fontSize: "10px", color: "var(--ink-dim)" }}>
-                    {e.actorLabel}
-                  </span>
-                )}
+              <div key={e.id} className="cr-audit-row">
+                <span className="cr-audit-row__time">{new Date(e.createdAtISO).toLocaleString("ro-RO")}</span>
+                <span className="cr-audit-row__type">{e.type}</span>
+                <span>{e.message}</span>
+                {e.actorLabel ? <span className="cr-audit-row__actor">{e.actorLabel}</span> : null}
               </div>
             ))}
           </div>
-        </div>
+          </div>
+        </section>
       )}
 
-      {/* Provenance + footer */}
       {finding.provenance && (
-        <div
-          style={{
-            fontSize: "11px",
-            color: "var(--ink-dim)",
-            fontFamily: "ui-monospace, SFMono-Regular, monospace",
-            padding: "8px 10px",
-            background: "var(--surface-1)",
-            borderRadius: "6px",
-            border: "1px solid var(--border-soft)",
-          }}
-        >
+        <div className="cr-provenance-box">
           ruleId: {finding.provenance.ruleId}
           {finding.provenance.signalSource && ` · src: ${finding.provenance.signalSource}`}
           {finding.provenance.verdictBasis && ` · basis: ${finding.provenance.verdictBasis}`}
@@ -1009,29 +808,11 @@ function ExpandedDetail({
         </div>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          paddingTop: "10px",
-          borderTop: "1px solid var(--border-soft)",
-          fontSize: "11px",
-          color: "var(--ink-dim)",
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="cr-detail-footer">
         <span>Creat {new Date(finding.createdAtISO).toLocaleString("ro-RO")}</span>
         <span>·</span>
         <span>ID: {finding.id}</span>
-        <button
-          onClick={onDelete}
-          style={{
-            ...btnGhost,
-            marginLeft: "auto",
-            color: "#f87171",
-          }}
-        >
+        <button onClick={onDelete} className="cr-btn cr-btn--danger cr-btn--sm">
           <Trash2 size={11} /> Sterge
         </button>
       </div>
@@ -1039,20 +820,74 @@ function ExpandedDetail({
   )
 }
 
+function InlineGuidanceCard({ finding }: { finding: ScanFinding }) {
+  const legalRefs = [
+    finding.legalReference,
+    ...(finding.legalMappings?.map((mapping) => `${mapping.regulation} ${mapping.article}`) ?? []),
+  ].filter((ref): ref is string => Boolean(ref))
+  const owner = finding.ownerSuggestion ?? suggestedOwnerFor(finding)
+  const firstEvidence =
+    finding.requiredEvidenceKinds?.[0] ??
+    finding.evidenceRequired ??
+    finding.closeCondition ??
+    "dovadă de decizie și execuție"
+  const nextStep =
+    finding.severity === "critical"
+      ? "Închide blocajul critic înainte de următorul raport sau audit pack."
+      : "Finalizează dovada lipsă și lasă audit trail-ul să lege acțiunea de finding."
+
+  return (
+    <section aria-label="AI Guidance pentru finding" className="cr-panel">
+      <div className="cr-panel__body">
+        <div className="cr-guidance-card__header">
+          <div className="cr-guidance-card__icon">
+          <Sparkles size={17} />
+        </div>
+          <div className="cr-guidance-card__copy">
+            <div className="cr-guidance-card__title-row">
+              <strong className="cr-guidance-card__title">AI Guidance · pas-cu-pas pentru acest finding</strong>
+            <span className="cr-badge cr-badge--info">nu execută</span>
+            {typeof finding.confidenceScore === "number" ? (
+              <span className="cr-badge">conf. {finding.confidenceScore}%</span>
+            ) : null}
+            </div>
+            <p className="cr-paragraph">
+              {nextStep} Owner recomandat: <strong>{owner}</strong>. Prima dovadă cerută:{" "}
+              <strong>{firstEvidence}</strong>.
+            </p>
+            <div className="cr-guidance-card__meta">
+            {legalRefs.slice(0, 3).map((ref) => (
+                <span key={ref} className="cr-badge">
+                  {ref}
+                </span>
+            ))}
+              <Link href="/dashboard#ai-guidance" className="cr-link">
+                Vezi planul complet →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function suggestedOwnerFor(finding: ScanFinding): string {
+  if (finding.category === "GDPR") return "DPO"
+  if (finding.category === "NIS2") return "Security"
+  if (finding.category === "EU_AI_ACT") {
+    if (finding.title.toLowerCase().includes("vendor") || finding.title.toLowerCase().includes("furnizor")) return "Legal"
+    if (finding.title.toLowerCase().includes("logging") || finding.title.toLowerCase().includes("jurnal")) return "IT"
+    return "Compliance"
+  }
+  return "Compliance"
+}
+
 function MetaPill({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        fontSize: "11px",
-        color: "var(--ink-muted)",
-        padding: "5px 10px",
-        background: "var(--surface-1)",
-        borderRadius: "999px",
-        border: "1px solid var(--border-soft)",
-      }}
-    >
-      <span style={{ fontWeight: 600, color: "var(--ink-dim)", marginRight: "4px" }}>{label}:</span>
-      {value}
+    <div className="cr-meta-pill">
+      <strong>{label}:</strong>
+      <span>{value}</span>
     </div>
   )
 }
@@ -1095,74 +930,54 @@ function EvidenceSection({
   }
 
   return (
-    <div>
-      <SectionLabel>Dovezi</SectionLabel>
+    <section className="cr-panel">
+      <div className="cr-panel__body cr-detail-stack">
+        <SectionLabel>Dovezi</SectionLabel>
       {finding.operationalEvidenceNote ? (
-        <pre
-          style={{
-            fontSize: "11px",
-            color: "var(--ink)",
-            background: "var(--surface-1)",
-            padding: "10px 12px",
-            borderRadius: "6px",
-            border: "1px solid var(--border-soft)",
-            marginTop: "10px",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            fontFamily: "ui-monospace, SFMono-Regular, monospace",
-            maxHeight: "160px",
-            overflow: "auto",
-          }}
-        >
+          <pre className="cr-pre-box">
           {finding.operationalEvidenceNote}
         </pre>
       ) : (
-        <div style={{ fontSize: "11px", color: "var(--ink-dim)", marginTop: "10px" }}>
-          Nicio dovada inregistrata. Adauga mai jos.
-        </div>
+          <div className="cr-inline-note">Nicio dovadă înregistrată. Adaugă mai jos.</div>
       )}
 
-      <div
-        style={{
-          marginTop: "12px",
-          padding: "12px",
-          background: "var(--surface-1)",
-          borderRadius: "8px",
-          border: "1px solid var(--border-soft)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
-      >
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Nota dovada (obligatoriu): ce ai facut, link, screenshot, observatie..."
-          rows={2}
-          style={{ ...inputStyle, fontFamily: "inherit", resize: "vertical" }}
-        />
-        <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="URL document (optional): https://..."
-          style={inputStyle}
-        />
+        <div className="cr-form-grid">
+          <Field label="Notă dovadă *" span={2}>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ce ai făcut, link, screenshot, observație..."
+              rows={3}
+              className="cr-input cr-textarea"
+            />
+          </Field>
+          <Field label="URL document" span={2}>
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://..."
+              className="cr-input"
+            />
+          </Field>
         {err && (
-          <div style={{ fontSize: "11px", color: "#f87171" }}>{err}</div>
+            <div className="cr-alert cr-alert--danger cr-field--span-2">{err}</div>
         )}
-        <button onClick={handleSubmit} disabled={submitting} style={btnSecondary}>
-          {submitting ? (
-            <>
-              <Loader2 size={12} className="animate-spin" /> Se ataseaza...
-            </>
-          ) : (
-            <>
-              <FileText size={12} /> Ataseaza dovada
-            </>
-          )}
-        </button>
+          <div className="cr-field cr-field--span-2 cr-form-actions">
+            <button onClick={handleSubmit} disabled={submitting} className="cr-btn cr-btn--secondary">
+              {submitting ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" /> Se ataseaza...
+                </>
+              ) : (
+                <>
+                  <FileText size={12} /> Ataseaza dovada
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -1218,148 +1033,100 @@ function CreateModal({
   }
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-        zIndex: 50,
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "var(--surface-1)",
-          borderRadius: "12px",
-          border: "1px solid var(--border-soft)",
-          maxWidth: "560px",
-          width: "100%",
-          maxHeight: "90vh",
-          overflow: "auto",
-          padding: "24px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "16px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              margin: 0,
-            }}
-          >
-            Risc manual nou
-          </h2>
-          <button onClick={onClose} style={{ ...btnGhost, padding: "4px" }}>
+    <div className="cr-modal-backdrop" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="cr-modal cr-modal--lg">
+        <div className="cr-modal__header">
+          <div>
+            <h2 className="cr-modal__title">Risc manual nou</h2>
+            <p className="cr-modal__subtitle">
+              Înregistrezi un finding manual care intră în același lifecycle de confirmare, dovadă și audit trail.
+            </p>
+          </div>
+          <button onClick={onClose} className="cr-icon-button cr-modal__close" aria-label="Închide">
             <X size={16} />
           </button>
         </div>
 
-        <Field label="Titlu *">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex: Provider AI fara DPA semnat"
-            style={inputStyle}
-          />
-        </Field>
+        <div className="cr-modal__body">
+          <div className="cr-form-grid">
+            <Field label="Titlu *" span={2}>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ex: Provider AI fără DPA semnat"
+                className="cr-input"
+              />
+            </Field>
 
-        <Field label="Descriere problema *">
-          <textarea
-            value={detail}
-            onChange={(e) => setDetail(e.target.value)}
-            rows={3}
-            placeholder="Ce ai observat, de ce e o problema..."
-            style={{ ...inputStyle, fontFamily: "inherit", resize: "vertical" }}
-          />
-        </Field>
+            <Field label="Descriere problemă *" span={2}>
+              <textarea
+                value={detail}
+                onChange={(e) => setDetail(e.target.value)}
+                rows={4}
+                placeholder="Ce ai observat și de ce e o problemă..."
+                className="cr-input cr-textarea"
+              />
+            </Field>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-          <Field label="Categorie">
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as FindingCategory)}
-              style={inputStyle}
-            >
-              <option value="EU_AI_ACT">{CATEGORY_LABELS.EU_AI_ACT}</option>
-              <option value="GDPR">{CATEGORY_LABELS.GDPR}</option>
-              <option value="NIS2">{CATEGORY_LABELS.NIS2}</option>
-              {/* Sprint 22 cleanup — e-Factura nu apare în manual create
-                  pentru CompliRoAI (Rule 3 mandate § 19: NO fiscal/e-Factura
-                  surfaces). FindingCategory.E_FACTURA rămâne în type union
-                  pentru backward compat (state-uri legacy migrate din CompliAI)
-                  + filter chip auto-shown dacă există finding-uri legacy.
-                  Manual category select expune doar categoriile AI Compliance OS. */}
-            </select>
-          </Field>
-          <Field label="Severitate">
-            <select
-              value={severity}
-              onChange={(e) => setSeverity(e.target.value as ComplianceSeverity)}
-              style={inputStyle}
-            >
-              <option value="critical">{SEVERITY_LABELS.critical}</option>
-              <option value="high">{SEVERITY_LABELS.high}</option>
-              <option value="medium">{SEVERITY_LABELS.medium}</option>
-              <option value="low">{SEVERITY_LABELS.low}</option>
-            </select>
-          </Field>
+            <Field label="Categorie">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as FindingCategory)}
+                className="cr-input"
+              >
+                <option value="EU_AI_ACT">{CATEGORY_LABELS.EU_AI_ACT}</option>
+                <option value="GDPR">{CATEGORY_LABELS.GDPR}</option>
+                <option value="NIS2">{CATEGORY_LABELS.NIS2}</option>
+              </select>
+            </Field>
+
+            <Field label="Severitate">
+              <select
+                value={severity}
+                onChange={(e) => setSeverity(e.target.value as ComplianceSeverity)}
+                className="cr-input"
+              >
+                <option value="critical">{SEVERITY_LABELS.critical}</option>
+                <option value="high">{SEVERITY_LABELS.high}</option>
+                <option value="medium">{SEVERITY_LABELS.medium}</option>
+                <option value="low">{SEVERITY_LABELS.low}</option>
+              </select>
+            </Field>
+
+            <Field label="Referință legală" span={2}>
+              <input
+                value={legalReference}
+                onChange={(e) => setLegalReference(e.target.value)}
+                placeholder="Ex: GDPR Art. 28 · EU AI Act Art. 26"
+                className="cr-input"
+              />
+            </Field>
+
+            <Field label="Owner sugerat" span={2}>
+              <input
+                value={ownerSuggestion}
+                onChange={(e) => setOwnerSuggestion(e.target.value)}
+                placeholder="Ex: DPO, IT, CISO"
+                className="cr-input"
+              />
+            </Field>
+
+            {err ? <div className="cr-alert cr-alert--danger cr-field--span-2">{err}</div> : null}
+          </div>
         </div>
 
-        <Field label="Referinta legala (optional)">
-          <input
-            value={legalReference}
-            onChange={(e) => setLegalReference(e.target.value)}
-            placeholder="Ex: GDPR Art. 28 · EU AI Act Art. 26"
-            style={inputStyle}
-          />
-        </Field>
-
-        <Field label="Owner sugerat (optional)">
-          <input
-            value={ownerSuggestion}
-            onChange={(e) => setOwnerSuggestion(e.target.value)}
-            placeholder="Ex: DPO, IT, CISO"
-            style={inputStyle}
-          />
-        </Field>
-
-        {err && (
-          <div
-            style={{
-              padding: "10px 12px",
-              background: "var(--red-soft)",
-              border: "1px solid rgba(248,113,113,0.2)",
-              borderRadius: "6px",
-              color: "#f87171",
-              fontSize: "12px",
-            }}
-          >
-            {err}
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={btnSecondary} disabled={submitting}>
-            Anuleaza
+        <div className="cr-modal__footer">
+          <button onClick={onClose} className="cr-btn cr-btn--secondary" disabled={submitting}>
+            Anulează
           </button>
-          <button onClick={handleSubmit} disabled={submitting} style={btnPrimary}>
+          <button onClick={handleSubmit} disabled={submitting} className="cr-btn cr-btn--primary">
             {submitting ? (
               <>
-                <Loader2 size={12} className="animate-spin" /> Se inregistreaza...
+                <Loader2 size={12} className="animate-spin" /> Se înregistrează...
               </>
             ) : (
               <>
-                <Plus size={14} /> Inregistreaza
+                <Plus size={14} /> Înregistrează
               </>
             )}
           </button>
@@ -1369,39 +1136,25 @@ function CreateModal({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+  span = 1,
+}: {
+  label: string
+  children: React.ReactNode
+  span?: 1 | 2
+}) {
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <span
-        style={{
-          fontSize: "11px",
-          fontWeight: 600,
-          color: "var(--ink-muted)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-        }}
-      >
-        {label}
-      </span>
+    <label className={`cr-field${span === 2 ? " cr-field--span-2" : ""}`}>
+      <span className="cr-field-label">{label}</span>
       {children}
     </label>
   )
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        fontSize: "10px",
-        fontWeight: 600,
-        textTransform: "uppercase",
-        letterSpacing: "0.08em",
-        color: "var(--ink-dim)",
-      }}
-    >
-      {children}
-    </div>
-  )
+  return <div className="cr-section-label">{children}</div>
 }
 
 function ActionButton({
@@ -1415,45 +1168,13 @@ function ActionButton({
   disabled?: boolean
   variant?: "default" | "primary" | "danger"
 }) {
-  const styles =
+  const className =
     variant === "primary"
-      ? {
-          background: "var(--cobalt-600)",
-          color: "white",
-          border: "1px solid var(--cobalt-600)",
-        }
+      ? "cr-btn cr-btn--primary cr-btn--sm"
       : variant === "danger"
-        ? {
-            background: "transparent",
-            color: "#f87171",
-            border: "1px solid rgba(248,113,113,0.3)",
-          }
-        : {
-            background: "var(--surface-2)",
-            color: "var(--ink)",
-            border: "1px solid var(--border-soft)",
-          }
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "5px",
-        padding: "6px 10px",
-        fontSize: "11px",
-        fontWeight: 500,
-        borderRadius: "6px",
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.4 : 1,
-        transition: "all 0.15s",
-        ...styles,
-      }}
-    >
-      {children}
-    </button>
-  )
+        ? "cr-btn cr-btn--danger cr-btn--sm"
+        : "cr-btn cr-btn--sm"
+  return <button onClick={onClick} disabled={disabled} className={className}>{children}</button>
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1478,70 +1199,3 @@ function timeAgo(iso: string): string {
 // ────────────────────────────────────────────────────────────────────────────
 //   Shared style tokens
 // ────────────────────────────────────────────────────────────────────────────
-
-const btnPrimary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  fontSize: "12px",
-  fontWeight: 600,
-  color: "white",
-  background: "var(--cobalt-600)",
-  border: "1px solid var(--cobalt-600)",
-  borderRadius: "8px",
-  cursor: "pointer",
-  transition: "all 0.15s",
-}
-
-const btnSecondary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  fontSize: "12px",
-  fontWeight: 500,
-  color: "var(--ink)",
-  background: "var(--surface-2)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "8px",
-  cursor: "pointer",
-  transition: "all 0.15s",
-}
-
-const btnGhost: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "4px",
-  padding: "3px 8px",
-  fontSize: "10px",
-  fontWeight: 500,
-  color: "var(--ink-muted)",
-  background: "transparent",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "4px",
-  cursor: "pointer",
-  transition: "all 0.15s",
-}
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "9px 12px",
-  fontSize: "13px",
-  color: "var(--ink)",
-  background: "var(--surface-0)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "6px",
-  outline: "none",
-  fontFamily: "inherit",
-}
-
-const paragraphStyle: React.CSSProperties = {
-  fontSize: "13px",
-  color: "var(--ink)",
-  marginTop: "8px",
-  marginBottom: "8px",
-  lineHeight: 1.55,
-  whiteSpace: "pre-wrap",
-}
-

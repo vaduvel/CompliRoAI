@@ -162,55 +162,22 @@ export default function RopaPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1240px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          RoPA / Data Map — activități de prelucrare
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+    <div className="cr-page cr-page--full cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate GDPR</span>
+          <h1 className="cr-title">Hartă date · RoPA</h1>
+          <p className="cr-subtitle">
           GDPR Art. 30 · Legea 190/2018 · Motor risc + findings + discovery triggers · Export Audit Pack
-        </p>
+          </p>
+        </div>
       </div>
 
       <SummaryStats summary={data?.summary ?? null} />
 
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
@@ -233,28 +200,23 @@ export default function RopaPage() {
             <button
               key={key}
               onClick={() => setRiskFilter(key)}
-              style={{
-                ...pillBtn,
-                background: riskFilter === key ? "var(--cobalt-600)" : "transparent",
-                color: riskFilter === key ? "white" : "var(--ink-muted)",
-                borderColor: riskFilter === key ? "var(--cobalt-600)" : "var(--border-soft)",
-              }}
+              className={`cr-filter-chip ${riskFilter === key ? "is-active" : ""}`}
             >
               {key === "all" ? "Toate" : RISK_LABELS[key]}
             </button>
           ))}
         </div>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <button onClick={() => handleExport("json")} style={btnGhost}>
+          <button onClick={() => handleExport("json")} className="cr-btn cr-btn--secondary cr-btn--sm">
             <Download size={13} /> Export JSON
           </button>
-          <button onClick={() => handleExport("md")} style={btnGhost}>
+          <button onClick={() => handleExport("md")} className="cr-btn cr-btn--secondary cr-btn--sm">
             <FileText size={13} /> Export Markdown
           </button>
-          <button onClick={() => setImporting(true)} style={btnGhost}>
+          <button onClick={() => setImporting(true)} className="cr-btn cr-btn--secondary cr-btn--sm">
             <Upload size={13} /> Import bulk
           </button>
-          <button onClick={() => setCreating(true)} style={btnPrimary}>
+          <button onClick={() => setCreating(true)} className="cr-btn cr-btn--primary cr-btn--sm">
             <Plus size={14} /> Activitate nouă
           </button>
         </div>
@@ -562,10 +524,10 @@ function ActivityTable({
                 )}
 
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  <button onClick={() => onEdit(a)} style={btnGhost}>
+                  <button onClick={() => onEdit(a)} className="cr-btn cr-btn--secondary cr-btn--sm">
                     <Save size={13} /> Editează
                   </button>
-                  <button onClick={() => onDelete(a.id)} style={{ ...btnGhost, color: "#f87171" }}>
+                  <button onClick={() => onDelete(a.id)} className="cr-btn cr-btn--danger cr-btn--sm">
                     <Trash2 size={13} /> Șterge
                   </button>
                 </div>
@@ -637,10 +599,10 @@ function EmptyState({ onCreate, onImport }: { onCreate: () => void; onImport: ()
         Construiește registrul Art. 30 al organizației — fie manual, fie prin import bulk din tabelul tău existent (CSV/TSV).
       </div>
       <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-        <button onClick={onCreate} style={btnPrimary}>
+        <button onClick={onCreate} className="cr-btn cr-btn--primary cr-btn--sm">
           <Plus size={14} /> Activitate nouă
         </button>
-        <button onClick={onImport} style={btnGhost}>
+        <button onClick={onImport} className="cr-btn cr-btn--secondary cr-btn--sm">
           <Upload size={13} /> Import bulk
         </button>
       </div>
@@ -704,7 +666,7 @@ function EditModal({
               Toate câmpurile Art. 30(1) + linkuri AI · Risc-ul se calculează după salvare.
             </div>
           </div>
-          <button onClick={onClose} style={iconBtn}><X size={16} /></button>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm"><X size={16} /></button>
         </div>
 
         {err && (
@@ -715,16 +677,16 @@ function EditModal({
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <Field label="Nume activitate *">
-            <input value={form.activityName ?? ""} onChange={(e) => f("activityName", e.target.value)} style={inputStyle} />
+            <input value={form.activityName ?? ""} onChange={(e) => f("activityName", e.target.value)} className="cr-input" />
           </Field>
           <Field label="Departament">
-            <input value={form.department ?? ""} onChange={(e) => f("department", e.target.value)} style={inputStyle} />
+            <input value={form.department ?? ""} onChange={(e) => f("department", e.target.value)} className="cr-input" />
           </Field>
           <Field label="Owner">
-            <input value={form.ownerName ?? ""} onChange={(e) => f("ownerName", e.target.value)} style={inputStyle} />
+            <input value={form.ownerName ?? ""} onChange={(e) => f("ownerName", e.target.value)} className="cr-input" />
           </Field>
           <Field label="Status">
-            <select value={form.status ?? "draft"} onChange={(e) => f("status", e.target.value as RopaActivityStatus)} style={inputStyle}>
+            <select value={form.status ?? "draft"} onChange={(e) => f("status", e.target.value as RopaActivityStatus)} className="cr-input">
               <option value="draft">Schiță</option>
               <option value="needs_review">Necesită revizie</option>
               <option value="validated">Validată</option>
@@ -735,6 +697,7 @@ function EditModal({
 
         <Field label="Scop prelucrare">
           <textarea
+            className="cr-input cr-textarea"
             value={form.purpose ?? ""}
             onChange={(e) => f("purpose", e.target.value)}
             rows={2}
@@ -744,15 +707,16 @@ function EditModal({
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <Field label="Temei juridic (Art. 6)">
-            <input value={form.legalBasis ?? ""} onChange={(e) => f("legalBasis", e.target.value)} placeholder="6(1)(a)/(b)/..." style={inputStyle} />
+            <input value={form.legalBasis ?? ""} onChange={(e) => f("legalBasis", e.target.value)} placeholder="6(1)(a)/(b)/..." className="cr-input" />
           </Field>
           <Field label="Condiție Art. 9 (date speciale)">
-            <input value={form.article9Condition ?? ""} onChange={(e) => f("article9Condition", e.target.value)} placeholder="9(2)(a)/(b)/..." style={inputStyle} />
+            <input value={form.article9Condition ?? ""} onChange={(e) => f("article9Condition", e.target.value)} placeholder="9(2)(a)/(b)/..." className="cr-input" />
           </Field>
         </div>
 
         <Field label="Persoane vizate (CSV/newline)">
           <textarea
+            className="cr-input cr-textarea"
             value={(form.dataSubjects ?? []).join("\n")}
             onChange={(e) => flist("dataSubjects", e.target.value)}
             rows={2}
@@ -762,6 +726,7 @@ function EditModal({
 
         <Field label="Categorii de date (CSV/newline)">
           <textarea
+            className="cr-input cr-textarea"
             value={(form.dataCategories ?? []).join("\n")}
             onChange={(e) => flist("dataCategories", e.target.value)}
             rows={2}
@@ -773,6 +738,7 @@ function EditModal({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <Field label="Destinatari (CSV)">
             <textarea
+            className="cr-input cr-textarea"
               value={(form.recipients ?? []).join("\n")}
               onChange={(e) => flist("recipients", e.target.value)}
               rows={2}
@@ -781,6 +747,7 @@ function EditModal({
           </Field>
           <Field label="Procesatori / vendori (CSV)">
             <textarea
+            className="cr-input cr-textarea"
               value={(form.processors ?? []).join("\n")}
               onChange={(e) => flist("processors", e.target.value)}
               rows={2}
@@ -791,6 +758,7 @@ function EditModal({
 
         <Field label="Sisteme / tool-uri (CSV)">
           <textarea
+            className="cr-input cr-textarea"
             value={(form.systems ?? []).join("\n")}
             onChange={(e) => flist("systems", e.target.value)}
             rows={2}
@@ -803,7 +771,7 @@ function EditModal({
             value={(form.linkedAISystemIds ?? []).join(", ")}
             onChange={(e) => flist("linkedAISystemIds", e.target.value)}
             placeholder="Ex: ai-sys-abc123, ai-sys-def456"
-            style={inputStyle}
+            className="cr-input"
           />
         </Field>
 
@@ -812,6 +780,7 @@ function EditModal({
             {transfers.map((t, i) => (
               <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <input
+                  className="cr-input"
                   value={t.country}
                   onChange={(e) => {
                     const next = [...transfers]
@@ -822,6 +791,7 @@ function EditModal({
                   style={{ ...inputStyle, flex: 1 }}
                 />
                 <input
+                  className="cr-input"
                   value={t.mechanism ?? ""}
                   onChange={(e) => {
                     const next = [...transfers]
@@ -833,7 +803,7 @@ function EditModal({
                 />
                 <button
                   onClick={() => setTransfers(transfers.filter((_, idx) => idx !== i))}
-                  style={iconBtn}
+                  className="cr-btn cr-btn--icon cr-btn--sm"
                 >
                   <X size={14} />
                 </button>
@@ -841,7 +811,8 @@ function EditModal({
             ))}
             <button
               onClick={() => setTransfers([...transfers, { country: "", mechanism: "" }])}
-              style={{ ...btnGhost, alignSelf: "flex-start" }}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
+              style={{ alignSelf: "flex-start" }}
             >
               <Plus size={12} /> Adaugă transfer
             </button>
@@ -853,12 +824,13 @@ function EditModal({
             value={form.retentionRule ?? ""}
             onChange={(e) => f("retentionRule", e.target.value)}
             placeholder="Ex: 5 ani după ultima interacțiune"
-            style={inputStyle}
+            className="cr-input"
           />
         </Field>
 
         <Field label="Măsuri tehnice/organizatorice (CSV)">
           <textarea
+            className="cr-input cr-textarea"
             value={(form.securityMeasures ?? []).join("\n")}
             onChange={(e) => flist("securityMeasures", e.target.value)}
             rows={2}
@@ -868,8 +840,8 @@ function EditModal({
         </Field>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button onClick={onClose} style={btnGhost}>Anulează</button>
-          <button onClick={submit} disabled={submitting} style={btnPrimary}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">Anulează</button>
+          <button onClick={submit} disabled={submitting} className="cr-btn cr-btn--primary cr-btn--sm">
             {submitting ? <Loader2 size={12} className="spin" /> : <Save size={13} />}
             Salvează
           </button>
@@ -969,7 +941,7 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
               Lipește din Excel/Google Sheets. Header obligatoriu pe primul rând.
             </div>
           </div>
-          <button onClick={onClose} style={iconBtn}><X size={16} /></button>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm"><X size={16} /></button>
         </div>
 
         <div style={{ fontSize: "11px", color: "var(--ink-dim)", padding: "8px 10px", background: "var(--surface-2)", borderRadius: "6px" }}>
@@ -989,6 +961,7 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
         )}
 
         <textarea
+            className="cr-input cr-textarea"
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={10}
@@ -1001,8 +974,8 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             {parsed.length > 0 ? `${parsed.length} activități recunoscute` : "—"}
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button onClick={parse} style={btnGhost}>Pre-procesează</button>
-            <button onClick={submit} disabled={submitting || parsed.length === 0} style={{ ...btnPrimary, opacity: parsed.length === 0 ? 0.5 : 1 }}>
+            <button onClick={parse} className="cr-btn cr-btn--secondary cr-btn--sm">Pre-procesează</button>
+            <button onClick={submit} disabled={submitting || parsed.length === 0} className="cr-btn cr-btn--primary cr-btn--sm">
               {submitting ? <Loader2 size={12} className="spin" /> : <Upload size={13} />}
               Importă ({parsed.length})
             </button>
@@ -1032,41 +1005,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 //   Styles
 // ────────────────────────────────────────────────────────────────────────────
 
-const btnPrimary: React.CSSProperties = {
-  padding: "8px 14px",
-  background: "var(--cobalt-600)",
-  color: "white",
-  border: "none",
-  borderRadius: "6px",
-  fontSize: "13px",
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-}
-
-const btnGhost: React.CSSProperties = {
-  padding: "6px 12px",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "6px",
-  fontSize: "12px",
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-}
-
-const iconBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--ink-dim)",
-  padding: "4px",
-}
-
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
   background: "var(--surface-2)",
@@ -1075,14 +1013,6 @@ const inputStyle: React.CSSProperties = {
   fontSize: "13px",
   color: "var(--ink)",
   outline: "none",
-}
-
-const pillBtn: React.CSSProperties = {
-  padding: "6px 12px",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "999px",
-  fontSize: "12px",
-  cursor: "pointer",
 }
 
 const modalOverlay: React.CSSProperties = {

@@ -254,140 +254,68 @@ export default function LoggingEvidencePage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1200px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Logging Evidence (Art. 12 + Art. 26(6))
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+    <div className="cr-page cr-page--full cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate</span>
+          <h1 className="cr-title">Jurnalizare · Art. 12 + Art. 26(6)</h1>
+          <p className="cr-subtitle">
           Config logging per sistem AI · Art. 12(3) biometric full · retenție min
           6 luni · meta-logging acces · Inclus în Audit Pack
-        </p>
+          </p>
+        </div>
       </div>
 
       <StatsBar summary={summary} />
 
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
 
       {systemsWithoutConfig.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "14px 16px",
-            background: "var(--amber-soft)",
-            border: "1px solid rgba(251,191,36,0.25)",
-            borderRadius: "10px",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <AlertTriangle size={18} style={{ color: "#fbbf24", flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: "200px" }}>
-            <div
-              style={{
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "#fbbf24",
-                marginBottom: "2px",
-              }}
-            >
+        <div className="cr-urgency-rail">
+          <div className="cr-urgency-rail__header">
+            <AlertTriangle size={18} />
+            <div>
               {systemsWithoutConfig.length} sistem
               {systemsWithoutConfig.length !== 1 ? "e" : ""} AI fără config logging
               Art. 12
             </div>
-            <div style={{ fontSize: "12px", color: "var(--ink-muted)" }}>
+          </div>
+          <div className="cr-urgency-rail__list">
+            <div className="cr-inline-note">
               Art. 12(1) impune logging automat pentru high-risk; Art. 12(3)
               biometric full obligatoriu (Annex III 1(a)); Art. 26(6) retenție
               min 6 luni.
             </div>
-          </div>
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {systemsWithoutConfig.slice(0, 3).map((s) => (
-              <button
-                key={s.id}
-                onClick={() => {
-                  setPrefilledSystemId(s.id)
-                  setShowWizard(true)
-                }}
-                style={{
-                  padding: "6px 12px",
-                  background: "transparent",
-                  color: "#fbbf24",
-                  border: "1px solid rgba(251,191,36,0.4)",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                }}
-              >
-                {s.name} →
-              </button>
-            ))}
-            {systemsWithoutConfig.length > 3 && (
-              <span
-                style={{
-                  fontSize: "11px",
-                  color: "var(--ink-dim)",
-                  alignSelf: "center",
-                }}
-              >
-                +{systemsWithoutConfig.length - 3} altele
-              </span>
-            )}
+            <div className="cr-urgency-item__actions">
+              {systemsWithoutConfig.slice(0, 3).map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setPrefilledSystemId(s.id)
+                    setShowWizard(true)
+                  }}
+                  className="cr-btn cr-btn--secondary cr-btn--sm"
+                >
+                  {s.name} →
+                </button>
+              ))}
+              {systemsWithoutConfig.length > 3 && (
+                <span className="cr-badge">
+                  +{systemsWithoutConfig.length - 3} altele
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <div className="cr-registry-toolbar">
+        <div className="cr-registry-toolbar__stack">
           <FilterTabs value={statusFilter} onChange={setStatusFilter} records={records} />
           <RetentionFilterTabs
             value={retentionFilter}
@@ -400,7 +328,7 @@ export default function LoggingEvidencePage() {
             setPrefilledSystemId(undefined)
             setShowWizard(true)
           }}
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
         >
           <Plus size={14} /> Nou config
         </button>
@@ -434,7 +362,7 @@ export default function LoggingEvidencePage() {
       )}
 
       {loading ? (
-        <div style={{ fontSize: "13px", color: "var(--ink-dim)", padding: "24px 0" }}>
+        <div className="cr-empty">
           Se încarcă registrul Logging Evidence...
         </div>
       ) : filtered.length === 0 ? (
@@ -443,7 +371,7 @@ export default function LoggingEvidencePage() {
           onCreate={() => setShowWizard(true)}
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div className="cr-registry-list">
           {filtered.map((record) => (
             <ConfigRow
               key={record.id}
@@ -480,42 +408,13 @@ function StatsBar({ summary }: { summary: LoggingSummary | null }) {
     { label: "Fără dovadă", value: summary?.noEvidence ?? 0, color: "#94a3b8" },
   ]
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-        gap: "10px",
-      }}
-    >
+    <div className="cr-stat-strip cr-stat-strip--auto">
       {items.map((it) => (
-        <div
-          key={it.label}
-          style={{
-            background: "var(--surface-1)",
-            border: "1px solid var(--border-soft)",
-            borderRadius: "10px",
-            padding: "14px 16px",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-            }}
-          >
+        <div key={it.label} className="cr-stat">
+          <div className="cr-stat__label">
             {it.label}
           </div>
-          <div
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "22px",
-              fontWeight: 600,
-              marginTop: "4px",
-              color: it.color,
-            }}
-          >
+          <div className="cr-stat__value" style={{ color: it.color }}>
             {it.value}
           </div>
         </div>
@@ -546,7 +445,7 @@ function FilterTabs({
     { id: "rejected", label: "Respinse" },
   ]
   return (
-    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+    <div className="cr-segment-bar">
       {tabs.map((tab) => {
         const count =
           tab.id === "all"
@@ -557,18 +456,9 @@ function FilterTabs({
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            style={{
-              padding: "6px 12px",
-              background: active ? "var(--surface-2)" : "transparent",
-              border: "1px solid var(--border-soft)",
-              borderRadius: "6px",
-              fontSize: "12px",
-              color: active ? "var(--ink)" : "var(--ink-muted)",
-              fontWeight: active ? 500 : 400,
-              cursor: "pointer",
-            }}
+            className={`cr-tab${active ? " is-active" : ""}`}
           >
-            {tab.label} ({count})
+            {tab.label} <span className="cr-tab__count">{count}</span>
           </button>
         )
       })}
@@ -593,7 +483,7 @@ function RetentionFilterTabs({
     { id: "no_evidence", label: "Fără dovadă" },
   ]
   return (
-    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+    <div className="cr-segment-bar">
       {tabs.map((tab) => {
         const count =
           tab.id === "all"
@@ -604,18 +494,9 @@ function RetentionFilterTabs({
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            style={{
-              padding: "5px 10px",
-              background: active ? "var(--surface-2)" : "transparent",
-              border: "1px solid var(--border-soft)",
-              borderRadius: "5px",
-              fontSize: "11px",
-              color: active ? "var(--ink)" : "var(--ink-dim)",
-              fontWeight: active ? 500 : 400,
-              cursor: "pointer",
-            }}
+            className={`cr-tab${active ? " is-active" : ""}`}
           >
-            {tab.label} ({count})
+            {tab.label} <span className="cr-tab__count">{count}</span>
           </button>
         )
       })}
@@ -629,43 +510,19 @@ function RetentionFilterTabs({
 
 function EmptyState({ hasAny, onCreate }: { hasAny: boolean; onCreate: () => void }) {
   return (
-    <div
-      style={{
-        padding: "40px 24px",
-        textAlign: "center",
-        background: "var(--surface-1)",
-        border: "1px dashed var(--border-soft)",
-        borderRadius: "10px",
-      }}
-    >
-      <Database
-        size={32}
-        style={{ color: "var(--ink-dim)", marginBottom: "12px", opacity: 0.6 }}
-      />
-      <h3
-        style={{
-          fontSize: "15px",
-          fontWeight: 500,
-          color: "var(--ink)",
-          margin: 0,
-        }}
-      >
+    <div className="cr-empty">
+      <Database size={32} className="cr-empty__icon" />
+      <h3 className="cr-empty__title">
         {hasAny
           ? "Nicio configurare pentru filtru"
           : "Niciun config Logging încă"}
       </h3>
-      <p
-        style={{
-          fontSize: "13px",
-          color: "var(--ink-muted)",
-          margin: "8px 0 16px",
-        }}
-      >
+      <p className="cr-empty__copy">
         {hasAny
           ? "Schimbă filtrul de status / retenție sau adaugă un config nou."
           : "Art. 12 cere logging automat per sistem AI high-risk; retenție min 6 luni (Art. 26(6))."}
       </p>
-      <button onClick={onCreate} style={btnPrimary}>
+      <button onClick={onCreate} className="cr-btn cr-btn--primary">
         <Plus size={14} /> Nou config
       </button>
     </div>
@@ -705,77 +562,37 @@ function ConfigRow({
   const canMarkObsolete = record.status === "active"
 
   return (
-    <div
-      style={{
-        background: "var(--surface-1)",
-        border: "1px solid var(--border-soft)",
-        borderRadius: "10px",
-        overflow: "hidden",
-      }}
-    >
-      <div
+    <div className="cr-registry-card">
+      <button
+        type="button"
         onClick={onToggle}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          padding: "14px 16px",
-          cursor: "pointer",
-        }}
+        className="cr-registry-toggle"
       >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: 500,
-                color: "var(--ink)",
-              }}
-            >
+        <div className="cr-registry-main">
+          <div className="cr-registry-heading">
+            <span className="cr-registry-title">
               {record.title}
-            </div>
-            <span style={{ ...badgeStyle, background: statusColor.bg, color: statusColor.fg }}>
+            </span>
+            <span className="cr-badge" style={{ background: statusColor.bg, color: statusColor.fg }}>
               {STATUS_LABELS[record.status]}
             </span>
-            <span style={{ ...badgeStyle, background: compColor.bg, color: compColor.fg }}>
+            <span className="cr-badge" style={{ background: compColor.bg, color: compColor.fg }}>
               {COMPLETENESS_LABELS[record.completeness]}
             </span>
             <span
-              style={{
-                ...badgeStyle,
-                background: retentionColor.bg,
-                color: retentionColor.fg,
-              }}
+              className="cr-badge"
+              style={{ background: retentionColor.bg, color: retentionColor.fg }}
             >
               {RETENTION_LABELS[record.retentionStatus]}
             </span>
             <span
-              style={{
-                ...badgeStyle,
-                background: "rgba(96,165,250,0.10)",
-                color: "#60a5fa",
-              }}
+              className="cr-badge"
+              style={{ background: "rgba(96,165,250,0.10)", color: "#60a5fa" }}
             >
               {LOGGING_SEVERITY_LEVEL_LABELS[record.severityLevel].split(" — ")[0]}
             </span>
           </div>
-          <div
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              marginTop: "4px",
-              display: "flex",
-              gap: "10px",
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="cr-registry-meta">
             <span>Sistem: {system?.name ?? record.linkedAISystemId}</span>
             <span>
               · Retenție: {record.actualRetentionMonths}/{record.minRetentionMonths} luni
@@ -788,53 +605,36 @@ function ConfigRow({
             )}
           </div>
         </div>
-        <button style={iconBtn} aria-label={expanded ? "Colapsează" : "Extinde"}>
+        <span className="cr-registry-chevron" aria-hidden="true">
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-      </div>
+        </span>
+      </button>
 
       {expanded && (
-        <div
-          style={{
-            padding: "16px",
-            borderTop: "1px solid var(--border-soft)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "18px",
-            background: "var(--surface-2)",
-          }}
-        >
+        <div className="cr-registry-detail">
           <ExpandedDetail record={record} system={system} />
 
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              flexWrap: "wrap",
-              borderTop: "1px solid var(--border-soft)",
-              paddingTop: "14px",
-            }}
-          >
+          <div className="cr-actions">
             {canApprove && (
-              <button onClick={onApprove} style={btnPrimary}>
+              <button onClick={onApprove} className="cr-btn cr-btn--primary cr-btn--sm">
                 <CheckCircle2 size={14} /> Activează
               </button>
             )}
-            <button onClick={onAttachEvidence} style={btnGhost}>
+            <button onClick={onAttachEvidence} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Upload size={14} /> Atașează logs / dovadă
             </button>
-            <button onClick={() => onExport("md")} style={btnGhost}>
+            <button onClick={() => onExport("md")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <FileText size={14} /> MD
             </button>
-            <button onClick={() => onExport("pdf")} style={btnGhost}>
+            <button onClick={() => onExport("pdf")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Download size={14} /> PDF
             </button>
             {canMarkObsolete && (
-              <button onClick={onObsolete} style={btnGhost}>
+              <button onClick={onObsolete} className="cr-btn cr-btn--secondary cr-btn--sm">
                 <Archive size={14} /> Marchează obsolet
               </button>
             )}
-            <button onClick={onDelete} style={{ ...btnGhost, color: "#f87171" }}>
+            <button onClick={onDelete} className="cr-btn cr-btn--danger cr-btn--sm">
               <Trash2 size={14} /> Șterge
             </button>
           </div>
@@ -854,22 +654,18 @@ function ExpandedDetail({
   return (
     <>
       <Section title="A. Sistem AI + nivel severitate">
-        <div style={detailRow}>
+        <div className="cr-detail-kv">
           <strong>Severitate:</strong> {LOGGING_SEVERITY_LEVEL_LABELS[record.severityLevel]}
         </div>
-        <div style={{ ...detailRow, color: "var(--ink-muted)", fontSize: "12px" }}>
+        <div className="cr-detail-copy">
           {LOGGING_SEVERITY_LEVEL_DESCRIPTIONS[record.severityLevel]}
         </div>
-        <div style={detailRow}>
+        <div className="cr-detail-kv">
           <strong>Sistem AI legat:</strong> {system?.name ?? record.linkedAISystemId}
           {system?.purpose === "biometric-identification" && (
             <span
-              style={{
-                ...badgeStyle,
-                background: "rgba(248,113,113,0.18)",
-                color: "#f87171",
-                marginLeft: "8px",
-              }}
+              className="cr-badge"
+              style={{ background: "rgba(248,113,113,0.18)", color: "#f87171" }}
             >
               Biometric ID — Art. 12(3) full obligatoriu
             </span>
@@ -878,18 +674,13 @@ function ExpandedDetail({
       </Section>
 
       <Section title="B. Categorii evenimente loguite (Art. 12(2)/(3))">
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div className="cr-registry-list">
           {LOGGING_EVENT_CATEGORIES_ORDERED.map((cat) => {
             const logged = record.eventCategoriesLogged.includes(cat)
             return (
               <div
                 key={cat}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "8px",
-                  fontSize: "13px",
-                }}
+                className="cr-inline-note"
               >
                 <span
                   style={{
@@ -909,8 +700,8 @@ function ExpandedDetail({
                   {logged ? "✓" : ""}
                 </span>
                 <div>
-                  <div style={{ color: "var(--ink)" }}>{LOGGING_EVENT_CATEGORY_LABELS[cat]}</div>
-                  <div style={{ fontSize: "11px", color: "var(--ink-dim)" }}>
+                  <div className="cr-registry-title">{LOGGING_EVENT_CATEGORY_LABELS[cat]}</div>
+                  <div className="cr-registry-meta">
                     {LOGGING_EVENT_CATEGORY_HELP[cat]}
                   </div>
                 </div>
@@ -919,10 +710,8 @@ function ExpandedDetail({
           })}
         </div>
         {record.biometricSpecific && (
-          <div style={{ marginTop: 12 }}>
-            <div
-              style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 6 }}
-            >
+          <div className="cr-section">
+            <div className="cr-section__label">
               Câmpuri Art. 12(3) biometric ID
             </div>
             <BiometricChips bs={record.biometricSpecific} />
@@ -931,55 +720,51 @@ function ExpandedDetail({
       </Section>
 
       <Section title="C. Storage + retenție (Art. 26(6))">
-        <div style={detailRow}>
+        <div className="cr-detail-kv">
           <strong>Backend:</strong> {LOGGING_STORAGE_BACKEND_LABELS[record.storageBackend]}
         </div>
-        <div style={detailRow}>
+        <div className="cr-detail-kv">
           <strong>Locație:</strong>{" "}
           <code style={{ fontSize: 11, color: "var(--ink-muted)" }}>
             {record.storageLocation}
           </code>
         </div>
-        <div style={detailRow}>
+        <div className="cr-detail-kv">
           <strong>Retenția:</strong> actuală {record.actualRetentionMonths} luni · minim cerut{" "}
           {record.minRetentionMonths} luni
           {record.actualRetentionMonths < record.minRetentionMonths && (
             <span
-              style={{
-                ...badgeStyle,
-                background: "rgba(248,113,113,0.18)",
-                color: "#f87171",
-                marginLeft: 6,
-              }}
+              className="cr-badge"
+              style={{ background: "rgba(248,113,113,0.18)", color: "#f87171" }}
             >
               Sub minim Art. 26(6)
             </span>
           )}
         </div>
         {record.retentionPolicy && (
-          <div style={{ ...detailRow, color: "var(--ink-muted)", fontSize: 12 }}>
+          <div className="cr-detail-copy">
             {record.retentionPolicy}
           </div>
         )}
       </Section>
 
       <Section title="D. Integritate + control acces">
-        <div style={detailRow}>
+        <div className="cr-detail-kv">
           <strong>Mecanism integritate:</strong>{" "}
           {LOGGING_INTEGRITY_MECHANISM_LABELS[record.integrityMechanism]}
         </div>
         {record.integrityMechanismDescription && (
-          <div style={{ ...detailRow, color: "var(--ink-muted)", fontSize: 12 }}>
+          <div className="cr-detail-copy">
             {record.integrityMechanismDescription}
           </div>
         )}
-        <div style={detailRow}>
+        <div className="cr-detail-kv">
           <strong>Roluri cu acces:</strong>{" "}
           {record.accessRoleDescription || (
             <em style={{ color: "var(--ink-dim)" }}>nedefinite</em>
           )}
         </div>
-        <div style={detailRow}>
+        <div className="cr-detail-kv">
           <strong>Meta-logging acces:</strong> {record.accessLogged ? "DA" : "NU"}
         </div>
       </Section>
@@ -988,7 +773,7 @@ function ExpandedDetail({
         {record.evidenceChecklist.length === 0 ? (
           <em style={{ color: "var(--ink-dim)" }}>Niciun item definit.</em>
         ) : (
-          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "var(--ink-muted)" }}>
+          <ul className="cr-source-list">
             {record.evidenceChecklist.map((item, i) => (
               <li key={i}>{item}</li>
             ))}
@@ -1000,48 +785,50 @@ function ExpandedDetail({
         {record.evidenceItems.length === 0 ? (
           <em style={{ color: "var(--ink-dim)" }}>Nicio dovadă încărcată.</em>
         ) : (
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Tip</th>
-                <th style={thStyle}>Descriere</th>
-                <th style={thStyle}>Perioadă</th>
-                <th style={thStyle}>Encărcat</th>
-                <th style={thStyle}>De</th>
-              </tr>
-            </thead>
-            <tbody>
-              {record.evidenceItems.map((e) => (
-                <tr key={e.id}>
-                  <td style={tdStyle}>{EVIDENCE_TYPE_LABELS[e.type]}</td>
-                  <td style={tdStyle}>
-                    {e.description}
-                    {e.url && (
-                      <>
-                        {" · "}
-                        <a href={e.url} target="_blank" rel="noreferrer" style={{ color: "#60a5fa" }}>
-                          link
-                        </a>
-                      </>
-                    )}
-                  </td>
-                  <td style={tdStyle}>
-                    {e.coversPeriodStartISO && e.coversPeriodEndISO
-                      ? `${e.coversPeriodStartISO.slice(0, 10)} → ${e.coversPeriodEndISO.slice(0, 10)}`
-                      : "—"}
-                  </td>
-                  <td style={tdStyle}>{e.uploadedAtISO.slice(0, 10)}</td>
-                  <td style={tdStyle}>{e.uploadedByEmail}</td>
+          <div className="cr-table-shell">
+            <table className="cr-table">
+              <thead>
+                <tr>
+                  <th>Tip</th>
+                  <th>Descriere</th>
+                  <th>Perioadă</th>
+                  <th>Încărcat</th>
+                  <th>De</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {record.evidenceItems.map((e) => (
+                  <tr key={e.id}>
+                    <td>{EVIDENCE_TYPE_LABELS[e.type]}</td>
+                    <td>
+                      {e.description}
+                      {e.url && (
+                        <>
+                          {" · "}
+                          <a href={e.url} target="_blank" rel="noreferrer">
+                            link
+                          </a>
+                        </>
+                      )}
+                    </td>
+                    <td>
+                      {e.coversPeriodStartISO && e.coversPeriodEndISO
+                        ? `${e.coversPeriodStartISO.slice(0, 10)} → ${e.coversPeriodEndISO.slice(0, 10)}`
+                        : "—"}
+                    </td>
+                    <td>{e.uploadedAtISO.slice(0, 10)}</td>
+                    <td>{e.uploadedByEmail}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Section>
 
       {record.linkedFindingIds.length > 0 && (
         <Section title={`Findings legate (${record.linkedFindingIds.length})`}>
-          <div style={{ fontSize: 12, color: "var(--ink-muted)" }}>
+          <div className="cr-detail-copy">
             {record.linkedFindingIds.join(", ")}
           </div>
         </Section>
@@ -1049,7 +836,7 @@ function ExpandedDetail({
 
       {record.nextReviewISO && (
         <Section title="Următoarea revizie">
-          <div style={detailRow}>
+          <div className="cr-detail-kv">
             <Clock size={14} style={{ color: "var(--ink-dim)" }} />{" "}
             {record.nextReviewISO.slice(0, 10)}
           </div>
@@ -1071,8 +858,8 @@ function BiometricChips({ bs }: { bs: LoggingBiometricSpecifics }) {
       {items.map((it) => (
         <span
           key={it.label}
+          className="cr-badge"
           style={{
-            ...badgeStyle,
             background: it.ok ? "rgba(52,211,153,0.18)" : "rgba(248,113,113,0.18)",
             color: it.ok ? "#10b981" : "#f87171",
           }}
@@ -1086,9 +873,9 @@ function BiometricChips({ bs }: { bs: LoggingBiometricSpecifics }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div style={subTitle}>{title}</div>
-      <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+    <div className="cr-section">
+      <div className="cr-section__title">{title}</div>
+      <div className="cr-section__body">
         {children}
       </div>
     </div>
@@ -1246,7 +1033,7 @@ function LoggingWizard({
               Pas {step + 1} / 4 · Art. 12 + Art. 26(6) AI Act
             </div>
           </div>
-          <button onClick={onClose} style={iconBtn} aria-label="Închide">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" aria-label="Închide">
             <X size={18} />
           </button>
         </div>
@@ -1263,7 +1050,7 @@ function LoggingWizard({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="ex: Logging Config — Credit Scoring AI"
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             <div>
@@ -1271,7 +1058,7 @@ function LoggingWizard({
               <select
                 value={systemId}
                 onChange={(e) => setSystemId(e.target.value)}
-                style={inputStyle}
+                className="cr-input"
               >
                 <option value="">— Selectează —</option>
                 {aiSystems.map((s) => (
@@ -1288,7 +1075,7 @@ function LoggingWizard({
                 onChange={(e) =>
                   setSeverityLevel(e.target.value as LoggingSeverityLevel)
                 }
-                style={inputStyle}
+                className="cr-input"
               >
                 {LOGGING_SEVERITY_LEVEL_OPTIONS.map((lv) => (
                   <option key={lv} value={lv}>
@@ -1419,7 +1206,7 @@ function LoggingWizard({
                 onChange={(e) =>
                   setStorageBackend(e.target.value as LoggingStorageBackend)
                 }
-                style={inputStyle}
+                className="cr-input"
               >
                 {LOGGING_STORAGE_BACKEND_OPTIONS.map((b) => (
                   <option key={b} value={b}>
@@ -1434,7 +1221,7 @@ function LoggingWizard({
                 value={storageLocation}
                 onChange={(e) => setStorageLocation(e.target.value)}
                 placeholder="ex: https://elastic.example.com/index=ai_logs"
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             <div style={{ display: "flex", gap: 12 }}>
@@ -1445,7 +1232,7 @@ function LoggingWizard({
                   value={minRetentionMonths}
                   min={1}
                   onChange={(e) => setMinRetentionMonths(Number(e.target.value))}
-                  style={inputStyle}
+                  className="cr-input"
                 />
               </div>
               <div style={{ flex: 1 }}>
@@ -1457,7 +1244,7 @@ function LoggingWizard({
                   onChange={(e) =>
                     setActualRetentionMonths(Number(e.target.value))
                   }
-                  style={inputStyle}
+                  className="cr-input"
                 />
               </div>
             </div>
@@ -1477,6 +1264,7 @@ function LoggingWizard({
             <div>
               <label style={labelStyle}>Politica retenție (narativ)</label>
               <textarea
+            className="cr-input cr-textarea"
                 value={retentionPolicy}
                 onChange={(e) => setRetentionPolicy(e.target.value)}
                 placeholder="ex: ILM rollover + delete la 6 luni; cold tier 3-6; export lunar înainte de delete."
@@ -1502,7 +1290,7 @@ function LoggingWizard({
                     e.target.value as LoggingConfig["integrityMechanism"],
                   )
                 }
-                style={inputStyle}
+                className="cr-input"
               >
                 {LOGGING_INTEGRITY_MECHANISM_OPTIONS.map((m) => (
                   <option key={m} value={m}>
@@ -1514,6 +1302,7 @@ function LoggingWizard({
             <div>
               <label style={labelStyle}>Descriere mecanism integritate</label>
               <textarea
+            className="cr-input cr-textarea"
                 value={integrityDesc}
                 onChange={(e) => setIntegrityDesc(e.target.value)}
                 placeholder="ex: SHA-256 chain per event line; root hash semnat zilnic + arhivat în S3 Object Lock 7 ani."
@@ -1524,6 +1313,7 @@ function LoggingWizard({
             <div>
               <label style={labelStyle}>Roluri cu acces la logs</label>
               <textarea
+            className="cr-input cr-textarea"
                 value={accessRoleDescription}
                 onChange={(e) => setAccessRoleDescription(e.target.value)}
                 placeholder="ex: DPO + Security Team + Admin Cloud (read-only, MFA obligatoriu)"
@@ -1552,6 +1342,7 @@ function LoggingWizard({
                 Checklist evidență (un item pe linie, opțional)
               </label>
               <textarea
+            className="cr-input cr-textarea"
                 value={evidenceChecklistText}
                 onChange={(e) => setEvidenceChecklistText(e.target.value)}
                 placeholder={"Export SIEM lunar\nScreenshot retention policy\nRaport audit integritate"}
@@ -1586,7 +1377,7 @@ function LoggingWizard({
           <button
             onClick={() => setStep((s) => Math.max(0, s - 1))}
             disabled={step === 0}
-            style={btnGhost}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
           >
             Înapoi
           </button>
@@ -1594,7 +1385,7 @@ function LoggingWizard({
             <button
               onClick={() => setStep((s) => Math.min(3, s + 1))}
               disabled={!canNext()}
-              style={btnPrimary}
+              className="cr-btn cr-btn--primary cr-btn--sm"
             >
               Continuă →
             </button>
@@ -1602,7 +1393,7 @@ function LoggingWizard({
             <button
               onClick={() => void submit()}
               disabled={submitting || !canNext()}
-              style={btnPrimary}
+              className="cr-btn cr-btn--primary cr-btn--sm"
             >
               {submitting ? "Se creează..." : "Creează config"}
             </button>
@@ -1692,7 +1483,7 @@ function EvidenceModal({
               Export SIEM, screenshot, raport audit etc. · Sprint 022 va adăuga upload real în Supabase Storage.
             </div>
           </div>
-          <button onClick={onClose} style={iconBtn} aria-label="Închide">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" aria-label="Închide">
             <X size={18} />
           </button>
         </div>
@@ -1701,7 +1492,7 @@ function EvidenceModal({
           <select
             value={type}
             onChange={(e) => setType(e.target.value as LogEvidenceItem["type"])}
-            style={inputStyle}
+            className="cr-input"
           >
             {EVIDENCE_TYPE_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -1716,7 +1507,7 @@ function EvidenceModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="ex: Export logs SIEM mai 2026 — 124.567 events Art. 12(2)"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
         <div>
@@ -1725,7 +1516,7 @@ function EvidenceModal({
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com/logs.zip"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
         <div style={{ display: "flex", gap: 12 }}>
@@ -1735,7 +1526,7 @@ function EvidenceModal({
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
               placeholder="logs-2026-05.zip"
-              style={inputStyle}
+              className="cr-input"
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -1744,7 +1535,7 @@ function EvidenceModal({
               value={fileHash}
               onChange={(e) => setFileHash(e.target.value)}
               placeholder="abc123def456..."
-              style={inputStyle}
+              className="cr-input"
             />
           </div>
         </div>
@@ -1755,7 +1546,7 @@ function EvidenceModal({
               type="date"
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              style={inputStyle}
+              className="cr-input"
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -1764,7 +1555,7 @@ function EvidenceModal({
               type="date"
               value={end}
               onChange={(e) => setEnd(e.target.value)}
-              style={inputStyle}
+              className="cr-input"
             />
           </div>
         </div>
@@ -1775,7 +1566,7 @@ function EvidenceModal({
             value={eventCount}
             onChange={(e) => setEventCount(e.target.value)}
             placeholder="124567"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
         {error && (
@@ -1799,10 +1590,10 @@ function EvidenceModal({
             marginTop: 6,
           }}
         >
-          <button onClick={onClose} style={btnGhost}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             <History size={14} /> Anulează
           </button>
-          <button onClick={() => void submit()} disabled={submitting} style={btnPrimary}>
+          <button onClick={() => void submit()} disabled={submitting} className="cr-btn cr-btn--primary cr-btn--sm">
             <Upload size={14} /> {submitting ? "Se atașează..." : "Atașează"}
           </button>
         </div>
@@ -1824,41 +1615,6 @@ const badgeStyle: CSSProperties = {
   fontWeight: 500,
   textTransform: "uppercase",
   letterSpacing: "0.04em",
-}
-
-const btnPrimary: CSSProperties = {
-  padding: "8px 14px",
-  background: "var(--ink)",
-  color: "var(--bg)",
-  border: "none",
-  borderRadius: 6,
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-}
-
-const btnGhost: CSSProperties = {
-  padding: "8px 14px",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: 6,
-  fontSize: 12,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-}
-
-const iconBtn: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--ink-dim)",
-  padding: 4,
 }
 
 const inputStyle: CSSProperties = {

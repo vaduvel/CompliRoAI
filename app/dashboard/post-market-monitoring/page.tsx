@@ -319,56 +319,23 @@ export default function PostMarketMonitoringPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1200px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Post-Market Monitoring (Art. 72)
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+    <div className="cr-page cr-page--full cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate</span>
+          <h1 className="cr-title">Monitorizare post-market · Art. 72</h1>
+          <p className="cr-subtitle">
           Plan PMM per sistem AI · 5 secțiuni Art. 72(3) · reviews periodice ·
           version changes (Art. 43(4)) · anomalii · Inclus în Audit Pack
-        </p>
+          </p>
+        </div>
       </div>
 
       <StatsBar summary={summary} />
 
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
@@ -465,7 +432,7 @@ export default function PostMarketMonitoringPage() {
             setPrefilledSystemId(undefined)
             setShowWizard(true)
           }}
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
         >
           <Plus size={14} /> Nou plan PMM
         </button>
@@ -654,18 +621,9 @@ function FilterTabs({
         <button
           key={t.key}
           onClick={() => onChange(t.key)}
-          style={{
-            padding: "6px 11px",
-            background:
-              value === t.key ? "var(--surface-2)" : "transparent",
-            border: "1px solid var(--border-soft)",
-            borderRadius: 999,
-            fontSize: 12,
-            color: value === t.key ? "var(--ink)" : "var(--ink-muted)",
-            cursor: "pointer",
-          }}
+          className={`cr-filter-chip ${value === t.key ? "is-active" : ""}`}
         >
-          {t.label} <span style={{ color: "var(--ink-dim)" }}>· {counts[t.key]}</span>
+          {t.label} <span className="cr-tab__count">· {counts[t.key]}</span>
         </button>
       ))}
     </div>
@@ -701,18 +659,9 @@ function FreshnessFilterTabs({
         <button
           key={t.key}
           onClick={() => onChange(t.key)}
-          style={{
-            padding: "5px 10px",
-            background:
-              value === t.key ? "var(--surface-2)" : "transparent",
-            border: "1px solid var(--border-soft)",
-            borderRadius: 999,
-            fontSize: 11,
-            color: value === t.key ? "var(--ink)" : "var(--ink-muted)",
-            cursor: "pointer",
-          }}
+          className={`cr-filter-chip ${value === t.key ? "is-active" : ""}`}
         >
-          {t.label} <span style={{ color: "var(--ink-dim)" }}>· {counts[t.key]}</span>
+          {t.label} <span className="cr-tab__count">· {counts[t.key]}</span>
         </button>
       ))}
     </div>
@@ -744,7 +693,7 @@ function EmptyState({ hasAny, onCreate }: { hasAny: boolean; onCreate: () => voi
         high-risk.
       </div>
       {!hasAny && (
-        <button onClick={onCreate} style={btnPrimary}>
+        <button onClick={onCreate} className="cr-btn cr-btn--primary cr-btn--sm">
           <Plus size={14} /> Creează primul plan PMM
         </button>
       )}
@@ -888,7 +837,7 @@ function PlanRow({
             )}
           </div>
         </div>
-        <button type="button" style={iconBtn} aria-label="toggle">
+        <button type="button" className="cr-btn cr-btn--icon cr-btn--sm" aria-label="toggle">
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
       </div>
@@ -980,7 +929,7 @@ function PlanRow({
               </>
             }
             action={
-              <button onClick={onRecordReview} style={btnGhost} type="button">
+              <button onClick={onRecordReview} className="cr-btn cr-btn--secondary cr-btn--sm" type="button">
                 <Plus size={12} /> Record review
               </button>
             }
@@ -1022,7 +971,7 @@ function PlanRow({
               </>
             }
             action={
-              <button onClick={onRecordVersionChange} style={btnGhost} type="button">
+              <button onClick={onRecordVersionChange} className="cr-btn cr-btn--secondary cr-btn--sm" type="button">
                 <Plus size={12} /> Record schimbare
               </button>
             }
@@ -1074,7 +1023,7 @@ function PlanRow({
               </>
             }
             action={
-              <button onClick={onRecordAnomaly} style={btnGhost} type="button">
+              <button onClick={onRecordAnomaly} className="cr-btn cr-btn--secondary cr-btn--sm" type="button">
                 <Plus size={12} /> Record anomalie
               </button>
             }
@@ -1127,25 +1076,25 @@ function PlanRow({
               flexWrap: "wrap",
             }}
           >
-            <button onClick={() => onExport("md")} style={btnGhost}>
+            <button onClick={() => onExport("md")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <FileText size={12} /> Export MD
             </button>
-            <button onClick={() => onExport("pdf")} style={btnGhost}>
+            <button onClick={() => onExport("pdf")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Download size={12} /> Export PDF
             </button>
             {record.status !== "active" && record.status !== "obsolete" && (
-              <button onClick={onApprove} style={btnGhost}>
+              <button onClick={onApprove} className="cr-btn cr-btn--secondary cr-btn--sm">
                 <CheckCircle2 size={12} /> Aprobă
               </button>
             )}
             {record.status === "active" && (
-              <button onClick={onObsolete} style={btnGhost}>
+              <button onClick={onObsolete} className="cr-btn cr-btn--secondary cr-btn--sm">
                 <Archive size={12} /> Marchează obsolet
               </button>
             )}
             <button
               onClick={onDelete}
-              style={{ ...btnGhost, color: "#f87171", borderColor: "rgba(248,113,113,0.4)" }}
+              className="cr-btn cr-btn--danger cr-btn--sm"
             >
               <Trash2 size={12} /> Șterge
             </button>
@@ -1319,7 +1268,7 @@ function PmmWizard({
             <BarChart3 size={16} style={{ color: "var(--cobalt-400)" }} />
             <strong>Nou plan PMM — pas {step}/5</strong>
           </div>
-          <button onClick={onClose} style={iconBtn}>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm">
             <X size={18} />
           </button>
         </div>
@@ -1345,14 +1294,14 @@ function PmmWizard({
             </p>
             <label style={labelStyle}>Titlu plan</label>
             <input
-              style={inputStyle}
+              className="cr-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder='ex: "PMM Plan — HR Screening AI v1"'
             />
             <label style={labelStyle}>Sistem AI</label>
             <select
-              style={inputStyle}
+              className="cr-input"
               value={linkedAISystemId}
               onChange={(e) => setLinkedAISystemId(e.target.value)}
             >
@@ -1365,7 +1314,7 @@ function PmmWizard({
             </select>
             <label style={labelStyle}>Ciclu de revizie</label>
             <select
-              style={inputStyle}
+              className="cr-input"
               value={reviewCycle}
               onChange={(e) => setReviewCycle(e.target.value as PmmReviewCycle)}
             >
@@ -1419,7 +1368,7 @@ function PmmWizard({
             </div>
             <label style={labelStyle}>Frecvența</label>
             <select
-              style={inputStyle}
+              className="cr-input"
               value={dataCollectionFrequency}
               onChange={(e) =>
                 setDataCollectionFrequency(e.target.value as PmmDataCollectionFrequency)
@@ -1433,6 +1382,7 @@ function PmmWizard({
             </select>
             <label style={labelStyle}>Descriere narativă pipeline</label>
             <textarea
+            className="cr-input cr-textarea"
               style={{ ...inputStyle, minHeight: 80 }}
               value={dataCollectionDescription}
               onChange={(e) => setDataCollectionDescription(e.target.value)}
@@ -1449,6 +1399,7 @@ function PmmWizard({
             </p>
             <label style={labelStyle}>Metodologii evaluare</label>
             <textarea
+            className="cr-input cr-textarea"
               style={{ ...inputStyle, minHeight: 80 }}
               value={complianceMethodsText}
               onChange={(e) => setComplianceMethodsText(e.target.value)}
@@ -1458,6 +1409,7 @@ function PmmWizard({
             />
             <label style={labelStyle}>Metrici tracked</label>
             <textarea
+            className="cr-input cr-textarea"
               style={{ ...inputStyle, minHeight: 80 }}
               value={complianceMetricsText}
               onChange={(e) => setComplianceMetricsText(e.target.value)}
@@ -1475,6 +1427,7 @@ function PmmWizard({
             </p>
             <label style={labelStyle}>Proces corectiv</label>
             <textarea
+            className="cr-input cr-textarea"
               style={{ ...inputStyle, minHeight: 80 }}
               value={correctiveActionProcess}
               onChange={(e) => setCorrectiveActionProcess(e.target.value)}
@@ -1482,6 +1435,7 @@ function PmmWizard({
             />
             <label style={labelStyle}>Proces preventiv</label>
             <textarea
+            className="cr-input cr-textarea"
               style={{ ...inputStyle, minHeight: 80 }}
               value={preventiveActionProcess}
               onChange={(e) => setPreventiveActionProcess(e.target.value)}
@@ -1498,6 +1452,7 @@ function PmmWizard({
             </p>
             <label style={labelStyle}>Note suplimentare (opțional)</label>
             <textarea
+            className="cr-input cr-textarea"
               style={{ ...inputStyle, minHeight: 80 }}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -1530,17 +1485,17 @@ function PmmWizard({
         >
           <button
             onClick={() => setStep((s) => Math.max(1, s - 1))}
-            style={btnGhost}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
             disabled={step === 1}
           >
             ← Înapoi
           </button>
           {step < 5 ? (
-            <button onClick={() => setStep((s) => s + 1)} style={btnPrimary}>
+            <button onClick={() => setStep((s) => s + 1)} className="cr-btn cr-btn--primary cr-btn--sm">
               Următorul →
             </button>
           ) : (
-            <button onClick={submit} style={btnPrimary} disabled={submitting}>
+            <button onClick={submit} className="cr-btn cr-btn--primary cr-btn--sm" disabled={submitting}>
               {submitting ? "Se creează..." : "Creează planul"}
             </button>
           )}
@@ -1621,7 +1576,7 @@ function ReviewModal({
             <Clock size={16} style={{ color: "var(--cobalt-400)" }} />
             <strong>Record review</strong>
           </div>
-          <button onClick={onClose} style={iconBtn}>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm">
             <X size={18} />
           </button>
         </div>
@@ -1642,7 +1597,7 @@ function ReviewModal({
 
         <label style={labelStyle}>Tip review</label>
         <select
-          style={inputStyle}
+          className="cr-input"
           value={reviewType}
           onChange={(e) => setReviewType(e.target.value as PmmReviewType)}
         >
@@ -1654,13 +1609,14 @@ function ReviewModal({
         </select>
         <label style={labelStyle}>Email reviewer (lasă gol = user curent)</label>
         <input
-          style={inputStyle}
+          className="cr-input"
           value={reviewedByEmail}
           onChange={(e) => setReviewedByEmail(e.target.value)}
           placeholder="dpo@org.ro"
         />
         <label style={labelStyle}>Metrici performanță (key=value per linie)</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 70 }}
           value={metricsText}
           onChange={(e) => setMetricsText(e.target.value)}
@@ -1668,6 +1624,7 @@ function ReviewModal({
         />
         <label style={labelStyle}>Riscuri detectate (1 per linie)</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 60 }}
           value={risksText}
           onChange={(e) => setRisksText(e.target.value)}
@@ -1675,6 +1632,7 @@ function ReviewModal({
         />
         <label style={labelStyle}>Acțiuni corective (1 per linie)</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 60 }}
           value={correctiveText}
           onChange={(e) => setCorrectiveText(e.target.value)}
@@ -1682,6 +1640,7 @@ function ReviewModal({
         />
         <label style={labelStyle}>Acțiuni preventive (1 per linie)</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 60 }}
           value={preventiveText}
           onChange={(e) => setPreventiveText(e.target.value)}
@@ -1689,6 +1648,7 @@ function ReviewModal({
         />
         <label style={labelStyle}>Note</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 50 }}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -1703,10 +1663,10 @@ function ReviewModal({
             paddingTop: 12,
           }}
         >
-          <button onClick={onClose} style={btnGhost}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
-          <button onClick={submit} style={btnPrimary} disabled={submitting}>
+          <button onClick={submit} className="cr-btn cr-btn--primary cr-btn--sm" disabled={submitting}>
             {submitting ? "Se salvează..." : "Salvează review"}
           </button>
         </div>
@@ -1787,7 +1747,7 @@ function VersionChangeModal({
             <GitBranch size={16} style={{ color: "var(--cobalt-400)" }} />
             <strong>Record version change</strong>
           </div>
-          <button onClick={onClose} style={iconBtn}>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm">
             <X size={18} />
           </button>
         </div>
@@ -1810,7 +1770,7 @@ function VersionChangeModal({
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Versiune veche</label>
             <input
-              style={inputStyle}
+              className="cr-input"
               value={oldVersion}
               onChange={(e) => setOldVersion(e.target.value)}
               placeholder="v1.0"
@@ -1819,7 +1779,7 @@ function VersionChangeModal({
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Versiune nouă</label>
             <input
-              style={inputStyle}
+              className="cr-input"
               value={newVersion}
               onChange={(e) => setNewVersion(e.target.value)}
               placeholder="v2.0"
@@ -1829,7 +1789,7 @@ function VersionChangeModal({
 
         <label style={labelStyle}>Tip schimbare</label>
         <select
-          style={inputStyle}
+          className="cr-input"
           value={changeType}
           onChange={(e) => setChangeType(e.target.value as PmmVersionChangeType)}
         >
@@ -1862,6 +1822,7 @@ function VersionChangeModal({
 
         <label style={labelStyle}>Descriere</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 60 }}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -1869,20 +1830,21 @@ function VersionChangeModal({
         />
         <label style={labelStyle}>Schimbat de (email, lasă gol = user curent)</label>
         <input
-          style={inputStyle}
+          className="cr-input"
           value={changedByEmail}
           onChange={(e) => setChangedByEmail(e.target.value)}
           placeholder="ml@org.ro"
         />
         <label style={labelStyle}>Aprobat de (opțional)</label>
         <input
-          style={inputStyle}
+          className="cr-input"
           value={approvedByEmail}
           onChange={(e) => setApprovedByEmail(e.target.value)}
           placeholder="cto@org.ro"
         />
         <label style={labelStyle}>Note</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 50 }}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -1897,10 +1859,10 @@ function VersionChangeModal({
             paddingTop: 12,
           }}
         >
-          <button onClick={onClose} style={btnGhost}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
-          <button onClick={submit} style={btnPrimary} disabled={submitting}>
+          <button onClick={submit} className="cr-btn cr-btn--primary cr-btn--sm" disabled={submitting}>
             {submitting ? "Se salvează..." : "Salvează schimbarea"}
           </button>
         </div>
@@ -1979,7 +1941,7 @@ function AnomalyModal({
             <AlertTriangle size={16} style={{ color: "#fbbf24" }} />
             <strong>Record anomalie</strong>
           </div>
-          <button onClick={onClose} style={iconBtn}>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm">
             <X size={18} />
           </button>
         </div>
@@ -2002,7 +1964,7 @@ function AnomalyModal({
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Severitate</label>
             <select
-              style={inputStyle}
+              className="cr-input"
               value={severity}
               onChange={(e) => setSeverity(e.target.value as PmmAnomalySeverity)}
             >
@@ -2016,7 +1978,7 @@ function AnomalyModal({
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>Categorie</label>
             <select
-              style={inputStyle}
+              className="cr-input"
               value={category}
               onChange={(e) => setCategory(e.target.value as PmmAnomalyCategory)}
             >
@@ -2047,6 +2009,7 @@ function AnomalyModal({
 
         <label style={labelStyle}>Descriere</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 60 }}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -2054,6 +2017,7 @@ function AnomalyModal({
         />
         <label style={labelStyle}>Impact</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 60 }}
           value={impactDescription}
           onChange={(e) => setImpactDescription(e.target.value)}
@@ -2084,7 +2048,7 @@ function AnomalyModal({
           <>
             <label style={labelStyle}>Linked Incident ID (Sprint 020)</label>
             <input
-              style={inputStyle}
+              className="cr-input"
               value={linkedIncidentId}
               onChange={(e) => setLinkedIncidentId(e.target.value)}
               placeholder="incident-xxx"
@@ -2094,6 +2058,7 @@ function AnomalyModal({
 
         <label style={labelStyle}>Note</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 50 }}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -2108,10 +2073,10 @@ function AnomalyModal({
             paddingTop: 12,
           }}
         >
-          <button onClick={onClose} style={btnGhost}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
-          <button onClick={submit} style={btnPrimary} disabled={submitting}>
+          <button onClick={submit} className="cr-btn cr-btn--primary cr-btn--sm" disabled={submitting}>
             {submitting ? "Se salvează..." : "Salvează anomalia"}
           </button>
         </div>
@@ -2133,41 +2098,6 @@ const badgeStyle: CSSProperties = {
   fontWeight: 500,
   textTransform: "uppercase",
   letterSpacing: "0.04em",
-}
-
-const btnPrimary: CSSProperties = {
-  padding: "8px 14px",
-  background: "var(--ink)",
-  color: "var(--bg)",
-  border: "none",
-  borderRadius: 6,
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-}
-
-const btnGhost: CSSProperties = {
-  padding: "8px 14px",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: 6,
-  fontSize: 12,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-}
-
-const iconBtn: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--ink-dim)",
-  padding: 4,
 }
 
 const inputStyle: CSSProperties = {

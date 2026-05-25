@@ -129,7 +129,7 @@ function buildHtml(input: SendMagicLinkEmailInput): string {
   return `<!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="utf-8"></head>
-<body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#0f172a;background:#fff">
+<body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#0f172a;background:#fff">
   <div style="background:${brand};padding:18px 24px;border-radius:8px 8px 0 0">
     ${headerLogo}
     <h1 style="color:#fff;margin:0;font-size:16px;font-weight:600;letter-spacing:-0.01em">${escapeHtml(brandName)}</h1>

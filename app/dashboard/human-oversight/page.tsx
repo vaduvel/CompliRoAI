@@ -234,56 +234,23 @@ export default function HumanOversightPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1200px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Human Oversight Protocols (Art. 14)
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+    <div className="cr-page cr-page--full cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate</span>
+          <h1 className="cr-title">Supraveghere umană · Art. 14</h1>
+          <p className="cr-subtitle">
           Protocol per sistem AI high-risk · 5 capacități Art. 14(3) + 4-eyes
           biometric · Inclus în Audit Pack
-        </p>
+          </p>
+        </div>
       </div>
 
       <StatsBar summary={summary} />
 
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
@@ -371,7 +338,7 @@ export default function HumanOversightPage() {
             setPrefilledSystemId(undefined)
             setShowWizard(true)
           }}
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
         >
           <Plus size={14} /> Nou protocol
         </button>
@@ -523,16 +490,7 @@ function FilterTabs({
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            style={{
-              padding: "6px 12px",
-              background: active ? "var(--surface-2)" : "transparent",
-              border: "1px solid var(--border-soft)",
-              borderRadius: "6px",
-              fontSize: "12px",
-              color: active ? "var(--ink)" : "var(--ink-muted)",
-              fontWeight: active ? 500 : 400,
-              cursor: "pointer",
-            }}
+            className={`cr-tab ${active ? "is-active" : ""}`}
           >
             {tab.label} ({count})
           </button>
@@ -582,7 +540,7 @@ function EmptyState({ hasAny, onCreate }: { hasAny: boolean; onCreate: () => voi
           ? "Schimbă filtrul de status sau adaugă un protocol nou."
           : "Art. 14 cere protocol per sistem AI high-risk înainte de prima utilizare."}
       </p>
-      <button onClick={onCreate} style={btnPrimary}>
+      <button onClick={onCreate} className="cr-btn cr-btn--primary cr-btn--sm">
         <Plus size={14} /> Nou protocol
       </button>
     </div>
@@ -694,7 +652,7 @@ function ProtocolRow({
             )}
           </div>
         </div>
-        <button style={iconBtn} aria-label={expanded ? "Colapsează" : "Extinde"}>
+        <button className="cr-btn cr-btn--icon cr-btn--sm" aria-label={expanded ? "Colapsează" : "Extinde"}>
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
       </div>
@@ -722,25 +680,25 @@ function ProtocolRow({
             }}
           >
             {canApprove && (
-              <button onClick={onApprove} style={btnPrimary}>
+              <button onClick={onApprove} className="cr-btn cr-btn--primary cr-btn--sm">
                 <CheckCircle2 size={14} /> Aprobă
               </button>
             )}
-            <button onClick={onAttachEvidence} style={btnGhost}>
+            <button onClick={onAttachEvidence} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Upload size={14} /> Atașează dovadă
             </button>
-            <button onClick={() => onExport("md")} style={btnGhost}>
+            <button onClick={() => onExport("md")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <FileText size={14} /> MD
             </button>
-            <button onClick={() => onExport("pdf")} style={btnGhost}>
+            <button onClick={() => onExport("pdf")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Download size={14} /> PDF
             </button>
             {canMarkObsolete && (
-              <button onClick={onObsolete} style={btnGhost}>
+              <button onClick={onObsolete} className="cr-btn cr-btn--secondary cr-btn--sm">
                 Marchează obsolet
               </button>
             )}
-            <button onClick={onDelete} style={{ ...btnGhost, color: "#f87171" }}>
+            <button onClick={onDelete} className="cr-btn cr-btn--danger cr-btn--sm">
               <Trash2 size={14} /> Șterge
             </button>
           </div>
@@ -1131,7 +1089,7 @@ function OversightWizard({
               Pas {step + 1}/5 · {STEPS[step]}
             </div>
           </div>
-          <button onClick={onClose} style={iconBtn} aria-label="Închide">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" aria-label="Închide">
             <X size={16} />
           </button>
         </div>
@@ -1156,7 +1114,7 @@ function OversightWizard({
             <div>
               <label style={labelStyle}>Titlul protocolului</label>
               <input
-                style={inputStyle}
+                className="cr-input"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ex: Oversight Protocol — HR Screening AI"
@@ -1165,7 +1123,7 @@ function OversightWizard({
             <div>
               <label style={labelStyle}>Sistem AI legat</label>
               <select
-                style={inputStyle}
+                className="cr-input"
                 value={linkedAISystemId}
                 onChange={(e) => setLinkedAISystemId(e.target.value)}
               >
@@ -1184,7 +1142,7 @@ function OversightWizard({
             <div>
               <label style={labelStyle}>Model oversight</label>
               <select
-                style={inputStyle}
+                className="cr-input"
                 value={oversightModel}
                 onChange={(e) => setOversightModel(e.target.value as OversightModel)}
               >
@@ -1280,6 +1238,7 @@ function OversightWizard({
             <div>
               <label style={labelStyle}>Checklist evidență (un item / linie)</label>
               <textarea
+            className="cr-input cr-textarea"
                 style={{ ...inputStyle, minHeight: 80, resize: "vertical" }}
                 value={checklist}
                 onChange={(e) => setChecklist(e.target.value)}
@@ -1289,6 +1248,7 @@ function OversightWizard({
             <div>
               <label style={labelStyle}>Note (opțional)</label>
               <textarea
+            className="cr-input cr-textarea"
                 style={{ ...inputStyle, minHeight: 60, resize: "vertical" }}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -1322,7 +1282,7 @@ function OversightWizard({
           <button
             onClick={() => setStep((s) => Math.max(0, s - 1))}
             disabled={step === 0 || submitting}
-            style={{ ...btnGhost, opacity: step === 0 ? 0.5 : 1 }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
           >
             Înapoi
           </button>
@@ -1330,12 +1290,12 @@ function OversightWizard({
             <button
               onClick={() => setStep((s) => s + 1)}
               disabled={!canProceed()}
-              style={{ ...btnPrimary, opacity: canProceed() ? 1 : 0.5 }}
+              className="cr-btn cr-btn--primary cr-btn--sm"
             >
               Continuă →
             </button>
           ) : (
-            <button onClick={submit} disabled={submitting} style={btnPrimary}>
+            <button onClick={submit} disabled={submitting} className="cr-btn cr-btn--primary cr-btn--sm">
               {submitting ? <Loader2 size={14} className="spin" /> : <ShieldCheck size={14} />}
               Salvează protocol
             </button>
@@ -1403,19 +1363,19 @@ function ResponsiblesEditor({
           }}
         >
           <input
-            style={inputStyle}
+            className="cr-input"
             value={h.email}
             onChange={(e) => update(idx, { email: e.target.value })}
             placeholder="email@org.ro"
           />
           <input
-            style={inputStyle}
+            className="cr-input"
             value={h.role}
             onChange={(e) => update(idx, { role: e.target.value })}
             placeholder="Rol (DPO, Manager HR...)"
           />
           <select
-            style={inputStyle}
+            className="cr-input"
             value={h.competenceLevel}
             onChange={(e) =>
               update(idx, {
@@ -1429,7 +1389,7 @@ function ResponsiblesEditor({
               </option>
             ))}
           </select>
-          <button onClick={() => remove(idx)} style={iconBtn} aria-label="Șterge">
+          <button onClick={() => remove(idx)} className="cr-btn cr-btn--icon cr-btn--sm" aria-label="Șterge">
             <Trash2 size={14} />
           </button>
           <label
@@ -1468,7 +1428,7 @@ function ResponsiblesEditor({
           </label>
         </div>
       ))}
-      <button onClick={add} style={btnGhost}>
+      <button onClick={add} className="cr-btn cr-btn--secondary cr-btn--sm">
         <Plus size={12} /> Adaugă persoană
       </button>
     </div>
@@ -1523,26 +1483,26 @@ function EscalationEditor({
           }}
         >
           <input
-            style={inputStyle}
+            className="cr-input"
             value={step.triggerCondition}
             onChange={(e) => update(idx, { triggerCondition: e.target.value })}
             placeholder='Condiție (ex: "risc >0.8")'
           />
           <input
-            style={inputStyle}
+            className="cr-input"
             value={step.escalateToEmail}
             onChange={(e) => update(idx, { escalateToEmail: e.target.value })}
             placeholder="Email destinatar"
           />
           <input
-            style={inputStyle}
+            className="cr-input"
             type="number"
             value={step.slaHours}
             onChange={(e) => update(idx, { slaHours: Number(e.target.value) })}
             placeholder="SLA h"
           />
           <select
-            style={inputStyle}
+            className="cr-input"
             value={step.notificationMethod}
             onChange={(e) =>
               update(idx, {
@@ -1557,10 +1517,11 @@ function EscalationEditor({
               </option>
             ))}
           </select>
-          <button onClick={() => remove(idx)} style={iconBtn} aria-label="Șterge">
+          <button onClick={() => remove(idx)} className="cr-btn cr-btn--icon cr-btn--sm" aria-label="Șterge">
             <Trash2 size={14} />
           </button>
           <input
+            className="cr-input"
             style={{ ...inputStyle, gridColumn: "1 / 6" }}
             value={step.escalateToRole}
             onChange={(e) => update(idx, { escalateToRole: e.target.value })}
@@ -1568,7 +1529,7 @@ function EscalationEditor({
           />
         </div>
       ))}
-      <button onClick={add} style={btnGhost}>
+      <button onClick={add} className="cr-btn cr-btn--secondary cr-btn--sm">
         <Plus size={12} /> Adaugă pas
       </button>
     </div>
@@ -1588,7 +1549,7 @@ function ContestationEditor({
       <div>
         <label style={labelStyle}>Canal contestație</label>
         <input
-          style={inputStyle}
+          className="cr-input"
           value={value.channelDescription}
           onChange={(e) => onChange({ ...value, channelDescription: e.target.value })}
           placeholder="Ex: Email dpo@org.ro cu formular contestație"
@@ -1598,7 +1559,7 @@ function ContestationEditor({
         <div>
           <label style={labelStyle}>SLA acknowledgement (ore)</label>
           <input
-            style={inputStyle}
+            className="cr-input"
             type="number"
             value={value.acknowledgementSlaHours}
             onChange={(e) =>
@@ -1609,7 +1570,7 @@ function ContestationEditor({
         <div>
           <label style={labelStyle}>SLA rezoluție (zile)</label>
           <input
-            style={inputStyle}
+            className="cr-input"
             type="number"
             value={value.resolutionSlaDays}
             onChange={(e) =>
@@ -1621,7 +1582,7 @@ function ContestationEditor({
       <div>
         <label style={labelStyle}>Rol reviewer</label>
         <input
-          style={inputStyle}
+          className="cr-input"
           value={value.reviewerRole}
           onChange={(e) => onChange({ ...value, reviewerRole: e.target.value })}
           placeholder="DPO / Manager Compliance"
@@ -1630,7 +1591,7 @@ function ContestationEditor({
       <div>
         <label style={labelStyle}>Păstrare dovezi</label>
         <input
-          style={inputStyle}
+          className="cr-input"
           value={value.evidencePreservation}
           onChange={(e) => onChange({ ...value, evidencePreservation: e.target.value })}
           placeholder="Ex: Toate log-urile sunt păstrate 3 ani conform politicii interne"
@@ -1668,7 +1629,7 @@ function StopEditor({
       <div>
         <label style={labelStyle}>Locație buton</label>
         <input
-          style={inputStyle}
+          className="cr-input"
           value={value.stopButtonLocation}
           onChange={(e) => onChange({ ...value, stopButtonLocation: e.target.value })}
           placeholder="Ex: Admin dashboard / panou operator"
@@ -1677,7 +1638,7 @@ function StopEditor({
       <div>
         <label style={labelStyle}>Mod fallback</label>
         <select
-          style={inputStyle}
+          className="cr-input"
           value={value.fallbackMode}
           onChange={(e) =>
             onChange({
@@ -1696,6 +1657,7 @@ function StopEditor({
       <div>
         <label style={labelStyle}>Descriere fallback</label>
         <textarea
+            className="cr-input cr-textarea"
           style={{ ...inputStyle, minHeight: 60, resize: "vertical" }}
           value={value.fallbackDescription}
           onChange={(e) => onChange({ ...value, fallbackDescription: e.target.value })}
@@ -1706,7 +1668,7 @@ function StopEditor({
         <div>
           <label style={labelStyle}>Ultima testare (opțional)</label>
           <input
-            style={inputStyle}
+            className="cr-input"
             type="date"
             value={value.testedAtISO ? value.testedAtISO.slice(0, 10) : ""}
             onChange={(e) =>
@@ -1720,7 +1682,7 @@ function StopEditor({
         <div>
           <label style={labelStyle}>Frecvență testare</label>
           <select
-            style={inputStyle}
+            className="cr-input"
             value={value.testFrequency}
             onChange={(e) =>
               onChange({
@@ -1796,14 +1758,14 @@ function EvidenceModal({
           <h2 style={{ fontSize: "15px", fontWeight: 600, color: "var(--ink)", margin: 0 }}>
             Atașează dovadă
           </h2>
-          <button onClick={onClose} style={iconBtn} aria-label="Închide">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" aria-label="Închide">
             <X size={16} />
           </button>
         </div>
         <div>
           <label style={labelStyle}>Tip dovadă</label>
           <select
-            style={inputStyle}
+            className="cr-input"
             value={type}
             onChange={(e) => setType(e.target.value as OversightEvidenceItem["type"])}
           >
@@ -1817,7 +1779,7 @@ function EvidenceModal({
         <div>
           <label style={labelStyle}>Descriere</label>
           <input
-            style={inputStyle}
+            className="cr-input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Ce demonstrează această dovadă?"
@@ -1826,7 +1788,7 @@ function EvidenceModal({
         <div>
           <label style={labelStyle}>URL (opțional)</label>
           <input
-            style={inputStyle}
+            className="cr-input"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://..."
@@ -1835,7 +1797,7 @@ function EvidenceModal({
         <div>
           <label style={labelStyle}>Nume fișier (opțional)</label>
           <input
-            style={inputStyle}
+            className="cr-input"
             value={fileName}
             onChange={(e) => setFileName(e.target.value)}
             placeholder="ex: training-2026-q2.pdf"
@@ -1855,10 +1817,10 @@ function EvidenceModal({
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button onClick={onClose} style={btnGhost}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
-          <button onClick={submit} disabled={submitting} style={btnPrimary}>
+          <button onClick={submit} disabled={submitting} className="cr-btn cr-btn--primary cr-btn--sm">
             {submitting ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
             Atașează
           </button>
@@ -1879,41 +1841,6 @@ const badgeStyle: CSSProperties = {
   textTransform: "uppercase",
   letterSpacing: "0.04em",
   fontWeight: 600,
-}
-
-const btnPrimary: CSSProperties = {
-  padding: "8px 14px",
-  background: "var(--cobalt-600)",
-  color: "white",
-  border: "none",
-  borderRadius: 6,
-  fontSize: "13px",
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-}
-
-const btnGhost: CSSProperties = {
-  padding: "6px 12px",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: 6,
-  fontSize: "12px",
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-}
-
-const iconBtn: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--ink-dim)",
-  padding: 4,
 }
 
 const inputStyle: CSSProperties = {

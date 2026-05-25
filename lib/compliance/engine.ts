@@ -44,6 +44,7 @@ export const initialComplianceState: ComplianceState = {
   driftSettings: { severityOverrides: {} },
   discoveryTriggers: [],
   literacyRecords: [],
+  aiGuidancePlans: [],
   onboarding: { completed: false, currentStep: 1 },
 }
 

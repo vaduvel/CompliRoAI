@@ -165,55 +165,22 @@ export default function DpiaPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          DPIA — Evaluare impact asupra protecției datelor
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+    <div className="cr-page cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate GDPR</span>
+          <h1 className="cr-title">DPIA · evaluare impact date</h1>
+          <p className="cr-subtitle">
           GDPR Art. 35-36 · ANSPDCP Decizia 174/2018 · Screening + record + finding cu lanț de dovezi
-        </p>
+          </p>
+        </div>
       </div>
 
       <StatsBar summary={summary} />
 
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
@@ -230,7 +197,7 @@ export default function DpiaPage() {
         <FilterTabs value={statusFilter} onChange={setStatusFilter} records={records} />
         <button
           onClick={() => setShowWizard(true)}
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
         >
           <Plus size={14} /> Screening DPIA nou
         </button>
@@ -355,29 +322,10 @@ function FilterTabs({
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "999px",
-            border: value === tab.key ? "1px solid var(--cobalt-600)" : "1px solid var(--border-soft)",
-            background: value === tab.key ? "var(--cobalt-600)" : "transparent",
-            color: value === tab.key ? "white" : "var(--ink-muted)",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
+          className={`cr-tab ${value === tab.key ? "is-active" : ""}`}
         >
           {tab.label}
-          <span
-            style={{
-              fontSize: "10px",
-              opacity: 0.85,
-              padding: "1px 6px",
-              borderRadius: "999px",
-              background: value === tab.key ? "rgba(255,255,255,0.18)" : "var(--surface-2)",
-            }}
-          >
+          <span className="cr-tab__count">
             {counts[tab.key] ?? 0}
           </span>
         </button>
@@ -561,29 +509,29 @@ function DpiaRow({
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
             {record.status !== "in_review" && (
-              <button onClick={() => onStatusChange("in_review")} style={btnGhost}>
+              <button onClick={() => onStatusChange("in_review")} className="cr-btn cr-btn--secondary cr-btn--sm">
                 Trimite în revizie
               </button>
             )}
             {record.status !== "approved" && (
-              <button onClick={() => onStatusChange("approved")} style={btnGhost}>
+              <button onClick={() => onStatusChange("approved")} className="cr-btn cr-btn--secondary cr-btn--sm">
                 Aprobă
               </button>
             )}
             {record.status !== "completed" && (
-              <button onClick={() => onStatusChange("completed")} style={btnGhost}>
+              <button onClick={() => onStatusChange("completed")} className="cr-btn cr-btn--secondary cr-btn--sm">
                 Marchează finalizat
               </button>
             )}
             {record.status !== "mitigations_in_progress" && (
-              <button onClick={() => onStatusChange("mitigations_in_progress")} style={btnGhost}>
+              <button onClick={() => onStatusChange("mitigations_in_progress")} className="cr-btn cr-btn--secondary cr-btn--sm">
                 Mitigare în curs
               </button>
             )}
-            <button onClick={onExport} style={btnGhost}>
+            <button onClick={onExport} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Download size={12} /> Export markdown
             </button>
-            <button onClick={onDelete} style={{ ...btnGhost, color: "#f87171" }}>
+            <button onClick={onDelete} className="cr-btn cr-btn--danger cr-btn--sm">
               <Trash2 size={12} /> Șterge
             </button>
           </div>
@@ -737,7 +685,7 @@ function ScreeningWizard({
               Schema {schema.version} · GDPR Art. 35 · ANSPDCP Decizia 174/2018
             </div>
           </div>
-          <button onClick={onClose} style={iconBtn}><X size={16} /></button>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm"><X size={16} /></button>
         </div>
 
         {err && (
@@ -765,7 +713,7 @@ function ScreeningWizard({
                 value={processName}
                 onChange={(e) => setProcessName(e.target.value)}
                 placeholder="Ex: HR screening CV, Chatbot suport, Profilare clienți"
-                style={inputStyle}
+                className="cr-input"
               />
             </FormField>
             <FormField label="Departament">
@@ -773,7 +721,7 @@ function ScreeningWizard({
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 placeholder="Ex: HR, IT, Vânzări"
-                style={inputStyle}
+                className="cr-input"
               />
             </FormField>
             <FormField label="Owner proces">
@@ -781,11 +729,12 @@ function ScreeningWizard({
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
                 placeholder="Numele responsabilului"
-                style={inputStyle}
+                className="cr-input"
               />
             </FormField>
             <FormField label="Descriere scurtă (opțional)">
               <textarea
+            className="cr-input cr-textarea"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Cum funcționează procesul, ce date intră, cine le primește..."
@@ -794,11 +743,11 @@ function ScreeningWizard({
               />
             </FormField>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-              <button onClick={onClose} style={btnGhost}>Anulează</button>
+              <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">Anulează</button>
               <button
                 onClick={() => processName.trim() && setStep(2)}
                 disabled={!processName.trim()}
-                style={{ ...btnPrimary, opacity: processName.trim() ? 1 : 0.5 }}
+                className="cr-btn cr-btn--primary cr-btn--sm"
               >
                 Mai departe →
               </button>
@@ -832,8 +781,8 @@ function ScreeningWizard({
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-              <button onClick={() => setStep(1)} style={btnGhost}>← Înapoi</button>
-              <button onClick={evaluate} disabled={submitting} style={btnPrimary}>
+              <button onClick={() => setStep(1)} className="cr-btn cr-btn--secondary cr-btn--sm">← Înapoi</button>
+              <button onClick={evaluate} disabled={submitting} className="cr-btn cr-btn--primary cr-btn--sm">
                 {submitting ? <Loader2 size={12} className="spin" /> : "Evaluează →"}
               </button>
             </div>
@@ -928,8 +877,8 @@ function ScreeningWizard({
             )}
 
             <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-              <button onClick={() => setStep(2)} style={btnGhost}>← Modifică răspunsuri</button>
-              <button onClick={save} disabled={submitting} style={btnPrimary}>
+              <button onClick={() => setStep(2)} className="cr-btn cr-btn--secondary cr-btn--sm">← Modifică răspunsuri</button>
+              <button onClick={save} disabled={submitting} className="cr-btn cr-btn--primary cr-btn--sm">
                 {submitting ? <Loader2 size={12} className="spin" /> : "Salvează record DPIA"}
               </button>
             </div>
@@ -967,24 +916,16 @@ function QuestionField({
       {question.type === "boolean" && (
         <div style={{ display: "flex", gap: "8px" }}>
           <button
+            type="button"
             onClick={() => onChange(true)}
-            style={{
-              ...pillBtn,
-              background: value === true ? "var(--cobalt-600)" : "var(--surface-2)",
-              color: value === true ? "white" : "var(--ink-muted)",
-              borderColor: value === true ? "var(--cobalt-600)" : "var(--border-soft)",
-            }}
+            className={`cr-filter-chip ${value === true ? "is-active" : ""}`}
           >
             Da
           </button>
           <button
+            type="button"
             onClick={() => onChange(false)}
-            style={{
-              ...pillBtn,
-              background: value === false ? "var(--cobalt-600)" : "var(--surface-2)",
-              color: value === false ? "white" : "var(--ink-muted)",
-              borderColor: value === false ? "var(--cobalt-600)" : "var(--border-soft)",
-            }}
+            className={`cr-filter-chip ${value === false ? "is-active" : ""}`}
           >
             Nu
           </button>
@@ -994,14 +935,10 @@ function QuestionField({
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           {question.options.map((opt) => (
             <button
+              type="button"
               key={opt}
               onClick={() => onChange(opt)}
-              style={{
-                ...pillBtn,
-                background: value === opt ? "var(--cobalt-600)" : "var(--surface-2)",
-                color: value === opt ? "white" : "var(--ink-muted)",
-                borderColor: value === opt ? "var(--cobalt-600)" : "var(--border-soft)",
-              }}
+              className={`cr-filter-chip ${value === opt ? "is-active" : ""}`}
             >
               {opt}
             </button>
@@ -1063,7 +1000,7 @@ function EmptyState({ hasAny, onCreate }: { hasAny: boolean; onCreate: () => voi
           : "Rulează screening Art. 35 ca să decizi dacă procesul tău cere DPIA completă."}
       </div>
       {!hasAny && (
-        <button onClick={onCreate} style={btnPrimary}>
+        <button onClick={onCreate} className="cr-btn cr-btn--primary cr-btn--sm">
           <Plus size={14} /> Screening DPIA nou
         </button>
       )}
@@ -1075,41 +1012,6 @@ function EmptyState({ hasAny, onCreate }: { hasAny: boolean; onCreate: () => voi
 //   Styles
 // ────────────────────────────────────────────────────────────────────────────
 
-const btnPrimary: React.CSSProperties = {
-  padding: "8px 14px",
-  background: "var(--cobalt-600)",
-  color: "white",
-  border: "none",
-  borderRadius: "6px",
-  fontSize: "13px",
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-}
-
-const btnGhost: React.CSSProperties = {
-  padding: "6px 12px",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "6px",
-  fontSize: "12px",
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-}
-
-const iconBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--ink-dim)",
-  padding: "4px",
-}
-
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
   background: "var(--surface-2)",
@@ -1118,14 +1020,6 @@ const inputStyle: React.CSSProperties = {
   fontSize: "13px",
   color: "var(--ink)",
   outline: "none",
-}
-
-const pillBtn: React.CSSProperties = {
-  padding: "6px 12px",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "999px",
-  fontSize: "12px",
-  cursor: "pointer",
 }
 
 const modalOverlay: React.CSSProperties = {
