@@ -13,6 +13,7 @@ export async function syncAIActObligationFindings(
 ): Promise<void> {
   const state = await readState()
   const updated = syncAIActObligationFindingsInState(state, system, nowISO)
+  if (updated === state) return
   await writeState(updated)
 }
 
