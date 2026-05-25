@@ -153,6 +153,7 @@ export default function LoggingEvidencePage() {
   const [error, setError] = useState<string | null>(null)
   const [showWizard, setShowWizard] = useState(false)
   const [prefilledSystemId, setPrefilledSystemId] = useState<string | undefined>()
+  const [prefilledSystemName, setPrefilledSystemName] = useState<string | undefined>()
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<"all" | LoggingConfigStatus>("all")
   const [retentionFilter, setRetentionFilter] = useState<"all" | LoggingRetentionStatus>("all")
@@ -189,8 +190,10 @@ export default function LoggingEvidencePage() {
     if (typeof window === "undefined") return
     const params = new URLSearchParams(window.location.search)
     const sid = params.get("systemId")
+    const systemName = params.get("systemName") ?? undefined
     if (sid) {
       setPrefilledSystemId(sid)
+      setPrefilledSystemName(systemName)
       setShowWizard(true)
     }
   }, [])
@@ -297,6 +300,7 @@ export default function LoggingEvidencePage() {
                   key={s.id}
                   onClick={() => {
                     setPrefilledSystemId(s.id)
+                    setPrefilledSystemName(s.name)
                     setShowWizard(true)
                   }}
                   className="cr-btn cr-btn--secondary cr-btn--sm"
@@ -326,6 +330,7 @@ export default function LoggingEvidencePage() {
         <button
           onClick={() => {
             setPrefilledSystemId(undefined)
+            setPrefilledSystemName(undefined)
             setShowWizard(true)
           }}
           className="cr-btn cr-btn--primary cr-btn--sm"
@@ -338,13 +343,16 @@ export default function LoggingEvidencePage() {
         <LoggingWizard
           aiSystems={aiSystems}
           prefilledSystemId={prefilledSystemId}
+          prefilledSystemName={prefilledSystemName}
           onClose={() => {
             setShowWizard(false)
             setPrefilledSystemId(undefined)
+            setPrefilledSystemName(undefined)
           }}
           onDone={async () => {
             setShowWizard(false)
             setPrefilledSystemId(undefined)
+            setPrefilledSystemName(undefined)
             await load()
           }}
         />
@@ -889,16 +897,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function LoggingWizard({
   aiSystems,
   prefilledSystemId,
+  prefilledSystemName,
   onClose,
   onDone,
 }: {
   aiSystems: AISystemRecord[]
   prefilledSystemId?: string
+  prefilledSystemName?: string
   onClose: () => void
   onDone: () => Promise<void>
 }) {
   const [step, setStep] = useState(0)
-  const [title, setTitle] = useState("")
+  const [title, setTitle] = useState(
+    prefilledSystemName ? `Logging Config — ${prefilledSystemName}` : "",
+  )
   const [systemId, setSystemId] = useState<string>(prefilledSystemId ?? "")
   const [severityLevel, setSeverityLevel] = useState<LoggingSeverityLevel>("standard")
   const [eventCategories, setEventCategories] = useState<LoggingEventCategory[]>([
@@ -936,6 +948,18 @@ function LoggingWizard({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [severityLevel])
+
+  useEffect(() => {
+    if (prefilledSystemId && !systemId) {
+      setSystemId(prefilledSystemId)
+    }
+  }, [prefilledSystemId, systemId])
+
+  useEffect(() => {
+    if (prefilledSystemName && !title) {
+      setTitle(`Logging Config — ${prefilledSystemName}`)
+    }
+  }, [prefilledSystemName, title])
 
   useEffect(() => {
     if (prefilledSystemId) {

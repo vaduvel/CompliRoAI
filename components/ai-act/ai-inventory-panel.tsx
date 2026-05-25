@@ -16,7 +16,7 @@ const PURPOSE_OPTIONS: { value: AISystemPurpose; label: string }[] = [
 ]
 
 interface AIInventoryPanelProps {
-  onAdded: () => void
+  onAdded: () => Promise<void> | void
 }
 
 const labelStyle: React.CSSProperties = {
@@ -82,9 +82,9 @@ export function AIInventoryPanel({ onAdded }: AIInventoryPanelProps) {
         throw new Error(data.error ?? `Eroare ${res.status}`)
       }
 
+      await Promise.resolve(onAdded())
       reset()
       setOpen(false)
-      onAdded()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Eroare la salvare. Încearcă din nou.")
     } finally {

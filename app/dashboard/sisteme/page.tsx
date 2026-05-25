@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type {
   AIIncident,
   AISystemRecord,
@@ -24,49 +24,74 @@ export default function SistemePage() {
   const [qmsAttestations, setQmsAttestations] = useState<QmsSystemAttestation[]>([])
   const [loading, setLoading] = useState(true)
   const [workspaceMode, setWorkspaceMode] = useState<"imm-classic" | "ai-builder" | "cabinet">("imm-classic")
+  const latestLoadId = useRef(0)
+  const hasLoadedOnce = useRef(false)
 
   const load = useCallback(async () => {
-    const [systemsRes, friaRes, ovRes, lgRes, pmmRes, incRes, qmsRes] = await Promise.all([
-      fetch("/api/ai-systems"),
-      fetch("/api/fria"),
-      fetch("/api/oversight"),
-      fetch("/api/logging-evidence"),
-      fetch("/api/pmm"),
-      fetch("/api/ai-incidents"),
-      fetch("/api/qms/system-attestation"),
-    ])
-    if (systemsRes.ok) {
-      const data = await systemsRes.json()
-      setSystems(data.systems)
+    const loadId = latestLoadId.current + 1
+    latestLoadId.current = loadId
+
+    if (!hasLoadedOnce.current) {
+      setLoading(true)
     }
-    if (friaRes.ok) {
-      const data = await friaRes.json()
-      setFriaRecords((data.records ?? []) as FriaRecord[])
+
+    try {
+      const [systemsRes, friaRes, ovRes, lgRes, pmmRes, incRes, qmsRes] = await Promise.all([
+        fetch("/api/ai-systems"),
+        fetch("/api/fria"),
+        fetch("/api/oversight"),
+        fetch("/api/logging-evidence"),
+        fetch("/api/pmm"),
+        fetch("/api/ai-incidents"),
+        fetch("/api/qms/system-attestation"),
+      ])
+
+      const nextSystems = systemsRes.ok
+        ? ((await systemsRes.json()).systems as AISystemRecord[])
+        : null
+      const nextFria = friaRes.ok
+        ? (((await friaRes.json()).records ?? []) as FriaRecord[])
+        : null
+      const nextOversight = ovRes.ok
+        ? (((await ovRes.json()).records ?? []) as HumanOversightProtocol[])
+        : null
+      const nextLogging = lgRes.ok
+        ? (((await lgRes.json()).records ?? []) as LoggingConfig[])
+        : null
+      const nextPmm = pmmRes.ok
+        ? (((await pmmRes.json()).records ?? []) as PmmPlan[])
+        : null
+      const nextIncidents = incRes.ok
+        ? (((await incRes.json()).records ?? []) as AIIncident[])
+        : null
+      const nextQms = qmsRes.ok
+        ? (((await qmsRes.json()).attestations ?? []) as QmsSystemAttestation[])
+        : null
+
+      if (loadId !== latestLoadId.current) {
+        return
+      }
+
+      if (nextSystems) setSystems(nextSystems)
+      if (nextFria) setFriaRecords(nextFria)
+      if (nextOversight) setOversightRecords(nextOversight)
+      if (nextLogging) setLoggingRecords(nextLogging)
+      if (nextPmm) setPmmRecords(nextPmm)
+      if (nextIncidents) setIncidents(nextIncidents)
+      if (nextQms) setQmsAttestations(nextQms)
+
+      hasLoadedOnce.current = true
+      setLoading(false)
+    } catch {
+      if (loadId === latestLoadId.current) {
+        setLoading(false)
+      }
     }
-    if (ovRes.ok) {
-      const data = await ovRes.json()
-      setOversightRecords((data.records ?? []) as HumanOversightProtocol[])
-    }
-    if (lgRes.ok) {
-      const data = await lgRes.json()
-      setLoggingRecords((data.records ?? []) as LoggingConfig[])
-    }
-    if (pmmRes.ok) {
-      const data = await pmmRes.json()
-      setPmmRecords((data.records ?? []) as PmmPlan[])
-    }
-    if (incRes.ok) {
-      const data = await incRes.json()
-      setIncidents((data.records ?? []) as AIIncident[])
-    }
-    if (qmsRes.ok) {
-      const data = await qmsRes.json()
-      setQmsAttestations((data.attestations ?? []) as QmsSystemAttestation[])
-    }
-    setLoading(false)
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    void load()
+  }, [load])
 
   useEffect(() => {
     fetch("/api/auth/me")

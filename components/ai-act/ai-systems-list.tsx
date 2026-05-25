@@ -331,7 +331,7 @@ export function AISystemsList({
                   Acest sistem necesită config Logging (Art. 12 + Art. 26(6))
                 </span>
                 <Link
-                  href={`/dashboard/logging-evidence?systemId=${encodeURIComponent(system.id)}`}
+                  href={`/dashboard/logging-evidence?systemId=${encodeURIComponent(system.id)}&systemName=${encodeURIComponent(system.name)}`}
                   style={{
                     color: "#fbbf24",
                     fontWeight: 600,

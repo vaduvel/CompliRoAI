@@ -398,3 +398,59 @@ None.
 - All dead code from placeholder era removed
 
 **STOP. No Sprint 026 without new mandate.**
+
+---
+
+## Addendum — 2026-05-25 Post-QA Hardening
+
+După portarea DS și reluarea verificărilor end-to-end, au apărut două regresii
+reale pe flow-ul `ai-builder -> sisteme -> logging evidence`:
+
+1. **Race de refresh în `/dashboard/sisteme`**  
+   Dacă utilizatorul salva un sistem AI înainte să termine primul `load()`,
+   răspunsul vechi putea suprascrie refresh-ul nou și sistemul tocmai creat nu
+   mai apărea imediat în listă.
+
+2. **Prefill fragil în `/dashboard/logging-evidence`**  
+   Wizard-ul deriva titlul doar din `systemId` și depindea de încărcarea
+   asincronă a listei de sisteme. În practică, heading-ul modalului devenea
+   vizibil înainte ca `title` să fie populat predictibil.
+
+### Fixuri aplicate
+
+- `components/ai-act/ai-inventory-panel.tsx`
+  - `onAdded()` este acum așteptat (`await`) înainte să se închidă formularul,
+    astfel încât refresh-ul de părinte să nu rămână în urmă.
+- `app/dashboard/sisteme/page.tsx`
+  - `load()` folosește acum `latestLoadId` + guard de commit pentru a preveni
+    ca un fetch mai vechi să suprascrie starea mai nouă.
+- `components/ai-act/ai-systems-list.tsx`
+  - link-ul spre logging transmite acum și `systemName`, nu doar `systemId`.
+- `app/dashboard/logging-evidence/page.tsx`
+  - pagina citește `systemName` din query params;
+  - wizard-ul pornește cu titlul pre-populat din numele sistemului;
+  - `systemId` și `systemName` sunt resetate coerent la `close` / `done`.
+
+### Verificare rulată
+
+Local, pe `http://127.0.0.1:3001`:
+
+```bash
+npx tsc --noEmit
+COMPLIROAI_BASE_URL='http://127.0.0.1:3001' \
+  npx playwright test .qa-screenshots/compliroai-module-ui-deep.pw.ts \
+  -g "ai-builder: high-risk system can create Logging Evidence from UI banner" \
+  --config .qa-screenshots/playwright.config.js --workers=1
+
+COMPLIROAI_BASE_URL='http://127.0.0.1:3001' \
+  npx playwright test --config .qa-screenshots/playwright.config.js --workers=1
+```
+
+### Rezultat
+
+- `npx tsc --noEmit` → clean
+- Playwright targeted test → **PASS**
+- Playwright full suite → **6/6 PASS**
+
+Concluzie: flow-ul critic de creare sistem AI + generare Logging Evidence din
+banner este din nou stabil și verificat cap-coadă.
