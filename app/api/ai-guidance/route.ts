@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 
-import { buildGuidancePlan } from "@/lib/compliance/guidance-orchestrator"
 import type { ComplianceEventActorInput } from "@/lib/compliance/events"
 import {
   acceptGuidancePlan,
@@ -9,6 +8,7 @@ import {
   getLatestGuidancePlan,
   rejectGuidancePlan,
 } from "@/lib/server/guidance-plan-store"
+import { buildGuidancePlanFromOrchestrator } from "@/lib/server/ai-orchestrator/to-guidance-plan"
 import { getOrgContext } from "@/lib/server/org-context"
 import { readFreshStateForOrg } from "@/lib/server/store"
 
@@ -30,10 +30,13 @@ export async function GET(request: Request) {
     const latest = await getLatestGuidancePlan(ctx.orgId)
     const state = await readFreshStateForOrg(ctx.orgId, ctx.orgName)
     const maxActions = readMaxActions(new URL(request.url).searchParams.get("maxActions"))
-    const preview = buildGuidancePlan({
+    const preview = await buildGuidancePlanFromOrchestrator({
+      orgId: ctx.orgId,
+      orgName: ctx.orgName || "Organizația curentă",
       state,
       workspaceMode: ctx.workspaceMode,
-      orgName: ctx.orgName || "Organizația curentă",
+      user: { id: ctx.userId },
+      preferMistral: false,
       maxActions,
     })
 
@@ -61,6 +64,7 @@ export async function POST(request: Request) {
         nowISO: typeof body.nowISO === "string" ? body.nowISO : undefined,
         reason: typeof body.reason === "string" ? body.reason : "manual_regenerate",
         maxActions: readMaxActions(body.maxActions),
+        mistral: readMistralOverrides(body),
       })
       return NextResponse.json({ record })
     }
@@ -111,4 +115,21 @@ function readMaxActions(value: unknown): number | undefined {
   const numeric = typeof value === "number" ? value : Number(value)
   if (!Number.isFinite(numeric)) return undefined
   return Math.max(1, Math.min(12, Math.trunc(numeric)))
+}
+
+function readMistralOverrides(body: Record<string, unknown>) {
+  const model = typeof body.mistralModel === "string" && body.mistralModel.trim()
+    ? body.mistralModel.trim()
+    : undefined
+  const timeoutMs = readBoundedInteger(body.mistralTimeoutMs, 5_000, 180_000)
+  const maxTokens = readBoundedInteger(body.mistralMaxTokens, 400, 4_000)
+
+  if (!model && timeoutMs === undefined && maxTokens === undefined) return undefined
+  return { model, timeoutMs, maxTokens }
+}
+
+function readBoundedInteger(value: unknown, min: number, max: number): number | undefined {
+  const numeric = typeof value === "number" ? value : Number(value)
+  if (!Number.isFinite(numeric)) return undefined
+  return Math.max(min, Math.min(max, Math.trunc(numeric)))
 }

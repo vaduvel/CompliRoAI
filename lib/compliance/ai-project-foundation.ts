@@ -16,6 +16,12 @@ export type GuidanceOwnerRole =
   | "Security"
   | "Marketing"
   | "Cabinet"
+  | "HR"
+  | "Customer Support"
+  | "Procurement"
+  | "Engineering"
+  | "Vendor Manager"
+  | "Client Admin"
 
 export type AIProjectProfile = {
   id: string

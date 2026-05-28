@@ -1,0 +1,7 @@
+﻿client_cui,process_name,linked_use_case,personal_data_categories,data_subjects,legal_basis,retention,processor_vendor,transfer_outside_eea,dpi_needs_review
+RO24567890,Suport clienți chatbot,Chatbot suport clienți pe website,nume;email;numar comanda;mesaje suport,customers;website_visitors,contract;interes_legitim,12 luni,Intercom AI,unknown,yes
+RO33214567,Recrutare asistată AI,Screening CV și ranking candidați,cv;email;experienta;educatie;scor candidat,candidates,interes_legitim,24 luni,VendorX HR AI,unknown,yes
+RO40127890,Scorare credit persoane fizice,Scorare credit clienți persoane fizice,venit;istoric credit;date identificare;scor risc,customers,contract;obligatie_legala,5 ani,Internal Model,no,yes
+RO81112233,Pre-triere simptome pacienți,Pre-triere simptome înainte de programare,nume;telefon;simptome;istoric medical declarat,patients,consimtamant;servicii_medicale,36 luni,DeviDevs Automation SRL,unknown,yes
+RO62001234,Transcriere apeluri suport,Transcriere și sumarizare apeluri suport,voce;numar telefon;nume;mesaje suport,customers;employees,interes_legitim,6 luni,Microsoft,no,yes
+RO11009988,Sumarizare contracte,Sumarizare contracte și documente licitație,nume semnatari;date contact;continut contractual,customers;suppliers;contractors,contract;interes_legitim,10 ani,CogniSync / OpenAI,unknown,yes

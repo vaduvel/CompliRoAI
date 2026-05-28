@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server"
 
 import {
+  buildClientImportFindings,
   buildClientImportSignals,
   draftToClientMeta,
   isValidEmail,
@@ -159,7 +160,40 @@ async function persistImportedClientState(input: {
   const existing = await loadOrgStateFromSupabase<Partial<AIActState>>(input.orgId)
   const state = mergeWithDefault(existing)
   state.clientMeta = input.meta
+  const initialFindings = buildClientImportFindings({
+    orgId: input.orgId,
+    meta: input.meta,
+    nowISO: input.nowISO,
+  })
+  const existingFindingIds = new Set((state.findings ?? []).map((finding) => finding.id))
+  const newFindings = initialFindings.filter((finding) => !existingFindingIds.has(finding.id))
+  if (newFindings.length > 0) {
+    state.findings = [...newFindings, ...(state.findings ?? [])]
+  }
+  const actor = {
+    id: input.cabinetUserId,
+    label: input.cabinetEmail,
+    role: "partner_manager",
+    source: "session",
+  } as const
   state.events = appendComplianceEvents(state, [
+    ...newFindings.map((finding) =>
+      createComplianceEvent(
+        {
+          type: "finding.created",
+          entityType: "finding",
+          entityId: finding.id,
+          message: `Acțiune inițială creată din import: ${finding.title}`,
+          createdAtISO: input.nowISO,
+          metadata: {
+            category: finding.category,
+            severity: finding.severity,
+            source: "client_import",
+          },
+        },
+        actor
+      )
+    ),
     createComplianceEvent(
       {
         type: "client.imported",
@@ -172,14 +206,10 @@ async function persistImportedClientState(input: {
           usesAi: input.meta.usesAi ?? "unknown",
           personalDataAi: input.meta.personalDataAi ?? "unknown",
           signalsCount: input.meta.importSignals?.length ?? 0,
+          initialFindingsCount: newFindings.length,
         },
       },
-      {
-        id: input.cabinetUserId,
-        label: input.cabinetEmail,
-        role: "partner_manager",
-        source: "session",
-      }
+      actor
     ),
   ])
   await persistOrgStateToSupabase(input.orgId, state)

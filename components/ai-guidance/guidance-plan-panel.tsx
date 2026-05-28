@@ -180,8 +180,8 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
       ) : null}
 
       <div className="cr-ai-plan__body">
-        {plan.actions.map((action) => (
-          <ActionRow key={action.id} action={action} />
+        {plan.actions.map((action, index) => (
+          <ActionRow key={`${action.id}-${index}`} action={action} />
         ))}
       </div>
       <div className="cr-ai-plan__footer">
@@ -228,8 +228,8 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
               <div>
                 <SectionLabel>Acțiuni prioritizate</SectionLabel>
                 <div className="cr-stack">
-                  {plan.actions.map((action) => (
-                    <ActionDetail key={action.id} action={action} />
+                  {plan.actions.map((action, index) => (
+                    <ActionDetail key={`${action.id}-${index}`} action={action} />
                   ))}
                 </div>
               </div>
@@ -240,8 +240,8 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
                   <p className="cr-muted-copy">Nu există acțiuni omise.</p>
                 ) : (
                   <div className="cr-stack">
-                    {plan.omittedActions.map((action) => (
-                      <div key={action.id} className="cr-omitted-row">
+                    {plan.omittedActions.map((action, index) => (
+                      <div key={`${action.id}-${index}`} className="cr-omitted-row">
                         <div>
                           <strong>{action.title}</strong>
                           <div className="cr-muted-copy">
@@ -265,8 +265,8 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
               <div>
                 <SectionLabel>Surse și guardrails</SectionLabel>
                 <ul className="cr-source-list">
-                  {plan.guardrails.map((item) => (
-                    <li key={item}>{item}</li>
+                  {plan.guardrails.map((item, index) => (
+                    <li key={`${item}-${index}`}>{item}</li>
                   ))}
                 </ul>
               </div>
@@ -302,8 +302,8 @@ function ActionRow({ action }: { action: GuidanceAction }) {
           {action.why}
         </div>
         <div className="cr-ai-action__refs">
-          {action.legalReferences.slice(0, 3).map((ref) => (
-            <span key={ref} className="cr-badge">{ref}</span>
+          {action.legalReferences.slice(0, 3).map((ref, index) => (
+            <span key={`${ref}-${index}`} className="cr-badge">{ref}</span>
           ))}
         </div>
       </div>
@@ -340,11 +340,11 @@ function ActionDetail({ action }: { action: GuidanceAction }) {
           </p>
           <SectionLabel>Articole consultate</SectionLabel>
           <div className="cr-chip-group">
-            {action.legalReferences.map((ref) => <span key={ref} className="cr-badge">{ref}</span>)}
+            {action.legalReferences.map((ref, index) => <span key={`${ref}-${index}`} className="cr-badge">{ref}</span>)}
           </div>
           <SectionLabel>Dovezi cerute</SectionLabel>
           <ul className="cr-source-list">
-            {(action.evidenceRequired.length ? action.evidenceRequired : ["dovadă execuție"]).map((item) => <li key={item}>{item}</li>)}
+            {(action.evidenceRequired.length ? action.evidenceRequired : ["dovadă execuție"]).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
           </ul>
           <Link href={action.targetHref} className="cr-btn cr-btn--primary">
             Deschide în aplicație <ExternalLink size={15} />
@@ -423,6 +423,12 @@ function ownerLabel(owner: GuidanceAction["suggestedOwner"]): string {
     Security: "Security",
     Marketing: "Marketing",
     Cabinet: "Cabinet",
+    HR: "HR",
+    "Customer Support": "Customer support",
+    Procurement: "Procurement",
+    Engineering: "Engineering",
+    "Vendor Manager": "Vendor manager",
+    "Client Admin": "Client admin",
   }
   return labels[owner] ?? owner
 }

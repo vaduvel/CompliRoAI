@@ -85,9 +85,13 @@ export function normalizeWorkspaceMode(value: unknown): WorkspaceMode {
 }
 
 export function getSessionCookieOptions() {
+  const forceInsecureCookies =
+    process.env.AIACT_FORCE_INSECURE_COOKIES === "1" ||
+    process.env.AIACT_FORCE_INSECURE_COOKIES === "true"
+
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" && !forceInsecureCookies,
     sameSite: "lax" as const,
     maxAge: SESSION_TTL_MS / 1000,
     path: "/",

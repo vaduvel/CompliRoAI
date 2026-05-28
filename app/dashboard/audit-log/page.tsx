@@ -69,6 +69,7 @@ const ENTITY_LABELS: Record<ComplianceEventEntityType, string> = {
   task: "Task",
   integration: "Integrare",
   system: "Sistem",
+  ai_use_case: "Utilizare AI",
   drift: "Drift",
   ai_guidance: "AI Guidance",
 }
@@ -80,6 +81,7 @@ const ENTITY_COLORS: Record<ComplianceEventEntityType, { bg: string; fg: string 
   task: { bg: "rgba(96,165,250,0.14)", fg: "#60a5fa" },
   integration: { bg: "rgba(168,85,247,0.14)", fg: "#a855f7" },
   system: { bg: "rgba(52,211,153,0.14)", fg: "#34d399" },
+  ai_use_case: { bg: "rgba(20,184,166,0.14)", fg: "#2dd4bf" },
   drift: { bg: "rgba(251,191,36,0.16)", fg: "#fbbf24" },
   ai_guidance: { bg: "rgba(59,130,246,0.14)", fg: "#60a5fa" },
 }

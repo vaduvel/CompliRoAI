@@ -1,0 +1,25 @@
+{
+  "client_cui": "RO12345678",
+  "responded_departments": [
+    "management"
+  ],
+  "missing_departments": [
+    "it_development",
+    "hr_recruitment",
+    "marketing",
+    "customer_support"
+  ],
+  "responses": [
+    {
+      "department": "management",
+      "uses_ai": "unknown",
+      "notes": "Administratorul suspectează folosirea ChatGPT de către marketing, dar nu are listă."
+    }
+  ],
+  "expected_status": "partial",
+  "expected_findings": [
+    "department_non_response",
+    "inventory_partial",
+    "send_followup_intake"
+  ]
+}

@@ -1,0 +1,7 @@
+﻿change_id,test_case_id,project_id,change_type,previous_version,new_version,changed_by,go_live_at,rollback_available,expected_findings
+CHG-001,E2E-CHG-001,PRJ-SUPPORT-AGENT,provider_change;model_change,openai:gpt-4.1:v1,mistral:mistral-large-latest:v2,cto@devidevs.example,2026-06-03,yes,change_impact_assessment;rerun_role_risk;model_card_update;eval_after_change;client_approval
+CHG-002,E2E-CHG-002,PRJ-SUPPORT-AGENT,prompt_change,prompt_2026-05-20,prompt_2026-05-24_typo_fix,dev@devidevs.example,2026-05-24,yes,change_impact_assessment;eval_after_change_low
+CHG-003,E2E-CHG-003,PRJ-SUPPORT-AGENT,logging_change,logging_enabled,logging_disabled,dev@devidevs.example,2026-05-26,yes,logging_after_change;auditability_broken;security_review
+CHG-004,E2E-CHG-004,PRJ-CRM-AGENT,data_source_change,no_crm_access,crm_contact_history_access,product@bluedesk.example,2026-06-01,unknown,gdpr_after_data_change;data_flow_update;rerun_role_risk
+CHG-005,E2E-CHG-005,PRJ-SUPPORT-AGENT,intended_purpose_change;autonomy_change,draft_replies_only,auto_send_replies_low_confidence_blocked,product@devidevs.example,2026-06-05,yes,substantial_modification_review;human_oversight_after_change;client_approval
+CHG-006,E2E-CHG-006,PRJ-HR-RANKER,human_review_change,human_review_required,human_review_none,hr_client@example.com,2026-06-07,yes,human_review_removed;high_risk_controls_broken;legal_review

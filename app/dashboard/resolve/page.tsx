@@ -93,6 +93,27 @@ type ListResponse = { findings: ScanFinding[]; stats: Stats }
 type StatusFilter = "all" | StatusKey
 type SeverityFilter = "all" | ComplianceSeverity
 
+async function fetchJsonWithTimeout<T>(
+  input: string,
+  init: RequestInit | undefined,
+  timeoutMs: number,
+): Promise<T> {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP_${response.status}`)
+    }
+    return (await response.json()) as T
+  } finally {
+    window.clearTimeout(timer)
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 //   Page
 // ────────────────────────────────────────────────────────────────────────────
@@ -110,25 +131,25 @@ export default function ResolvePage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [events, setEvents] = useState<ComplianceEvent[]>([])
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    setLoading(true)
     try {
-      const [resFindings, resAudit] = await Promise.all([
-        fetch("/api/findings"),
-        fetch("/api/findings/audit-trail"),
-      ])
-      if (!resFindings.ok) {
-        setError("Nu am putut incarca risc-urile.")
-        return
-      }
-      const data = (await resFindings.json()) as ListResponse
+      const data = await fetchJsonWithTimeout<ListResponse>(
+        "/api/findings",
+        undefined,
+        20_000,
+      )
       setFindings(data.findings)
       setStats(data.stats)
-      if (resAudit.ok) {
-        const audit = (await resAudit.json()) as { events: ComplianceEvent[] }
-        setEvents(audit.events ?? [])
-      }
+      setEvents([])
       setError(null)
+    } catch {
+      setFindings([])
+      setStats(null)
+      setEvents([])
+      setError("Nu am putut incarca risc-urile.")
     } finally {
       setLoading(false)
     }
@@ -165,14 +186,34 @@ export default function ResolvePage() {
   }, [findings, statusFilter, severityFilter, categoryFilter])
 
   async function handleAction(id: string, action: string) {
-    const res = await fetch(`/api/findings/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action }),
-    })
-    if (res.ok) {
+    setPendingActionId(`${id}:${action}`)
+    const previousFindings = findings
+    try {
+      const res = await fetch(`/api/findings/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Eroare necunoscuta" }))
+        throw new Error(data.error || "Nu am putut actualiza statusul.")
+      }
+      const data = (await res.json()) as { finding?: ScanFinding }
+      if (data.finding) {
+        setFindings((current) =>
+          current.map((finding) => (finding.id === id ? data.finding! : finding)),
+        )
+        if (data.finding.findingStatus === "resolved" && expandedId === id) {
+          setExpandedId(null)
+        }
+      }
       await regenerateGuidanceAfterAction(`finding_${action}`)
       await load()
+    } catch (e) {
+      setFindings(previousFindings)
+      alert(e instanceof Error ? e.message : "Nu am putut actualiza statusul.")
+    } finally {
+      setPendingActionId(null)
     }
   }
 
@@ -313,6 +354,7 @@ export default function ResolvePage() {
               expanded={expandedId === f.id}
               onToggle={() => setExpandedId((p) => (p === f.id ? null : f.id))}
               onAction={(a) => handleAction(f.id, a)}
+              pendingAction={pendingActionId?.startsWith(`${f.id}:`) ? pendingActionId.split(":")[1] : null}
               onDelete={() => handleDelete(f.id)}
               onAttachEvidence={(p) => handleAttachEvidence(f.id, p)}
               onShare={() => handleShare(f.id)}
@@ -478,6 +520,7 @@ function FindingRow({
   onAttachEvidence,
   onShare,
   relatedEvents,
+  pendingAction,
 }: {
   finding: ScanFinding
   expanded: boolean
@@ -487,6 +530,7 @@ function FindingRow({
   onAttachEvidence: (p: { note: string; url?: string; fileName?: string }) => Promise<void>
   onShare: () => Promise<string>
   relatedEvents: ComplianceEvent[]
+  pendingAction: string | null
 }) {
   const status = (finding.findingStatus ?? "open") as StatusKey
   const sev = finding.severity
@@ -537,6 +581,7 @@ function FindingRow({
           finding={finding}
           relatedEvents={relatedEvents}
           onAction={onAction}
+          pendingAction={pendingAction}
           onDelete={onDelete}
           onAttachEvidence={onAttachEvidence}
           onShare={onShare}
@@ -606,6 +651,7 @@ function ExpandedDetail({
   onDelete,
   onAttachEvidence,
   onShare,
+  pendingAction,
 }: {
   finding: ScanFinding
   relatedEvents: ComplianceEvent[]
@@ -613,6 +659,7 @@ function ExpandedDetail({
   onDelete: () => void
   onAttachEvidence: (p: { note: string; url?: string; fileName?: string }) => Promise<void>
   onShare: () => Promise<string>
+  pendingAction: string | null
 }) {
   const status = (finding.findingStatus ?? "open") as StatusKey
   const [shareUrl, setShareUrl] = useState<string | null>(null)
@@ -734,38 +781,43 @@ function ExpandedDetail({
           <div className="cr-action-row">
           <ActionButton
             onClick={() => onAction("confirm")}
-            disabled={status === "confirmed" || status === "resolved"}
+            disabled={Boolean(pendingAction) || status === "confirmed" || status === "resolved"}
             variant="primary"
           >
-            <CheckCircle2 size={12} /> Confirma
+            {pendingAction === "confirm" ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+            Confirma
           </ActionButton>
           <ActionButton
             onClick={() => onAction("dismiss")}
-            disabled={status === "dismissed"}
+            disabled={Boolean(pendingAction) || status === "dismissed"}
             variant="default"
           >
-            <X size={12} /> Respinge
+            {pendingAction === "dismiss" ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
+            Respinge
           </ActionButton>
           <ActionButton
             onClick={() => onAction("resolve")}
-            disabled={status === "resolved"}
+            disabled={Boolean(pendingAction) || status === "resolved"}
             variant="primary"
           >
-            <ShieldCheck size={12} /> Marcheaza rezolvat
+            {pendingAction === "resolve" ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+            Marcheaza rezolvat
           </ActionButton>
           <ActionButton
             onClick={() => onAction("monitor")}
-            disabled={status === "under_monitoring"}
+            disabled={Boolean(pendingAction) || status === "under_monitoring"}
             variant="default"
           >
-            <Eye size={12} /> Pune in monitorizare
+            {pendingAction === "monitor" ? <Loader2 size={12} className="animate-spin" /> : <Eye size={12} />}
+            Pune in monitorizare
           </ActionButton>
           <ActionButton
             onClick={() => onAction("reopen")}
-            disabled={status === "open"}
+            disabled={Boolean(pendingAction) || status === "open"}
             variant="default"
           >
-            <RotateCcw size={12} /> Redeschide
+            {pendingAction === "reopen" ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+            Redeschide
           </ActionButton>
           <ActionButton
             onClick={copyShare}
@@ -1174,7 +1226,7 @@ function ActionButton({
       : variant === "danger"
         ? "cr-btn cr-btn--danger cr-btn--sm"
         : "cr-btn cr-btn--sm"
-  return <button onClick={onClick} disabled={disabled} className={className}>{children}</button>
+  return <button type="button" onClick={onClick} disabled={disabled} className={className}>{children}</button>
 }
 
 // ────────────────────────────────────────────────────────────────────────────

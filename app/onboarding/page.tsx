@@ -84,6 +84,7 @@ const PURPOSES: { value: AISystemPurpose; label: string }[] = [
   { value: "fraud-detection", label: "Detecție fraudă" },
   { value: "marketing-personalization", label: "Personalizare marketing" },
   { value: "support-chatbot", label: "Chatbot client / suport" },
+  { value: "decision-support", label: "Suport decizional / recomandări" },
   { value: "document-assistant", label: "Asistent documente" },
   { value: "other", label: "Altele" },
 ]

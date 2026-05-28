@@ -17,6 +17,7 @@ import path from "node:path"
 
 import { writeFileSafe } from "./fs-safe"
 import { getOrgContext } from "./org-context"
+import { loadAIUseCasesForOrgIds } from "./ai-use-case-store"
 import {
   loadOrgStateFromSupabase,
   persistOrgStateToSupabase,
@@ -75,6 +76,7 @@ export function mergeWithDefault(partial: Partial<AIActState> | null | undefined
     events: partial.events ?? base.events,
     generatedDocuments: partial.generatedDocuments ?? base.generatedDocuments,
     aiSystems: partial.aiSystems ?? base.aiSystems,
+    aiUseCases: partial.aiUseCases ?? base.aiUseCases,
     literacyRecords: partial.literacyRecords ?? base.literacyRecords,
     aiGuidancePlans: partial.aiGuidancePlans ?? base.aiGuidancePlans,
     // Onboarding: păstrează existing sau cade pe default {completed:false, step:1}.
@@ -82,15 +84,36 @@ export function mergeWithDefault(partial: Partial<AIActState> | null | undefined
   }
 }
 
+async function hydrateDedicatedSupabaseState(orgId: string, state: AIActState): Promise<AIActState> {
+  if (!shouldUseSupabaseOrgState()) return state
+
+  try {
+    const persistedUseCasesByOrg = await loadAIUseCasesForOrgIds([orgId])
+    const persistedUseCases = persistedUseCasesByOrg.get(orgId)
+    if (persistedUseCases && persistedUseCases.length > 0) {
+      return {
+        ...state,
+        aiUseCases: persistedUseCases,
+      }
+    }
+  } catch {
+    // Keep org_state as fallback if the dedicated table is temporarily unavailable.
+  }
+
+  return state
+}
+
 export async function readState(): Promise<AIActState> {
   const { orgId } = await getOrgContext()
-  if (stateCache.has(orgId)) return stateCache.get(orgId)!
+  if (stateCache.has(orgId)) {
+    return stateCache.get(orgId)!
+  }
 
   // Supabase path
   if (shouldUseSupabaseOrgState()) {
     try {
       const remote = await loadOrgStateFromSupabase<Partial<AIActState>>(orgId)
-      const state = mergeWithDefault(remote)
+      const state = await hydrateDedicatedSupabaseState(orgId, mergeWithDefault(remote))
       stateCache.set(orgId, state)
       return state
     } catch {

@@ -1,0 +1,10 @@
+﻿client_cui,vendor_name,product_name,model_name,contract_type,dpa_status,data_region,training_opt_out,subprocessors_url,security_doc_url,owner_email
+RO24567890,OpenAI,ChatGPT Team,gpt-4.1,subscription,available,EU/US,yes,https://example.com/openai-subprocessors-demo,https://example.com/openai-security-demo,it@magazine-online.example
+RO24567890,Intercom AI,Website Chatbot,vendor_managed,saas,unknown,unknown,unknown,,,it@magazine-online.example
+RO33214567,VendorX HR AI,HireRank AI ATS,vendor_model_v3,saas,unknown,EU,unknown,,,hr@nordhire.example
+RO40127890,Internal Model,CreditRisk ML,xgboost_v12,internal,not_applicable,Romania,not_applicable,,https://example.com/internal-security-demo,risk@fincred.example
+RO70004567,OpenAI,API,gpt-4.1,api,available,EU/US,yes,https://example.com/openai-subprocessors-demo,https://example.com/openai-security-demo,cto@devidevs.example
+RO12004567,Mistral AI,API,mistral-large-latest,api,unknown,EU,unknown,,,security@bluedesk.example
+RO92345671,OpenAI,ChatGPT Personal,unknown,personal_account,missing,unknown,unknown,,,office@contabil-plus.example
+RO62001234,Microsoft,Copilot / Teams Premium,vendor_managed,enterprise,available,EU,yes,https://example.com/ms-subprocessors-demo,https://example.com/ms-security-demo,it@smartcall.example
+RO10333444,AgroVision SaaS,AgroVision AI,vendor_model,saas,available,EU,no_training,https://example.com/agro-subprocessors-demo,https://example.com/agro-security-demo,ops@agrodata.example

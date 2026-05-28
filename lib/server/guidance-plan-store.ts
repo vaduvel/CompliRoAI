@@ -1,5 +1,4 @@
 import {
-  buildGuidancePlan,
   diffGuidancePlans,
   explainOmittedAction,
   type GuidanceAction,
@@ -16,6 +15,8 @@ import type {
   ComplianceState,
 } from "@/lib/compliance/types"
 import type { WorkspaceMode } from "@/lib/server/auth"
+import { buildGuidancePlanFromOrchestrator } from "@/lib/server/ai-orchestrator/to-guidance-plan"
+import type { MistralOrchestratorRequest } from "@/lib/server/ai-orchestrator/mistral-client"
 import { mutateFreshStateForOrg, readFreshStateForOrg } from "@/lib/server/store"
 
 export type GenerateGuidancePlanInput = {
@@ -25,6 +26,7 @@ export type GenerateGuidancePlanInput = {
   nowISO?: string
   reason?: "initial" | "manual_regenerate" | "after_action" | "scheduled" | string
   maxActions?: number
+  mistral?: Pick<MistralOrchestratorRequest, "model" | "timeoutMs" | "maxTokens">
 }
 
 export type OmittedGuidanceExplanation = {
@@ -40,33 +42,38 @@ export async function generateGuidancePlanForOrg(
   orgId: string,
   input: GenerateGuidancePlanInput,
 ): Promise<AIGuidancePlanRecord> {
-  let generated: AIGuidancePlanRecord | undefined
   const nowISO = input.nowISO ?? new Date().toISOString()
+  const state = await readFreshStateForOrg(orgId, input.orgName)
+  const previousRecord = state.aiGuidancePlans?.[0]
+  const plan = await buildGuidancePlanFromOrchestrator({
+    orgId,
+    orgName: input.orgName,
+    workspaceMode: input.workspaceMode,
+    state,
+    nowISO,
+    maxActions: input.maxActions,
+    preferMistral: true,
+    mistral: input.mistral,
+    user: {
+      id: input.actor.id,
+    },
+  })
+
+  const generated: AIGuidancePlanRecord = {
+    id: buildRecordId(plan, nowISO, state.aiGuidancePlans?.length ?? 0),
+    planId: plan.id,
+    orgId,
+    status: "generated",
+    plan,
+    diffFromPrevious: previousRecord ? diffGuidancePlans(previousRecord.plan, plan) : undefined,
+    generatedAtISO: nowISO,
+    generatedByEmail: input.actor.label,
+    reason: input.reason ?? "initial",
+  }
 
   await mutateFreshStateForOrg(
     orgId,
     (state) => {
-      const previousRecord = state.aiGuidancePlans?.[0]
-      const plan = buildGuidancePlan({
-        state,
-        workspaceMode: input.workspaceMode,
-        orgName: input.orgName,
-        nowISO,
-        maxActions: input.maxActions,
-      })
-
-      generated = {
-        id: buildRecordId(plan, nowISO, state.aiGuidancePlans?.length ?? 0),
-        planId: plan.id,
-        orgId,
-        status: "generated",
-        plan,
-        diffFromPrevious: previousRecord ? diffGuidancePlans(previousRecord.plan, plan) : undefined,
-        generatedAtISO: nowISO,
-        generatedByEmail: input.actor.label,
-        reason: input.reason ?? "initial",
-      }
-
       const existing = state.aiGuidancePlans ?? []
       const nextPlans = [
         generated,
@@ -101,9 +108,6 @@ export async function generateGuidancePlanForOrg(
     input.orgName,
   )
 
-  if (!generated) {
-    throw new Error("Nu am putut genera planul AI Guidance.")
-  }
   return generated
 }
 

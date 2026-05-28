@@ -106,6 +106,20 @@ function resolvePurposeDescriptor(input: AISystemPurpose | string): {
       matches: ["chatbot", "customer support", "support bot", "helpdesk", "customer service", "assistant"],
     },
     {
+      purpose: "decision-support",
+      matches: [
+        "decision support",
+        "recomand",
+        "suggest",
+        "triage",
+        "simptom",
+        "crm",
+        "follow up",
+        "drone",
+        "irig",
+      ],
+    },
+    {
       purpose: "document-assistant",
       matches: ["document", "contract", "draft", "summar", "copilot", "knowledge assistant"],
     },
@@ -184,6 +198,17 @@ const KNOWN_CLASSIFICATIONS: Record<AISystemPurpose, {
     requiredActions: [
       "Informare utilizator că interacționează cu AI",
       "Disclosure pe pagina /trust",
+    ],
+  },
+  "decision-support": {
+    riskLevel: "limited_risk",
+    article: "Art. 50 / review contextual",
+    reason:
+      "Sistem AI asistiv sau recomandativ cu impact contextual — cere validare de use-case, date și oversight înainte de verdict final.",
+    requiredActions: [
+      "Confirmă domeniul concret de utilizare și persoanele afectate",
+      "Verifică dacă intră într-un domeniu Annex III sau într-un review GDPR",
+      "Documentează human oversight și logging unde există impact operațional",
     ],
   },
   "document-assistant": {

@@ -33,9 +33,18 @@ export async function GET() {
     const ctx = await getOrgContext()
     const { findings, stats } = await readFindings(ctx.orgId)
     return NextResponse.json({ findings, stats })
-  } catch {
+  } catch (error) {
+    console.error("GET /api/findings failed", error)
     return NextResponse.json(
-      { error: "Nu am putut incarca risk-urile." },
+      {
+        error: "Nu am putut incarca risk-urile.",
+        details:
+          process.env.NODE_ENV === "production"
+            ? undefined
+            : error instanceof Error
+              ? error.message
+              : String(error),
+      },
       { status: 500 },
     )
   }

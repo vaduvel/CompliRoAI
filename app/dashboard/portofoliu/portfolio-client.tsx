@@ -12,6 +12,7 @@ type ClientRow = {
   aiSystemsCount: number
   literacyTrainingsCount: number
   onboardingCompleted: boolean
+  importSignalsCount?: number
 }
 
 export function PortfolioClient() {
@@ -48,7 +49,7 @@ export function PortfolioClient() {
         body: JSON.stringify({ orgId }),
       })
       if (res.ok) {
-        router.push("/dashboard/sisteme")
+        router.push("/dashboard/resolve")
         router.refresh()
       } else {
         setSwitching(null)
@@ -147,7 +148,7 @@ export function PortfolioClient() {
 
       {/* Stats */}
       {!loading && clients.length > 0 && (
-        <div className="cr-stat-strip cr-stat-strip--three">
+        <div className="cr-stat-strip cr-stat-strip--four">
           {[
             { label: "Total clienți", value: clients.length },
             {
@@ -157,6 +158,10 @@ export function PortfolioClient() {
             {
               label: "Sisteme AI înregistrate",
               value: clients.reduce((sum, c) => sum + c.aiSystemsCount, 0),
+            },
+            {
+              label: "Acțiuni inițiale",
+              value: clients.reduce((sum, c) => sum + (c.importSignalsCount ?? 0), 0),
             },
           ].map((stat) => (
             <div
@@ -197,15 +202,6 @@ export function PortfolioClient() {
               return (
                 <div
                   key={c.orgId}
-                  onClick={() => !switching && handleSwitch(c.orgId)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if ((e.key === "Enter" || e.key === " ") && !switching) {
-                      e.preventDefault()
-                      handleSwitch(c.orgId)
-                    }
-                  }}
                   className={isSwitching ? "cr-client-card cr-client-card--busy" : "cr-client-card"}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -228,6 +224,14 @@ export function PortfolioClient() {
                       <span>{c.aiSystemsCount} sistem{c.aiSystemsCount !== 1 ? "e" : ""} AI</span>
                       <span>·</span>
                       <span>{c.literacyTrainingsCount} training-uri</span>
+                      {(c.importSignalsCount ?? 0) > 0 && (
+                        <>
+                          <span>·</span>
+                          <span style={{ color: "var(--cobalt-500)", fontWeight: 600 }}>
+                            {c.importSignalsCount} acțiuni inițiale
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -251,7 +255,16 @@ export function PortfolioClient() {
                     {intakeBusy === c.orgId ? "Se trimite…" : "Trimite intake"}
                   </button>
 
-                  <ChevronRight size={15} style={{ color: "var(--ink-dim)", flexShrink: 0 }} />
+                  <button
+                    type="button"
+                    onClick={() => !switching && handleSwitch(c.orgId)}
+                    disabled={Boolean(switching)}
+                    className="cr-btn cr-btn--sm cr-btn--primary"
+                    aria-label={`Intră în execuție pentru ${c.orgName}`}
+                  >
+                    {isSwitching ? "Se deschide…" : "Intră în execuție"}
+                    <ChevronRight size={12} />
+                  </button>
                 </div>
               )
             })}

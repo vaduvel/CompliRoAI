@@ -1,0 +1,3 @@
+{"ts": "2026-05-22T10:00:00Z", "event": "ai_output_generated", "user": "support_agent_01", "case_id": "TCK-1001", "model": "gpt-4.1", "human_review": "pending"}
+{"ts": "2026-05-22T10:03:00Z", "event": "human_approved_output", "user": "support_agent_01", "case_id": "TCK-1001", "override": false}
+{"ts": "2026-05-22T10:08:00Z", "event": "human_overrode_output", "user": "support_agent_02", "case_id": "TCK-1002", "override": true, "reason": "wrong refund rule"}

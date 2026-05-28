@@ -1,0 +1,7 @@
+﻿client_cui,person_name,person_email,department,role,ai_user_level,training_assigned,training_completed,completion_date,evidence_url
+RO12345678,Maria Popescu,maria.popescu@apex-logistic.example,management,Administrator,approver,yes,no,,
+RO24567890,Elena Radu,marketing@magazine-online.example,marketing,Marketing Manager,regular,yes,no,,
+RO24567890,Paul Grigore,support@magazine-online.example,customer_support,Support Lead,regular,yes,yes,2026-05-21,evidence/EV-LITERACY-MAGO-SUPPORT.txt
+RO33214567,Ioana Stan,hr@nordhire.example,hr_recruitment,HR Manager,power_user,yes,no,,
+RO70004567,Petru Constantin,cto@devidevs.example,it_development,CTO,power_user,yes,yes,2026-05-18,evidence/EV-LITERACY-DEVIDEVS-CTO.txt
+RO12004567,Diana Ene,diana.ene@bluedesk.example,product,Product Owner,power_user,no,no,,

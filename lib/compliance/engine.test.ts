@@ -41,6 +41,7 @@ describe("initialComplianceState", () => {
     expect(initialComplianceState.events).toEqual([])
     expect(initialComplianceState.generatedDocuments).toEqual([])
     expect(initialComplianceState.aiSystems).toEqual([])
+    expect(initialComplianceState.aiUseCases).toEqual([])
     expect(initialComplianceState.literacyRecords).toEqual([])
     expect(initialComplianceState.onboarding).toMatchObject({ completed: false, currentStep: 1 })
   })

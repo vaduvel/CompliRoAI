@@ -1,0 +1,12 @@
+{
+  "change_id": "CHG-002",
+  "test_case_id": "E2E-CHG-002",
+  "project_id": "PRJ-SUPPORT-AGENT",
+  "change_type": "prompt_change",
+  "previous_version": "prompt_2026-05-20",
+  "new_version": "prompt_2026-05-24_typo_fix",
+  "changed_by": "dev@devidevs.example",
+  "go_live_at": "2026-05-24",
+  "rollback_available": "yes",
+  "expected_findings": "change_impact_assessment;eval_after_change_low"
+}

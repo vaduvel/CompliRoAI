@@ -1,0 +1,29 @@
+project:
+  id: PRJ-MED-INTAKE
+  name: "Medical Intake Assistant"
+  client: "Urban Medica SRL"
+  intended_purpose: "Collect symptoms and suggest appointment type for human staff confirmation."
+  lifecycle_stage: "pilot"
+
+system:
+  system_name: "MedIntake Assistant"
+  model_provider: "OpenAI"
+  model_name: "gpt-4.1"
+  deployment: "website_form"
+  human_review_required: true
+
+data:
+  personal_data: true
+  special_category_data: true
+  confidential_data: true
+  data_categories:
+    - name
+    - phone
+    - symptoms
+    - health_history_declared
+
+risk:
+  affects_people: true
+  automated_decision: false
+  public_output: false
+  medical_triage_candidate: true

@@ -20,6 +20,18 @@ type ClientRow = {
   cui?: string
 }
 
+type AuthMeResponse = {
+  user?: {
+    workspaceMode?: string
+  } | null
+  workspaces?: Array<{
+    orgId: string
+    orgName: string
+    role: string
+    status: string
+  }>
+}
+
 type PackEntry = {
   id: string
   orgId: string
@@ -70,9 +82,21 @@ export default function AuditPackPage() {
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+      .then((d: AuthMeResponse | null) => {
         if (d?.user?.workspaceMode === "cabinet") {
           setWorkspaceMode("cabinet")
+          const workspaceClients =
+            d.workspaces
+              ?.filter((workspace) => workspace.role === "partner_manager" && workspace.status === "active")
+              .map((workspace) => ({
+                orgId: workspace.orgId,
+                orgName: workspace.orgName,
+              })) ?? []
+          if (workspaceClients.length > 0) {
+            // Fallback imediat: audit pack-ul are nevoie doar de orgId/orgName.
+            // /api/portfolio/clients poate îmbogăți ulterior cu CUI și metadata.
+            setClients(workspaceClients)
+          }
         }
       })
       .catch(() => {})
@@ -84,12 +108,13 @@ export default function AuditPackPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (Array.isArray(data?.clients)) {
-          setClients(
-            data.clients.map((c: { orgId: string; orgName: string; cui?: string }) => ({
+          const portfolioClients = data.clients.map((c: { orgId: string; orgName: string; cui?: string }) => ({
               orgId: c.orgId,
               orgName: c.orgName,
               cui: c.cui,
             }))
+          setClients((current) =>
+            portfolioClients.length > 0 || current.length === 0 ? portfolioClients : current
           )
         }
       })
@@ -366,8 +391,8 @@ export default function AuditPackPage() {
             }}
           >
             <Users size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: "6px" }} />
-            Nu ai încă clienți în portofoliu. Adaugă din{" "}
-            <a href="/dashboard/portofoliu" style={{ color: "var(--cobalt-400)" }}>Portofoliu</a>.
+            Nu ai încă clienți în portofoliu. Importă sau adaugă primul client din{" "}
+            <a href="/dashboard/clienti" style={{ color: "var(--cobalt-400)" }}>Clienți</a>.
           </div>
         )}
 

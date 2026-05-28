@@ -1,0 +1,16 @@
+{
+  "client_cui": "RO24567890",
+  "department": "hr_recruitment",
+  "use_case": "Monitorizare productivitate angajați",
+  "output_type": "scoring",
+  "affected_persons": [
+    "employees"
+  ],
+  "personal_data": "yes",
+  "expected_findings": [
+    "employment_worker_management_review",
+    "worker_notice",
+    "dpia",
+    "human_oversight"
+  ]
+}

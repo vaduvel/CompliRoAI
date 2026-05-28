@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Send, ShieldAlert, Trash2 } from "lucide-react"
 import type { AISystemRecord, AISystemRiskLevel } from "@/lib/compliance/types"
+import type { AISystemDisplayAssessment } from "@/lib/ai-inventory/system-assessment"
 
 const RISK_LABELS: Record<AISystemRiskLevel, string> = {
   minimal: "Minimal",
@@ -11,7 +12,10 @@ const RISK_LABELS: Record<AISystemRiskLevel, string> = {
   high: "Ridicat",
 }
 
-const RISK_BADGE_STYLES: Record<AISystemRiskLevel, React.CSSProperties> = {
+const RISK_BADGE_STYLES: Record<
+  AISystemRiskLevel | AISystemDisplayAssessment["riskTone"],
+  React.CSSProperties
+> = {
   minimal: {
     background: "var(--emerald-soft)",
     color: "var(--emerald-400)",
@@ -26,6 +30,11 @@ const RISK_BADGE_STYLES: Record<AISystemRiskLevel, React.CSSProperties> = {
     background: "var(--amber-soft)",
     color: "var(--amber-400)",
     border: "1px solid rgba(251,191,36,0.2)",
+  },
+  critical: {
+    background: "rgba(239,68,68,0.12)",
+    color: "#ef4444",
+    border: "1px solid rgba(239,68,68,0.22)",
   },
 }
 
@@ -42,6 +51,7 @@ const PURPOSE_LABELS: Record<string, string> = {
 
 interface AISystemsListProps {
   systems: AISystemRecord[]
+  systemAssessments?: Map<string, AISystemDisplayAssessment>
   onDelete: (id: string) => void
   /** When "cabinet", each row exposes a "Trimite spre aprobare" button. */
   workspaceMode?: "imm-classic" | "ai-builder" | "cabinet"
@@ -86,6 +96,7 @@ interface AISystemsListProps {
 
 export function AISystemsList({
   systems,
+  systemAssessments,
   onDelete,
   workspaceMode = "imm-classic",
   systemsRequiringFriaIds,
@@ -221,11 +232,15 @@ export function AISystemsList({
         </div>
       )}
       {systems.map((system) => {
-        const badgeStyle = RISK_BADGE_STYLES[system.riskLevel] ?? RISK_BADGE_STYLES.minimal
-        const riskLabel = RISK_LABELS[system.riskLevel] ?? system.riskLevel
-        const actionCount = system.recommendedActions?.length ?? 0
+        const assessment = systemAssessments?.get(system.id)
+        const badgeStyle =
+          assessment?.riskTone
+            ? RISK_BADGE_STYLES[assessment.riskTone]
+            : (RISK_BADGE_STYLES[system.riskLevel] ?? RISK_BADGE_STYLES.minimal)
+        const riskLabel =
+          assessment?.riskLabel ?? RISK_LABELS[system.riskLevel] ?? system.riskLevel
+        const actionCount = assessment?.actionCount ?? system.recommendedActions?.length ?? 0
         const needsFria =
-          system.riskLevel === "high" &&
           systemsRequiringFriaIds?.has(system.id) === true
         const needsOversight = systemsRequiringOversightIds?.has(system.id) === true
         const needsLogging = systemsRequiringLoggingIds?.has(system.id) === true
@@ -505,12 +520,18 @@ export function AISystemsList({
                 }}
               >
                 <span style={{ fontSize: "11px", color: "var(--ink-muted)" }}>
-                  {PURPOSE_LABELS[system.purpose] ?? system.purpose}
+                  {assessment?.purposeLabel ?? PURPOSE_LABELS[system.purpose] ?? system.purpose}
                 </span>
 
                 {system.vendor && (
                   <span style={{ fontSize: "11px", color: "var(--ink-dim)" }}>
                     · {system.vendor}
+                  </span>
+                )}
+
+                {assessment && assessment.linkedUseCaseCount > 0 && (
+                  <span style={{ fontSize: "10px", color: "var(--ink-dim)" }}>
+                    · {assessment.linkedUseCaseCount} use case{assessment.linkedUseCaseCount !== 1 ? "-uri" : ""}
                   </span>
                 )}
 

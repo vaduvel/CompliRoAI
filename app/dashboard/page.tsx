@@ -1,4 +1,3 @@
-import { headers } from "next/headers"
 import Link from "next/link"
 import {
   Bell,
@@ -18,10 +17,13 @@ import {
 
 import { GuidancePlanPanel } from "@/components/ai-guidance/guidance-plan-panel"
 import { buildGuidancePlan, type GuidancePlan } from "@/lib/compliance/guidance-orchestrator"
-import { initialComplianceState } from "@/lib/compliance/engine"
 import type { AIGuidancePlanRecord } from "@/lib/compliance/types"
-import { readState } from "@/lib/server/store"
-import { normalizeWorkspaceMode, type WorkspaceMode } from "@/lib/server/auth"
+import type { ComplianceState } from "@/lib/compliance/types"
+import { initialComplianceState } from "@/lib/compliance/engine"
+import { buildGuidancePlanFromOrchestrator } from "@/lib/server/ai-orchestrator/to-guidance-plan"
+import { type WorkspaceMode } from "@/lib/server/auth"
+import { getOrgContext } from "@/lib/server/org-context"
+import { readFreshStateForOrg } from "@/lib/server/store"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -139,169 +141,244 @@ const ROLE_GREETING: Record<WorkspaceMode, { title: string; subtitle: string }> 
   },
 }
 
-export default async function DashboardHomePage() {
-  const h = await headers()
-  const workspaceMode = normalizeWorkspaceMode(h.get("x-aiact-workspace-mode"))
-  const orgName = h.get("x-aiact-org-name") ?? ""
-
-  // Best-effort state read for counters + recent events.
-  let pending = { findings: 0, dsar: 0, breach: 0, approvals: 0 }
-  let snapshot = {
-    aiSystems: 0,
-    literacyRecords: 0,
-    loggingConfigs: 0,
-    pmmPlans: 0,
-    aiIncidentsOpen: 0,
-  }
-  let recent: Array<{ id: string; createdAtISO: string; message: string; type: string }> = []
-  let guidanceRecord: AIGuidancePlanRecord | null = null
-  let guidancePlan: GuidancePlan | null = null
+async function buildDashboardGuidancePlan(input: {
+  orgId: string
+  orgName: string
+  workspaceMode: WorkspaceMode
+  userId: string
+  state: ComplianceState
+}): Promise<GuidancePlan> {
   try {
-    const state = await readState()
-    pending = {
-      findings:
-        state.findings?.filter(
-          (f) => f.findingStatus === "open" || f.findingStatus === "confirmed"
-        ).length ?? 0,
-      dsar:
-        state.dsarRequests?.filter(
-          (r) =>
-            r.status === "received" ||
-            r.status === "in_progress" ||
-            r.status === "awaiting_verification"
-        ).length ?? 0,
-      breach:
-        state.breachRecords?.filter(
-          (b) => b.status !== "closed" && b.status !== "no_notification_required"
-        ).length ?? 0,
-      approvals:
-        state.approvalRequests?.filter((a) => a.status === "pending").length ?? 0,
-    }
-    snapshot = {
-      aiSystems: state.aiSystems?.length ?? 0,
-      literacyRecords: state.literacyRecords?.length ?? 0,
-      loggingConfigs: state.loggingEvidence?.length ?? 0,
-      pmmPlans: state.pmmPlans?.length ?? 0,
-      aiIncidentsOpen:
-        state.aiIncidents?.filter(
-          (incident) => incident.status !== "closed" && incident.status !== "not_reportable"
-        ).length ?? 0,
-    }
-    recent = (state.events ?? [])
-      .slice(-5)
-      .reverse()
-      .map((e) => ({ id: e.id, createdAtISO: e.createdAtISO, message: e.message, type: e.type }))
-    guidanceRecord = state.aiGuidancePlans?.[0] ?? null
-    guidancePlan = buildGuidancePlan({
-      state,
-      workspaceMode,
-      orgName: orgName || "Organizația curentă",
+    return await buildGuidancePlanFromOrchestrator({
+      orgId: input.orgId,
+      orgName: input.orgName,
+      workspaceMode: input.workspaceMode,
+      state: input.state,
+      user: { id: input.userId },
+      preferMistral: false,
     })
-  } catch {
-    // swallow — empty defaults are safe
+  } catch (error) {
+    console.error("Dashboard guidance fallback failed over to deterministic plan", error)
+    return buildGuidancePlan({
+      state: input.state,
+      workspaceMode: input.workspaceMode,
+      orgName: input.orgName,
+    })
   }
+}
 
-  guidancePlan ??= buildGuidancePlan({
-    state: initialComplianceState,
-    workspaceMode,
-    orgName: orgName || "Organizația curentă",
-  })
+export default async function DashboardHomePage() {
+  try {
+    const ctx = await getOrgContext()
+    const workspaceMode = ctx.workspaceMode
+    const orgName = ctx.orgName ?? ""
 
-  const actions = nextActionsFor(workspaceMode)
-  const greeting = ROLE_GREETING[workspaceMode]
-  const counters = dashboardCountersFor(workspaceMode, pending, snapshot)
+    // Best-effort state read for counters + recent events.
+    let pending = { findings: 0, dsar: 0, breach: 0, approvals: 0 }
+    let snapshot = {
+      aiSystems: 0,
+      literacyRecords: 0,
+      loggingConfigs: 0,
+      pmmPlans: 0,
+      aiIncidentsOpen: 0,
+    }
+    let recent: Array<{ id: string; createdAtISO: string; message: string; type: string }> = []
+    let guidanceRecord: AIGuidancePlanRecord | null = null
+    let guidancePlan: GuidancePlan | null = null
+    let dashboardState: ComplianceState = structuredClone(initialComplianceState)
+    try {
+      const state = await readFreshStateForOrg(ctx.orgId, ctx.orgName)
+      dashboardState = state
+      pending = {
+        findings:
+          state.findings?.filter(
+            (f) => f.findingStatus === "open" || f.findingStatus === "confirmed"
+          ).length ?? 0,
+        dsar:
+          state.dsarRequests?.filter(
+            (r) =>
+              r.status === "received" ||
+              r.status === "in_progress" ||
+              r.status === "awaiting_verification"
+          ).length ?? 0,
+        breach:
+          state.breachRecords?.filter(
+            (b) => b.status !== "closed" && b.status !== "no_notification_required"
+          ).length ?? 0,
+        approvals:
+          state.approvalRequests?.filter((a) => a.status === "pending").length ?? 0,
+      }
+      snapshot = {
+        aiSystems: state.aiSystems?.length ?? 0,
+        literacyRecords: state.literacyRecords?.length ?? 0,
+        loggingConfigs: state.loggingEvidence?.length ?? 0,
+        pmmPlans: state.pmmPlans?.length ?? 0,
+        aiIncidentsOpen:
+          state.aiIncidents?.filter(
+            (incident) => incident.status !== "closed" && incident.status !== "not_reportable"
+          ).length ?? 0,
+      }
+      recent = (state.events ?? [])
+        .slice(-5)
+        .reverse()
+        .map((e) => ({ id: e.id, createdAtISO: e.createdAtISO, message: e.message, type: e.type }))
+      guidanceRecord = state.aiGuidancePlans?.[0] ?? null
+      guidancePlan =
+        guidanceRecord?.plan ??
+        await buildDashboardGuidancePlan({
+          orgId: ctx.orgId,
+          orgName: orgName || "Organizația curentă",
+          workspaceMode,
+          state,
+          userId: ctx.userId,
+        })
+    } catch {
+      // swallow — empty defaults are safe
+    }
 
-  return (
-    <div className="cr-page cr-page--full cr-stack">
-      {/* Header */}
-      <header className="cr-hero">
-        <div className="cr-hero__copy">
-          <span className="cr-eyebrow">Acasă</span>
-          <h1 className="cr-title">
-            {greeting.title}
-            {orgName ? <span className="cr-title__muted">, {orgName}</span> : null}
-          </h1>
-          <div className="cr-subtitle">
-            {greeting.subtitle}
+    if (!guidancePlan) {
+      try {
+        const state = await readFreshStateForOrg(ctx.orgId, ctx.orgName)
+        dashboardState = state
+        guidancePlan = await buildDashboardGuidancePlan({
+          orgId: ctx.orgId,
+          orgName: orgName || "Organizația curentă",
+          workspaceMode,
+          state,
+          userId: ctx.userId,
+        })
+      } catch (error) {
+        console.error("Dashboard state fallback failed; using empty deterministic guidance", error)
+        guidancePlan = buildGuidancePlan({
+          state: dashboardState,
+          workspaceMode,
+          orgName: orgName || "Organizația curentă",
+        })
+      }
+    }
+
+    const actions = nextActionsFor(workspaceMode)
+    const greeting = ROLE_GREETING[workspaceMode]
+    const counters = dashboardCountersFor(workspaceMode, pending, snapshot)
+
+    return (
+      <div className="cr-page cr-page--full cr-stack">
+        <header className="cr-hero">
+          <div className="cr-hero__copy">
+            <span className="cr-eyebrow">Acasă</span>
+            <h1 className="cr-title">
+              {greeting.title}
+              {orgName ? <span className="cr-title__muted">, {orgName}</span> : null}
+            </h1>
+            <div className="cr-subtitle">
+              {greeting.subtitle}
+            </div>
           </div>
+        </header>
+
+        <GuidancePlanPanel initialRecord={guidanceRecord} initialPlan={guidancePlan} />
+
+        <div className="cr-stat-strip cr-stat-strip--auto">
+          {counters.map((counter) => (
+            <CounterCard
+              key={`${counter.label}-${counter.href}`}
+              {...counter}
+            />
+          ))}
         </div>
-      </header>
 
-      <GuidancePlanPanel initialRecord={guidanceRecord} initialPlan={guidancePlan} />
+        <section className="cr-stack">
+          <h2 className="cr-eyebrow">
+            Următorii 3 pași
+          </h2>
+          <div className="cr-grid cr-grid--cards">
+            {actions.map((a) => {
+              const Icon = CARD_ICONS[a.iconName]
+              return (
+                <Link
+                  key={a.href + a.title}
+                  href={a.href}
+                  className="cr-card cr-action-card"
+                >
+                  <div className="cr-action-card__icon">
+                    <Icon size={16} />
+                  </div>
+                  <div className="cr-action-card__title">{a.title}</div>
+                  <div className="cr-action-card__body">
+                    {a.subtitle}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
 
-      {/* Pending counters */}
-      <div className="cr-stat-strip cr-stat-strip--auto">
-        {counters.map((counter) => (
-          <CounterCard
-            key={`${counter.label}-${counter.href}`}
-            {...counter}
-          />
-        ))}
+        <section className="cr-stack">
+          <h2 className="cr-eyebrow">
+            Activitate recentă
+          </h2>
+          {recent.length === 0 ? (
+            <div className="cr-empty">
+              Niciun eveniment înregistrat încă. Pe măsură ce adaugi sisteme, training-uri și
+              rapoarte, ele apar aici.
+            </div>
+          ) : (
+            <div className="cr-feed">
+              {recent.map((e) => (
+                <div
+                  key={e.id}
+                  className="cr-feed-row"
+                >
+                  <span className="cr-feed-time">
+                    {new Date(e.createdAtISO).toLocaleString("ro-RO", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span className="cr-feed-message">{e.message}</span>
+                  <span className="cr-badge cr-badge--info">
+                    {e.type}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
+    )
+  } catch (error) {
+    console.error("DashboardHomePage fatal fallback", error)
+    const guidancePlan = buildGuidancePlan({
+      state: structuredClone(initialComplianceState),
+      workspaceMode: "imm-classic",
+      orgName: "Organizația curentă",
+    })
 
-      {/* Next actions */}
-      <section className="cr-stack">
-        <h2 className="cr-eyebrow">
-          Următorii 3 pași
-        </h2>
-        <div className="cr-grid cr-grid--cards">
-          {actions.map((a) => {
-            const Icon = CARD_ICONS[a.iconName]
-            return (
-              <Link
-                key={a.href + a.title}
-                href={a.href}
-                className="cr-card cr-action-card"
-              >
-                <div className="cr-action-card__icon">
-                  <Icon size={16} />
-                </div>
-                <div className="cr-action-card__title">{a.title}</div>
-                <div className="cr-action-card__body">
-                  {a.subtitle}
-                </div>
-              </Link>
-            )
-          })}
+    return (
+      <div className="cr-page cr-page--full cr-stack">
+        <header className="cr-hero">
+          <div className="cr-hero__copy">
+            <span className="cr-eyebrow">Acasă</span>
+            <h1 className="cr-title">
+              Workspace CompliRoAI
+            </h1>
+            <div className="cr-subtitle">
+              Dashboard-ul a intrat în fallback local. Poți continua în modulele de lucru.
+            </div>
+          </div>
+        </header>
+
+        <GuidancePlanPanel initialRecord={null} initialPlan={guidancePlan} />
+
+        <div className="cr-empty">
+          Datele de overview se recalculează. Deschide `De rezolvat`, `Inventar AI` sau `Portofoliu`
+          ca să continui execuția fără să pierzi sesiunea curentă.
         </div>
-      </section>
-
-      {/* Recent activity */}
-      <section className="cr-stack">
-        <h2 className="cr-eyebrow">
-          Activitate recentă
-        </h2>
-        {recent.length === 0 ? (
-          <div className="cr-empty">
-            Niciun eveniment înregistrat încă. Pe măsură ce adaugi sisteme, training-uri și
-            rapoarte, ele apar aici.
-          </div>
-        ) : (
-          <div className="cr-feed">
-            {recent.map((e) => (
-              <div
-                key={e.id}
-                className="cr-feed-row"
-              >
-                <span className="cr-feed-time">
-                  {new Date(e.createdAtISO).toLocaleString("ro-RO", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <span className="cr-feed-message">{e.message}</span>
-                <span className="cr-badge cr-badge--info">
-                  {e.type}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  )
+      </div>
+    )
+  }
 }
 
 function dashboardCountersFor(

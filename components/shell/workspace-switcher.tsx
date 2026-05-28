@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Briefcase, Building2, Check, ChevronsUpDown, Loader2 } from "lucide-react"
 
 type Workspace = {
@@ -34,6 +34,7 @@ const ROLE_LABELS: Record<Workspace["role"], string> = {
 
 export function WorkspaceSwitcher() {
   const router = useRouter()
+  const pathname = usePathname()
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [active, setActive] = useState<Workspace | null>(null)
   const [open, setOpen] = useState(false)
@@ -57,7 +58,7 @@ export function WorkspaceSwitcher() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [pathname])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {

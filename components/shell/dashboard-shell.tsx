@@ -49,6 +49,7 @@ import {
 } from "./nav-config"
 import type { BillingTier } from "@/lib/compliance/types"
 import type { WorkspaceMode } from "@/lib/server/auth"
+import type { UserRole } from "@/lib/server/tenancy"
 
 // Lucide icon registry — mapped by string name so nav-config can stay framework-free.
 const ICON_REGISTRY: Record<string, React.ComponentType<{ size?: number }>> = {
@@ -99,6 +100,8 @@ interface Props {
   tier?: BillingTier
   /** ISO string when trial ends — used to compute days remaining. */
   trialEndsAtISO?: string
+  /** Active membership role for the current org, used to separate cabinet HQ from client execution. */
+  activeWorkspaceRole?: UserRole
 }
 
 const BANNER_DISMISS_KEY = "compliroai_trial_banner_dismissed"
@@ -132,9 +135,11 @@ export function DashboardShell({
   workspaceMode = "imm-classic",
   tier = "free_trial",
   trialEndsAtISO,
+  activeWorkspaceRole,
 }: Props) {
   const router = useRouter()
   const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [exitingExecution, setExitingExecution] = useState(false)
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -144,6 +149,33 @@ export function DashboardShell({
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" })
     router.push("/login")
+  }
+
+  async function handleExitExecution() {
+    if (exitingExecution) return
+    setExitingExecution(true)
+    try {
+      const response = await fetch("/api/workspaces/exit-execution", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(
+          typeof data?.error === "string"
+            ? data.error
+            : "Nu am putut reveni în workspace-ul cabinetului."
+        )
+      }
+      router.push(typeof data?.destination === "string" ? data.destination : "/dashboard/portofoliu")
+      router.refresh()
+    } catch (error) {
+      // Keep the shell usable even if the session refresh fails.
+      console.error(error)
+      router.push("/dashboard/portofoliu")
+    } finally {
+      setExitingExecution(false)
+    }
   }
 
   function dismissBanner() {
@@ -166,6 +198,7 @@ export function DashboardShell({
       : workspaceMode === "ai-builder"
         ? "AI Builder"
         : "IMM"
+  const isClientExecution = workspaceMode === "cabinet" && activeWorkspaceRole === "partner_manager"
 
   return (
     <div className="cr-app-shell">
@@ -264,13 +297,15 @@ export function DashboardShell({
               <span className="cr-work-context__sep">·</span>
               <span>mod {modeLabel}</span>
             </div>
-            {workspaceMode === "cabinet" ? (
-              <a
-                href="/dashboard/portofoliu"
+            {isClientExecution ? (
+              <button
+                type="button"
+                onClick={handleExitExecution}
+                disabled={exitingExecution}
                 className="cr-btn cr-btn--sm"
               >
-                ← Ieși din execuție
-              </a>
+                {exitingExecution ? "Revin în cabinet..." : "← Ieși din execuție"}
+              </button>
             ) : null}
           </div>
         ) : null}

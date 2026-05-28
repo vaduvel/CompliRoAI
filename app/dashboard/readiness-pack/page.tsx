@@ -451,9 +451,9 @@ export default function ReadinessPackPage() {
               size={12}
               style={{ display: "inline", verticalAlign: "middle", marginRight: "6px" }}
             />
-            Nu ai încă clienți în portofoliu. Adaugă din{" "}
-            <a href="/dashboard/portofoliu" style={{ color: "var(--cobalt-400)" }}>
-              Portofoliu
+            Nu ai încă clienți în portofoliu. Importă sau adaugă primul client din{" "}
+            <a href="/dashboard/clienti" style={{ color: "var(--cobalt-400)" }}>
+              Clienți
             </a>
             .
           </div>

@@ -1,0 +1,3 @@
+﻿client_code,company_name,cui,contact_name,contact_email,industry,employees_count,service_scope,uses_ai,personal_data_ai,send_intake,deadline,notes,expected_client_status,expected_open_findings
+APEX,Apex Logistic SRL,RO12345678,Maria Popescu,maria.popescu@apex-logistic.example,logistica,85,ai_act;gdpr;ai_literacy;vendor_review,unknown,unknown,yes,2026-06-15,Cabinet are doar lista de clienti; trebuie discovery AI.,awaiting_intake,4
+APEX,Apex Logistic SRL,RO12345678,Maria Popescu,maria.new@apex-logistic.example,logistica,85,ai_act;gdpr;ai_literacy;vendor_review,unknown,unknown,yes,2026-06-15,Duplicate update attempt with changed email,awaiting_intake,4

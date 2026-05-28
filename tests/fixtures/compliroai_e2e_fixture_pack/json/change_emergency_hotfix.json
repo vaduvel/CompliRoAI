@@ -1,0 +1,15 @@
+{
+  "change_id": "CHG-007",
+  "project_id": "PRJ-SUPPORT-AGENT",
+  "change_type": [
+    "emergency_hotfix",
+    "prompt_change"
+  ],
+  "reason": "Bug produces wrong escalation label for support tickets",
+  "temporary_approval_hours": 48,
+  "expected_findings": [
+    "emergency_review_due",
+    "rollback_plan_missing",
+    "incident_review_if_failure"
+  ]
+}

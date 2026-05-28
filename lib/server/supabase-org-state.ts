@@ -13,9 +13,9 @@ type OrgStateRow<T> = {
 export function getConfiguredDataBackend(): "local" | "supabase" | "hybrid" {
   // Preferă AIACT_DATA_BACKEND (mandate § 20 — env prefix AIACT_*), cu fallback
   // pe COMPLISCAN_DATA_BACKEND pentru deploy-uri legacy.
-  const raw =
-    process.env.AIACT_DATA_BACKEND ?? process.env.COMPLISCAN_DATA_BACKEND
-  const value = raw?.trim().toLowerCase()
+  const raw = [process.env.AIACT_DATA_BACKEND, process.env.COMPLISCAN_DATA_BACKEND]
+    .find((value) => typeof value === "string" && value.trim() !== "")
+  const value = raw?.replace(/\\n/g, "\n").trim().toLowerCase()
   if (value === "supabase") return "supabase"
   if (value === "hybrid") return "hybrid"
   return "local"
@@ -33,6 +33,7 @@ export async function loadOrgStateFromSupabase<T>(orgId: string): Promise<T | nu
     `select=org_id,state,updated_at&org_id=eq.${encodeURIComponent(orgId)}&limit=1`,
     "public"
   )
+  if (!Array.isArray(rows)) return null
   return rows[0]?.state ?? null
 }
 
