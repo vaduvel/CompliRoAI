@@ -10,7 +10,7 @@
  * Style: inline + v3 design tokens, fara shadcn / Tailwind utilities.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import {
   AlertCircle,
@@ -93,6 +93,9 @@ type ListResponse = { findings: ScanFinding[]; stats: Stats }
 type StatusFilter = "all" | StatusKey
 type SeverityFilter = "all" | ComplianceSeverity
 
+const GUIDANCE_ACTION_REFRESH_DELAY_MS = 10_000
+const GUIDANCE_ACTION_REFRESH_COOLDOWN_MS = 60_000
+
 async function fetchJsonWithTimeout<T>(
   input: string,
   init: RequestInit | undefined,
@@ -132,6 +135,17 @@ export default function ResolvePage() {
   const [showCreate, setShowCreate] = useState(false)
   const [events, setEvents] = useState<ComplianceEvent[]>([])
   const [pendingActionId, setPendingActionId] = useState<string | null>(null)
+  const guidanceRefreshRef = useRef<{
+    inFlight: boolean
+    lastRunAt: number
+    timerId: number | null
+    pendingReason: string | null
+  }>({
+    inFlight: false,
+    lastRunAt: 0,
+    timerId: null,
+    pendingReason: null,
+  })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -159,16 +173,33 @@ export default function ResolvePage() {
     void load()
   }, [load])
 
-  async function regenerateGuidanceAfterAction(reason: string) {
-    try {
-      await fetch("/api/ai-guidance", {
+  function scheduleGuidanceAfterAction(reason: string) {
+    const state = guidanceRefreshRef.current
+    state.pendingReason = reason
+    if (state.timerId) window.clearTimeout(state.timerId)
+
+    state.timerId = window.setTimeout(() => {
+      const next = guidanceRefreshRef.current
+      const now = Date.now()
+      if (next.inFlight || now - next.lastRunAt < GUIDANCE_ACTION_REFRESH_COOLDOWN_MS) return
+
+      next.inFlight = true
+      next.lastRunAt = now
+      const refreshReason = next.pendingReason ?? reason
+      next.pendingReason = null
+
+      fetch("/api/ai-guidance", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "regenerate", reason }),
+        body: JSON.stringify({ action: "regenerate", reason: refreshReason }),
       })
-    } catch {
-      // Guidance este suport decizional, nu blochează lifecycle-ul finding-ului.
-    }
+        .catch(() => {
+          // Guidance este suport decizional, nu blochează lifecycle-ul finding-ului.
+        })
+        .finally(() => {
+          guidanceRefreshRef.current.inFlight = false
+        })
+    }, GUIDANCE_ACTION_REFRESH_DELAY_MS)
   }
 
   // Per mandate Rule 3 — no fiscal/e-Factura surface în UI. Categoria E_FACTURA
@@ -207,8 +238,8 @@ export default function ResolvePage() {
           setExpandedId(null)
         }
       }
-      await regenerateGuidanceAfterAction(`finding_${action}`)
-      await load()
+      scheduleGuidanceAfterAction(`finding_${action}`)
+      void load()
     } catch (e) {
       setFindings(previousFindings)
       alert(e instanceof Error ? e.message : "Nu am putut actualiza statusul.")
@@ -230,8 +261,14 @@ export default function ResolvePage() {
       const d = await res.json().catch(() => ({ error: "Eroare necunoscuta" }))
       throw new Error(d.error || "Nu am putut atasa dovada.")
     }
-    await regenerateGuidanceAfterAction("finding_evidence_attached")
-    await load()
+    const data = (await res.json()) as { finding?: ScanFinding }
+    if (data.finding) {
+      setFindings((current) =>
+        current.map((finding) => (finding.id === id ? data.finding! : finding)),
+      )
+    }
+    scheduleGuidanceAfterAction("finding_evidence_attached")
+    void load()
   }
 
   async function handleDelete(id: string) {
@@ -239,8 +276,8 @@ export default function ResolvePage() {
     const res = await fetch(`/api/findings/${id}`, { method: "DELETE" })
     if (res.ok) {
       if (expandedId === id) setExpandedId(null)
-      await regenerateGuidanceAfterAction("finding_deleted")
       await load()
+      scheduleGuidanceAfterAction("finding_deleted")
     }
   }
 
@@ -254,8 +291,8 @@ export default function ResolvePage() {
       const data = await res.json().catch(() => ({ error: "Eroare necunoscuta" }))
       throw new Error(data.error || "Nu am putut crea risc-ul.")
     }
-    await regenerateGuidanceAfterAction("finding_created")
     await load()
+    scheduleGuidanceAfterAction("finding_created")
     setShowCreate(false)
   }
 

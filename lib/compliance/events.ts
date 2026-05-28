@@ -137,13 +137,14 @@ export type EventChainVerification =
  *    2. prevHash == selfHash al evenimentului hash-uit anterior cronologic
  *
  * Iterăm cronologic (vechi → nou), deci primim events în ordine reverse
- * (state îl păstrează newest-first; convertim aici).
+ * (state îl păstrează newest-first; convertim aici). Nu sortăm după timestamp:
+ * mai multe acțiuni UI pot avea același `createdAtISO`, iar ordinea ledger-ului
+ * este mai precisă decât ceasul.
  */
 export function verifyEventChain(events: ComplianceEvent[]): EventChainVerification {
-  // Sortăm cronologic (vechi → nou) pentru lanț.
   const chronological = [...events]
+    .reverse()
     .filter((e) => typeof e.selfHash === "string" && e.selfHash.length > 0)
-    .sort((a, b) => a.createdAtISO.localeCompare(b.createdAtISO))
 
   const skippedLegacyCount = events.length - chronological.length
   let prev = GENESIS_HASH
