@@ -270,7 +270,11 @@ function buildLiveFixturePrompt(
       ? {
           previousAttemptInvalid: true,
           fixTheseErrors: retryErrors.slice(0, 8),
-          instruction: "Return the same JSON schema again and ensure each proposed finding has evidenceRequests covering every requiredEvidence item.",
+          instruction: [
+            "Return the same JSON schema again.",
+            "Ensure every proposed finding has evidenceRequests covering every requiredEvidence item.",
+            "Ensure every legalBasis item includes instrument and at least one of article, annex, or note.",
+          ].join(" "),
         }
       : undefined,
     ragContext: [
@@ -307,7 +311,9 @@ function shouldRetryLiveProposal(errors: string[]) {
   if (errors.length === 0) return false
   return errors.every((error) =>
     error.includes("must be an array") ||
-    error.includes("missing evidenceRequests for requiredEvidence")
+    error.includes("missing evidenceRequests for requiredEvidence") ||
+    error.includes("legalBasis") ||
+    error.includes("must include article, annex, or note")
   )
 }
 

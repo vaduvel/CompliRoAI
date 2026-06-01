@@ -55,7 +55,7 @@ export async function requestMistralOrchestratorProposal(
       },
       body: JSON.stringify({
         model,
-        max_tokens: input.maxTokens ?? 1_800,
+        max_tokens: input.maxTokens ?? 4_000,
         temperature: 0,
         response_format: { type: "json_object" },
         messages: [
@@ -66,6 +66,7 @@ export async function requestMistralOrchestratorProposal(
               "Return only compact valid JSON matching schemaVersion orchestrator.v1.",
               "The root object MUST include finalLegalVerdict:false.",
               "Every proposed finding MUST include legalBasis as an array of objects and finalLegalVerdict:false.",
+              "Every legalBasis object MUST include instrument plus at least one of article, annex, or note.",
               "Use only enum values and allowed source IDs from the user prompt.",
               "Keep every string field short; prefer exact existing titles and evidence codes over new prose.",
               "Never set final legal verdicts, approvals, resolved findings, or fully compliant claims.",

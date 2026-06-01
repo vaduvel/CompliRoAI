@@ -15,7 +15,7 @@ const MAX_CASES = readNumberEnv("COMPLIROAI_MATRIX_MAX_CASES")
 const DELAY_MS = readNumberEnv("COMPLIROAI_MATRIX_DELAY_MS") ?? 1_500
 const MISTRAL_MODEL = process.env.COMPLIROAI_MISTRAL_MODEL || process.env.MISTRAL_MODEL || ""
 const MISTRAL_TIMEOUT_MS = readNumberEnv("COMPLIROAI_MISTRAL_TIMEOUT_MS")
-const MISTRAL_MAX_TOKENS = readNumberEnv("COMPLIROAI_MISTRAL_MAX_TOKENS")
+const MISTRAL_MAX_TOKENS = readNumberEnv("COMPLIROAI_MISTRAL_MAX_TOKENS") ?? 4_000
 const SKIP_MISTRAL = process.env.COMPLIROAI_SKIP_MISTRAL === "1"
 const EXPECT_MISTRAL = process.env.COMPLIROAI_EXPECT_MISTRAL !== "0"
 
@@ -1178,6 +1178,9 @@ function summarizeSetupPayload(payload) {
       ? payload.generatedFindings.map((item) => item.title ?? item.id ?? item)
       : undefined,
     aiUseCaseTablePersisted: payload.aiUseCaseTablePersisted,
+    aiUseCasePersistenceWarning: payload.aiUseCasePersistenceWarning
+      ? String(payload.aiUseCasePersistenceWarning).slice(0, 240)
+      : undefined,
   }
 }
 

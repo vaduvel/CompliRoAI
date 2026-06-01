@@ -12,6 +12,7 @@ import {
 import { canonicalizeOrchestratorProposal } from "./canonicalize"
 import { validateOrchestratorProposal } from "./validator"
 import type {
+  OrchestratorLegalContextReference,
   OrchestratorProposal,
   OrchestratorValidationResult,
 } from "./types"
@@ -67,7 +68,7 @@ export async function runComplianceOrchestrator(
     model: input.mistral?.model,
     fetchImpl: input.mistral?.fetchImpl,
     timeoutMs: input.mistral?.timeoutMs ?? 45_000,
-    maxTokens: input.mistral?.maxTokens ?? 1_800,
+    maxTokens: input.mistral?.maxTokens ?? 4_000,
   } satisfies Pick<MistralOrchestratorRequest, "apiKey" | "model" | "fetchImpl" | "timeoutMs" | "maxTokens">
 
   const mistralPrompt = buildMistralPrompt({
@@ -81,11 +82,20 @@ export async function runComplianceOrchestrator(
     prompt: mistralPrompt,
   })
 
-  if (!mistralResult.ok && shouldRetryMistralRequest(mistralResult.reason, mistralResult.status)) {
-    await sleep(1_500)
+  for (
+    let retryAttempt = 1;
+    !mistralResult.ok && shouldRetryMistralRequest(mistralResult.reason, mistralResult.status) && retryAttempt <= 2;
+    retryAttempt += 1
+  ) {
+    const retryReason = mistralResult.reason
+    const retryStatus = mistralResult.status
+    await sleep(retryDelayMs(retryReason, retryStatus, retryAttempt))
     mistralResult = await requestMistralOrchestratorProposal({
       ...mistralRequestBase,
       timeoutMs: extendRetryTimeout(mistralRequestBase.timeoutMs),
+      maxTokens: retryReason === "mistral_truncated_json"
+        ? extendRetryMaxTokens(mistralRequestBase.maxTokens)
+        : mistralRequestBase.maxTokens,
       prompt: mistralPrompt,
     })
   }
@@ -499,7 +509,12 @@ function buildMistralPrompt(input: {
       ? {
           previousAttemptInvalid: true,
           fixTheseSchemaErrors: input.retryErrors.slice(0, 8),
-          instruction: "Return the same JSON schema again, include every root array, keep the response compact, and ensure every proposed finding has evidenceRequests covering all requiredEvidence items.",
+          instruction: [
+            "Return the same JSON schema again.",
+            "Include every root array and keep the response compact.",
+            "Ensure every proposed finding has evidenceRequests covering all requiredEvidence items.",
+            "Ensure every legalBasis object has instrument and at least one of article, annex, or note.",
+          ].join(" "),
         }
       : undefined,
     snapshotSummary: compactSnapshot.summary,
@@ -516,7 +531,9 @@ function shouldRetryInvalidProposal(errors: string[]) {
   return errors.every((error) =>
     error.includes("must be an array") ||
     error.includes("whyRelevant is required") ||
-    error.includes("missing evidenceRequests for requiredEvidence")
+    error.includes("missing evidenceRequests for requiredEvidence") ||
+    error.includes("legalBasis") ||
+    error.includes("must include article, annex, or note")
   )
 }
 
@@ -528,13 +545,31 @@ function shouldRetryMistralRequest(
     reason === "mistral_timeout" ||
     reason === "mistral_network_error" ||
     reason === "mistral_truncated_json" ||
-    (reason === "mistral_http_error" && typeof status === "number" && status >= 500)
+    (reason === "mistral_http_error" &&
+      typeof status === "number" &&
+      (status === 408 || status === 409 || status === 429 || status >= 500))
   )
+}
+
+function retryDelayMs(
+  reason: MistralOrchestratorRequestFailureReason,
+  status: number | undefined,
+  attempt: number,
+) {
+  if (reason === "mistral_http_error" && status === 429) {
+    return attempt === 1 ? 6_000 : 12_000
+  }
+  return attempt === 1 ? 1_500 : 3_000
 }
 
 function extendRetryTimeout(timeoutMs: number | undefined) {
   const baseTimeout = timeoutMs ?? 45_000
   return Math.min(Math.max(baseTimeout * 2, 60_000), 180_000)
+}
+
+function extendRetryMaxTokens(maxTokens: number | undefined) {
+  const baseTokens = maxTokens ?? 4_000
+  return Math.min(Math.max(baseTokens * 2, 4_000), 8_000)
 }
 
 async function sleep(ms: number) {
@@ -926,13 +961,65 @@ function repairProposalAgainstDeterministicFallback(
 
   return {
     ...proposal,
-    legalContext: proposal.legalContext?.map((entry) => ({
-      ...entry,
-      whyRelevant: entry.whyRelevant?.trim() || "Sursă RAG permisă pentru contextul juridic al planului.",
-    })),
+    legalContext: repairLegalContextReferences(proposal.legalContext, fallback.legalContext),
     proposedFindings,
     evidenceRequests,
     reviewTasks,
     nextActions,
+  }
+}
+
+function repairLegalContextReferences(
+  legalContext: OrchestratorLegalContextReference[] | undefined,
+  fallbackLegalContext: OrchestratorLegalContextReference[] | undefined,
+): OrchestratorLegalContextReference[] | undefined {
+  const proposed = legalContext?.length ? legalContext : fallbackLegalContext
+  if (!proposed?.length) return undefined
+
+  return proposed.map((entry, index) => {
+    const fallbackEntry = fallbackLegalContext?.[index] ?? fallbackLegalContext?.[0]
+    const instrument = isLegalContextInstrument(entry.instrument)
+      ? entry.instrument
+      : fallbackEntry?.instrument ?? "EU_AI_ACT"
+
+    return {
+      ...entry,
+      sourceId: nonEmptyString(entry.sourceId) ?? fallbackEntry?.sourceId ?? "eu-ai-act-corpus",
+      instrument,
+      reference:
+        nonEmptyString(entry.reference) ??
+        fallbackEntry?.reference ??
+        defaultLegalContextReference(instrument),
+      whyRelevant:
+        nonEmptyString(entry.whyRelevant) ??
+        fallbackEntry?.whyRelevant ??
+        "Sursă RAG permisă pentru contextul juridic al planului.",
+    }
+  })
+}
+
+function nonEmptyString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined
+}
+
+function isLegalContextInstrument(
+  value: unknown,
+): value is OrchestratorLegalContextReference["instrument"] {
+  return value === "EU_AI_ACT" || value === "GDPR" || value === "CONTRACT" || value === "INTERNAL_POLICY"
+}
+
+function defaultLegalContextReference(
+  instrument: OrchestratorLegalContextReference["instrument"],
+) {
+  switch (instrument) {
+    case "GDPR":
+      return "Art. 5"
+    case "CONTRACT":
+      return "DPA / contract"
+    case "INTERNAL_POLICY":
+      return "Politică internă AI"
+    case "EU_AI_ACT":
+    default:
+      return "Art. 50"
   }
 }

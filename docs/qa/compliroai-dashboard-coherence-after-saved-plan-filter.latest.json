@@ -1,0 +1,17 @@
+{
+  "url": "http://127.0.0.1:3001/dashboard",
+  "screenshotPath": "/Users/vaduvadaniel/Documents/Codex/CompliRoAI/output/playwright/dashboard-coherence/ui-coherence-after-saved-plan-filter.png",
+  "hasNewCandidateText": true,
+  "planStillShowsResolvedGdprAction": false,
+  "pageMentionsResolvedGdprInRecentActivity": true,
+  "hasReviewVendorAction": true,
+  "visiblePlanLines": [
+    "Plan de execuție AI · Apex UI Flow 1780247598352 SRL",
+    "4 acțiuni prioritizate (0 critice), 5 în planul complet. · 9 acțiuni candidate evaluate · 0 sisteme AI confirmate · sursă: engine determinist + Mistral · prompt v1.2",
+    "Review vendor/model pentru Chatbot suport clienți cu recomandări de răspuns",
+    "Atașează dovezile cerute și trimite finding-ul la review.",
+    "Atașează dovezi",
+    "Atașează dovezi"
+  ],
+  "errors": []
+}

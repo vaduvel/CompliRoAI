@@ -32,6 +32,10 @@ export type GuidanceAction = {
   priority: GuidancePriority
   legalReferences: string[]
   evidenceRequired: string[]
+  dataCertaintyLabel?: string
+  reviewStatusLabel?: string
+  exportImpactLabel?: string
+  ctaLabel?: string
   dueAtISO?: string
   estimatedMinutes?: number
   omittedReason?: string
@@ -214,6 +218,14 @@ function findingCandidates(state: ComplianceState): GuidanceAction[] {
       priority: priorityForSeverity(finding.severity),
       legalReferences,
       evidenceRequired: splitEvidence(finding.evidenceRequired || finding.closeCondition),
+      dataCertaintyLabel: finding.reviewState === "evidence_attached"
+        ? "Dovezi atașate"
+        : "Dovezi cerute",
+      reviewStatusLabel: reviewLabelForFinding(finding.reviewState),
+      exportImpactLabel: finding.severity === "critical" ? "Blochează export" : "Impact export",
+      ctaLabel: splitEvidence(finding.evidenceRequired || finding.closeCondition).length > 0
+        ? "Atașează dovezi"
+        : "Deschide finding",
       estimatedMinutes: estimateMinutes(finding.severity),
     }
   })
@@ -289,7 +301,9 @@ function openFindingsOnly(findings: ScanFinding[]): ScanFinding[] {
   return findings.filter((finding) => {
     const status = finding.findingStatus ?? "open"
     const review = finding.reviewState
-    return status === "open" || status === "confirmed" || review === "unreviewed"
+    if (status === "resolved" || status === "dismissed" || status === "under_monitoring") return false
+    if (review === "closed" || review === "monitoring") return false
+    return status === "open" || status === "confirmed" || review === "unreviewed" || review === "evidence_attached"
   })
 }
 
@@ -319,6 +333,14 @@ function normalizeOwner(value: string | undefined): GuidanceOwnerRole {
   if (raw.includes("management") || raw.includes("owner")) return "Management"
   if (raw.includes("cabinet")) return "Cabinet"
   return "DPO"
+}
+
+function reviewLabelForFinding(reviewState: ScanFinding["reviewState"]): string {
+  if (reviewState === "closed") return "Review închis"
+  if (reviewState === "evidence_attached") return "Review necesar"
+  if (reviewState === "monitoring") return "În monitorizare"
+  if (reviewState === "confirmed") return "Confirmat"
+  return "Review necesar"
 }
 
 function ownerForPreventive(action: PreventiveAction): GuidanceOwnerRole {

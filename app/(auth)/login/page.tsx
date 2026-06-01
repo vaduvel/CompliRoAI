@@ -26,7 +26,7 @@ function LoginForm() {
         ? { email, password }
         : { email, password, orgName }
 
-      const res = await fetch(endpoint, {
+      const res = await fetchWithTimeout(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -160,4 +160,17 @@ export default function LoginPage() {
       </Suspense>
     </main>
   )
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs = 15000) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: init.signal ?? controller.signal,
+    })
+  } finally {
+    window.clearTimeout(timer)
+  }
 }

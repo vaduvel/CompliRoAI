@@ -88,7 +88,31 @@ type Stats = {
   low: number
 }
 
-type ListResponse = { findings: ScanFinding[]; stats: Stats }
+type AuditPackBlocker = {
+  id: string
+  code: string
+  title: string
+  statusLabel: string
+  ownerRole: string
+  requiredEvidence: string[]
+  reviewGate: string
+  href: string
+}
+
+type AuditPackReadiness = {
+  status: "blocked" | "draft_only" | "ready_for_review" | "approved"
+  label: string
+  blockersCount: number
+  evidenceMissingCount: number
+  reviewPendingCount: number
+}
+
+type ListResponse = {
+  findings: ScanFinding[]
+  stats: Stats
+  auditPackReadiness?: AuditPackReadiness
+  auditPackBlockers?: AuditPackBlocker[]
+}
 
 type StatusFilter = "all" | StatusKey
 type SeverityFilter = "all" | ComplianceSeverity
@@ -134,6 +158,8 @@ export default function ResolvePage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [events, setEvents] = useState<ComplianceEvent[]>([])
+  const [auditPackReadiness, setAuditPackReadiness] = useState<AuditPackReadiness | null>(null)
+  const [auditPackBlockers, setAuditPackBlockers] = useState<AuditPackBlocker[]>([])
   const [pendingActionId, setPendingActionId] = useState<string | null>(null)
   const guidanceRefreshRef = useRef<{
     inFlight: boolean
@@ -157,11 +183,15 @@ export default function ResolvePage() {
       )
       setFindings(data.findings)
       setStats(data.stats)
+      setAuditPackReadiness(data.auditPackReadiness ?? null)
+      setAuditPackBlockers(data.auditPackBlockers ?? [])
       setEvents([])
       setError(null)
     } catch {
       setFindings([])
       setStats(null)
+      setAuditPackReadiness(null)
+      setAuditPackBlockers([])
       setEvents([])
       setError("Nu am putut incarca risc-urile.")
     } finally {
@@ -215,6 +245,10 @@ export default function ResolvePage() {
       return true
     })
   }, [findings, statusFilter, severityFilter, categoryFilter])
+
+  const blockerByFindingId = useMemo(() => {
+    return new Map(auditPackBlockers.map((blocker) => [blocker.id, blocker]))
+  }, [auditPackBlockers])
 
   async function handleAction(id: string, action: string) {
     setPendingActionId(`${id}:${action}`)
@@ -327,6 +361,10 @@ export default function ResolvePage() {
       {/* Stats */}
       {stats && <StatsBar stats={stats} />}
 
+      {auditPackReadiness && (
+        <ResolveReadinessPanel readiness={auditPackReadiness} blockers={auditPackBlockers} />
+      )}
+
       {/* Error */}
       {error && (
         <div className="cr-alert cr-alert--danger">
@@ -388,6 +426,7 @@ export default function ResolvePage() {
             <FindingRow
               key={f.id}
               finding={f}
+              auditPackBlocker={blockerByFindingId.get(f.id) ?? null}
               expanded={expandedId === f.id}
               onToggle={() => setExpandedId((p) => (p === f.id ? null : f.id))}
               onAction={(a) => handleAction(f.id, a)}
@@ -446,6 +485,52 @@ function StatCard({
         {value}
       </div>
     </div>
+  )
+}
+
+function ResolveReadinessPanel({
+  readiness,
+  blockers,
+}: {
+  readiness: AuditPackReadiness
+  blockers: AuditPackBlocker[]
+}) {
+  const statusTone =
+    readiness.status === "blocked"
+      ? "danger"
+      : readiness.status === "draft_only"
+        ? "warning"
+        : "ok"
+
+  return (
+    <section className="cr-panel">
+      <div className="cr-panel__body cr-detail-stack">
+        <div className="cr-inline-between">
+          <div>
+            <SectionLabel>Audit Pack readiness</SectionLabel>
+            <p className="cr-paragraph">
+              <strong>{readiness.label}</strong> · {readiness.blockersCount} blocker-e ·{" "}
+              {readiness.evidenceMissingCount} dovezi lipsă · {readiness.reviewPendingCount} review pending.
+            </p>
+          </div>
+          <StatusPill tone={statusTone}>{readiness.label}</StatusPill>
+        </div>
+
+        {blockers.length > 0 ? (
+          <div className="cr-pill-group">
+            {blockers.slice(0, 6).map((blocker) => (
+              <Link key={blocker.id} href={`#${blocker.id}`} className="cr-link">
+                {blocker.code}: {blocker.statusLabel}
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="cr-inline-note">
+            Nu există blocker canonic în lista curentă. Dacă dosarul are date complete, următorul pas este review-ul uman.
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -550,6 +635,7 @@ function EmptyState({ hasAny, onCreate }: { hasAny: boolean; onCreate: () => voi
 
 function FindingRow({
   finding,
+  auditPackBlocker,
   expanded,
   onToggle,
   onAction,
@@ -560,6 +646,7 @@ function FindingRow({
   pendingAction,
 }: {
   finding: ScanFinding
+  auditPackBlocker: AuditPackBlocker | null
   expanded: boolean
   onToggle: () => void
   onAction: (action: string) => void
@@ -571,9 +658,10 @@ function FindingRow({
 }) {
   const status = (finding.findingStatus ?? "open") as StatusKey
   const sev = finding.severity
+  const blocksAuditPack = Boolean(auditPackBlocker)
 
   return (
-    <div className={`cr-finding-card cr-finding-card--${sev}`}>
+    <div id={finding.id} className={`cr-finding-card cr-finding-card--${sev}`}>
       <button
         onClick={onToggle}
         className="cr-finding-row"
@@ -586,6 +674,9 @@ function FindingRow({
             <Badge tone={severityBadgeTone(sev)}>{SEVERITY_LABELS[sev]}</Badge>
             <StatusPill tone={categoryPillTone(finding.category)}>{CATEGORY_LABELS[finding.category]}</StatusPill>
             <StatusPill tone={statusPillTone(status)}>{STATUS_LABELS[status]}</StatusPill>
+            {blocksAuditPack ? (
+              <StatusPill tone="danger">Blochează Audit Pack</StatusPill>
+            ) : null}
           </div>
           <div className="cr-finding-meta">
             <span title={new Date(finding.createdAtISO).toLocaleString("ro-RO")}>
@@ -616,6 +707,7 @@ function FindingRow({
       {expanded && (
         <ExpandedDetail
           finding={finding}
+          auditPackBlocker={auditPackBlocker}
           relatedEvents={relatedEvents}
           onAction={onAction}
           pendingAction={pendingAction}
@@ -683,6 +775,7 @@ function StatusPill({
 
 function ExpandedDetail({
   finding,
+  auditPackBlocker,
   relatedEvents,
   onAction,
   onDelete,
@@ -691,6 +784,7 @@ function ExpandedDetail({
   pendingAction,
 }: {
   finding: ScanFinding
+  auditPackBlocker: AuditPackBlocker | null
   relatedEvents: ComplianceEvent[]
   onAction: (a: string) => void
   onDelete: () => void
@@ -727,7 +821,8 @@ function ExpandedDetail({
 
   return (
     <div className="cr-finding-expanded">
-      <InlineGuidanceCard finding={finding} />
+      <AuditPackImpactCard finding={finding} blocker={auditPackBlocker} />
+      <InlineGuidanceCard finding={finding} auditPackBlocker={auditPackBlocker} />
 
       <div className="cr-detail-grid">
         <section className="cr-panel">
@@ -909,19 +1004,106 @@ function ExpandedDetail({
   )
 }
 
-function InlineGuidanceCard({ finding }: { finding: ScanFinding }) {
+function AuditPackImpactCard({
+  finding,
+  blocker,
+}: {
+  finding: ScanFinding
+  blocker: AuditPackBlocker | null
+}) {
+  const isClosed =
+    finding.findingStatus === "resolved" ||
+    finding.findingStatus === "dismissed" ||
+    finding.reviewState === "closed" ||
+    finding.reviewState === "monitoring"
+
+  if (!blocker && isClosed) {
+    return (
+      <section aria-label="Impact Audit Pack" className="cr-panel">
+        <div className="cr-panel__body">
+          <SectionLabel>Impact Audit Pack</SectionLabel>
+          <div className="cr-inline-note">
+            Finding-ul nu mai blochează Audit Pack-ul. Rămâne în audit trail ca dovadă de execuție.
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (!blocker) {
+    return (
+      <section aria-label="Impact Audit Pack" className="cr-panel">
+        <div className="cr-panel__body">
+          <SectionLabel>Impact Audit Pack</SectionLabel>
+          <div className="cr-inline-note">
+            Acest finding nu este blocker canonic de export în starea curentă, dar poate rămâne relevant pentru review sau monitorizare.
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section aria-label="Impact Audit Pack" className="cr-panel">
+      <div className="cr-panel__body cr-detail-stack">
+        <div className="cr-inline-between">
+          <div>
+            <SectionLabel>Impact Audit Pack</SectionLabel>
+            <p className="cr-paragraph">
+              <strong>{blocker.code}</strong> · {blocker.statusLabel}. Acest finding blochează exportul final până când
+              dovada cerută este atașată și gate-ul de review este trecut.
+            </p>
+          </div>
+          <StatusPill tone="danger">Blochează export final</StatusPill>
+        </div>
+
+        <div className="cr-detail-grid">
+          <div className="cr-note-box">
+            <strong>Dovadă cerută</strong>
+            <div className="cr-note-box__sub">
+              {blocker.requiredEvidence.length > 0
+                ? blocker.requiredEvidence.join("; ")
+                : "Dovadă de execuție + notă de review uman."}
+            </div>
+          </div>
+          <div className="cr-note-box">
+            <strong>Owner / review gate</strong>
+            <div className="cr-note-box__sub">
+              {blocker.ownerRole} · {blocker.reviewGate}
+            </div>
+          </div>
+        </div>
+
+        <div className="cr-inline-note">
+          Când atașezi dovada și marchezi finding-ul rezolvat, Dashboard Coherence și Audit Pack readiness se recalculează din state-ul canonic.
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function InlineGuidanceCard({
+  finding,
+  auditPackBlocker,
+}: {
+  finding: ScanFinding
+  auditPackBlocker: AuditPackBlocker | null
+}) {
   const legalRefs = [
     finding.legalReference,
     ...(finding.legalMappings?.map((mapping) => `${mapping.regulation} ${mapping.article}`) ?? []),
   ].filter((ref): ref is string => Boolean(ref))
   const owner = finding.ownerSuggestion ?? suggestedOwnerFor(finding)
   const firstEvidence =
+    auditPackBlocker?.requiredEvidence?.[0] ??
     finding.requiredEvidenceKinds?.[0] ??
     finding.evidenceRequired ??
     finding.closeCondition ??
     "dovadă de decizie și execuție"
   const nextStep =
-    finding.severity === "critical"
+    auditPackBlocker
+      ? "Rezolvă blocker-ul canonic înainte de exportul final al Audit Pack-ului."
+      : finding.severity === "critical"
       ? "Închide blocajul critic înainte de următorul raport sau audit pack."
       : "Finalizează dovada lipsă și lasă audit trail-ul să lege acțiunea de finding."
 

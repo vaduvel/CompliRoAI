@@ -150,6 +150,10 @@ export async function writeState(state: AIActState): Promise<void> {
   await writeFileSafe(getStatePath(orgId), JSON.stringify(state, null, 2))
 }
 
+export function primeStateCacheForOrg(orgId: string, state: AIActState): void {
+  stateCache.set(orgId, state)
+}
+
 // ── DPO-OS adapter pattern (drop-in compat pentru module portate) ────────────
 //
 // DPO-OS sources presupun signature `mutateFreshStateForOrg(orgId, mutator)`

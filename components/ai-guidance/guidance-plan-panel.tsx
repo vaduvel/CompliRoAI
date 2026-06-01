@@ -10,6 +10,28 @@ import type { AIGuidancePlanRecord } from "@/lib/compliance/types"
 type GuidancePlanPanelProps = {
   initialRecord: AIGuidancePlanRecord | null
   initialPlan: GuidancePlan
+  coherence?: GuidancePlanCoherence
+}
+
+type GuidancePlanCoherence = {
+  aiUseCasesCandidateCount: number
+  aiUseCasesConfirmedCount: number
+  aiSystemsCount: number
+  evidenceMissingCount: number
+  reviewPendingCount: number
+  exportReadinessLabel: string
+  exportBlockers: GuidancePlanCoherenceBlocker[]
+}
+
+type GuidancePlanCoherenceBlocker = {
+  id: string
+  code: string
+  title: string
+  statusLabel: string
+  ownerRole: string
+  requiredEvidence: string[]
+  reviewGate: string
+  href: string
 }
 
 type ExplanationState = {
@@ -17,7 +39,7 @@ type ExplanationState = {
   reason: string
 } | null
 
-export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPanelProps) {
+export function GuidancePlanPanel({ initialRecord, initialPlan, coherence }: GuidancePlanPanelProps) {
   const [record, setRecord] = useState<AIGuidancePlanRecord | null>(initialRecord)
   const [previewPlan, setPreviewPlan] = useState(initialPlan)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -37,6 +59,15 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
     if (activeRecord.status === "superseded") return "înlocuit"
     return "generat"
   }, [activeRecord, isPreviewNewerThanRecord])
+  const planExportBlockerActions = useMemo(
+    () => [...plan.actions, ...plan.omittedActions].filter(isExportBlockerAction).slice(0, 6),
+    [plan],
+  )
+  const canonicalExportBlockers = coherence?.exportBlockers ?? []
+  const exportBlockerCount = coherence ? canonicalExportBlockers.length : planExportBlockerActions.length
+  const planMeta = coherence
+    ? `${plan.summary} · ${coherence.aiUseCasesCandidateCount} AI candidate · ${coherence.aiUseCasesConfirmedCount} confirmate · ${coherence.aiSystemsCount} sisteme AI · ${coherence.evidenceMissingCount} dovezi lipsă · ${coherence.reviewPendingCount} review pending · export ${coherence.exportReadinessLabel} · sursă: state canonic + engine determinist${plan.modelLabel === "mistral-assisted" ? " + Mistral" : ""} · prompt ${plan.promptVersion}`
+    : `${plan.summary} · ${plan.coverage.totalCandidates} acțiuni candidate evaluate · ${plan.stats.aiSystemsCount} sisteme AI confirmate · sursă: engine determinist${plan.modelLabel === "mistral-assisted" ? " + Mistral" : ""} · prompt ${plan.promptVersion}`
 
   async function createPersistedPlan(reason = "manual_regenerate"): Promise<AIGuidancePlanRecord | null> {
     const response = await fetch("/api/ai-guidance", {
@@ -144,13 +175,14 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
           <div className="cr-ai-plan__title-copy">
             <div className="cr-ai-plan__heading-row">
               <h2 className="cr-ai-plan__title">
-                {plan.headline}
+                {displayText(plan.headline).replace("Plan de lucru AI", "Plan de execuție AI")}
               </h2>
               <span className="cr-badge cr-badge--info">AI · {plan.modelLabel === "mistral-assisted" ? "MISTRAL" : "DETERMINIST"}</span>
               <span className="cr-badge">{statusLabel}</span>
+              <span className="cr-badge cr-badge--warning">Draft · review uman</span>
             </div>
             <p className="cr-ai-plan__meta">
-              {plan.summary} · {plan.coverage.totalCandidates} candidate evaluate · {plan.stats.aiSystemsCount} sisteme AI · prompt {plan.promptVersion}
+              {planMeta}
             </p>
             {activeRecord?.diffFromPrevious ? (
               <p className="cr-ai-plan__change">
@@ -179,6 +211,13 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
         </div>
       ) : null}
 
+      {exportBlockerCount > 0 ? (
+        <div className="cr-alert cr-alert--warning">
+          <strong>Audit Pack blocat sau incomplet.</strong>{" "}
+          {exportBlockerCount} blocker(e) canonic(e) blochează exportul. Deschide lista ca să vezi dovada, owner-ul și review-ul cerut.
+        </div>
+      ) : null}
+
       <div className="cr-ai-plan__body">
         {plan.actions.map((action, index) => (
           <ActionRow key={`${action.id}-${index}`} action={action} />
@@ -202,10 +241,10 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
             <div className="cr-drawer__header">
               <div>
                 <h2 className="cr-title" style={{ margin: 0, fontSize: "24px" }}>
-                  Plan de lucru AI · explicat
+                  Plan de execuție AI · explicat
                 </h2>
                 <p className="cr-muted-copy">
-                  Generat {formatDate(plan.generatedAtISO)} · {plan.modelLabel} · {plan.coverage.totalCandidates} candidate · fingerprint {plan.fingerprint.slice(0, 8)}
+                  Generat {formatDate(plan.generatedAtISO)} · {plan.modelLabel} · {plan.coverage.totalCandidates} acțiuni candidate · Draft — necesită review uman · fingerprint {plan.fingerprint.slice(0, 8)}
                 </p>
               </div>
               <button type="button" aria-label="Închide planul" onClick={() => setDrawerOpen(false)} className="cr-btn cr-btn--sm">
@@ -223,6 +262,28 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
 
               {activeRecord?.diffFromPrevious ? (
                 <PlanDiffSummary record={activeRecord} />
+              ) : null}
+
+              {canonicalExportBlockers.length > 0 ? (
+                <div>
+                  <SectionLabel>Blocker-ele Audit Pack</SectionLabel>
+                  <div className="cr-stack">
+                    {canonicalExportBlockers.map((blocker) => (
+                      <CanonicalBlockerDetail key={blocker.id} blocker={blocker} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {!coherence && planExportBlockerActions.length > 0 ? (
+                <div>
+                  <SectionLabel>Blocker-ele Audit Pack</SectionLabel>
+                  <div className="cr-stack">
+                    {planExportBlockerActions.map((action, index) => (
+                      <ActionDetail key={`export-${action.id}-${index}`} action={action} compact />
+                    ))}
+                  </div>
+                </div>
               ) : null}
 
               <div>
@@ -292,18 +353,54 @@ export function GuidancePlanPanel({ initialRecord, initialPlan }: GuidancePlanPa
   )
 }
 
+function CanonicalBlockerDetail({ blocker }: { blocker: GuidancePlanCoherenceBlocker }) {
+  return (
+    <div className="cr-ai-detail cr-ai-detail--compact">
+      <div className="cr-ai-detail__header">
+        <div>
+          <span className="cr-badge cr-badge--warning">{blocker.code}</span>
+          <h3>{displayText(blocker.title)}</h3>
+          <p className="cr-muted-copy">
+            {blocker.statusLabel} · {blocker.ownerRole} · {blocker.reviewGate}
+          </p>
+        </div>
+        <Link href={blocker.href} className="cr-btn cr-btn--primary cr-btn--sm">
+          Deschide <ExternalLink size={15} />
+        </Link>
+      </div>
+      <div className="cr-ai-detail__section">
+        <strong>Dovezi / gate cerut</strong>
+        <p>
+          {blocker.requiredEvidence.length > 0
+            ? blocker.requiredEvidence.join("; ")
+            : "Review uman înainte de export."}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function ActionRow({ action }: { action: GuidanceAction }) {
+  const cta = action.ctaLabel ?? ctaLabelForAction(action)
   return (
     <div className="cr-ai-action">
       <span className={rankClassName(action.severity)}>{action.rank}</span>
       <div>
-        <div className="cr-ai-action__title">{action.title}</div>
+        <div className="cr-ai-action__title">{displayText(action.title)}</div>
         <div className="cr-ai-action__why">
-          {action.why}
+          {displayText(action.why)}
+        </div>
+        <div className="cr-chip-group" style={{ marginTop: "6px" }}>
+          <span className="cr-badge">{action.dataCertaintyLabel ?? dataCertaintyForAction(action)}</span>
+          <span className="cr-badge">{action.reviewStatusLabel ?? reviewStatusForAction(action)}</span>
+          <span className="cr-badge">{action.exportImpactLabel ?? exportImpactForAction(action)}</span>
         </div>
         <div className="cr-ai-action__refs">
           {action.legalReferences.slice(0, 3).map((ref, index) => (
-            <span key={`${ref}-${index}`} className="cr-badge">{ref}</span>
+            <span key={`${ref}-${index}`} className="cr-badge">{displayLegalReference(ref)}</span>
+          ))}
+          {sourceTypeLabels(action.legalReferences).map((label) => (
+            <span key={label} className="cr-badge cr-badge--info">{label}</span>
           ))}
         </div>
       </div>
@@ -311,43 +408,54 @@ function ActionRow({ action }: { action: GuidanceAction }) {
         <div className="cr-ai-action__side-label">
           Acțiune sugerată
         </div>
-        <strong>{action.suggestedAction}</strong>
+        <strong>{displayText(action.suggestedAction)}</strong>
         <div className="cr-muted">
           {ownerLabel(action.suggestedOwner)}
           {action.estimatedMinutes ? ` · ${action.estimatedMinutes} min` : ""}
         </div>
       </div>
       <Link href={action.targetHref} className="cr-btn cr-btn--primary cr-btn--sm">
-        Deschide <ExternalLink size={15} />
+        {cta} <ExternalLink size={15} />
       </Link>
     </div>
   )
 }
 
-function ActionDetail({ action }: { action: GuidanceAction }) {
+function ActionDetail({ action, compact = false }: { action: GuidanceAction; compact?: boolean }) {
+  const cta = action.ctaLabel ?? ctaLabelForAction(action)
   return (
     <article className="cr-card">
       <div className="cr-inline cr-inline--start">
         <span className={rankClassName(action.severity)}>{action.rank}</span>
         <div className="cr-stack">
-          <h3>{action.title}</h3>
-          <p className="cr-muted-copy">{action.why}</p>
+          <h3>{displayText(action.title)}</h3>
+          <p className="cr-muted-copy">{displayText(action.why)}</p>
+          <div className="cr-chip-group">
+            <span className="cr-badge">{action.dataCertaintyLabel ?? dataCertaintyForAction(action)}</span>
+            <span className="cr-badge">{action.reviewStatusLabel ?? reviewStatusForAction(action)}</span>
+            <span className="cr-badge">{action.exportImpactLabel ?? exportImpactForAction(action)}</span>
+          </div>
           <SectionLabel>De ce e #{action.rank}</SectionLabel>
           <p className="cr-paragraph">
             {action.priority} · {severityLabel(action.severity)} · owner recomandat:{" "}
             <strong>{ownerLabel(action.suggestedOwner)}</strong>
             {action.estimatedMinutes ? ` · ${action.estimatedMinutes} minute estimate` : ""}.
           </p>
-          <SectionLabel>Articole consultate</SectionLabel>
-          <div className="cr-chip-group">
-            {action.legalReferences.map((ref, index) => <span key={`${ref}-${index}`} className="cr-badge">{ref}</span>)}
-          </div>
-          <SectionLabel>Dovezi cerute</SectionLabel>
+          {!compact ? (
+            <>
+              <SectionLabel>Articole consultate</SectionLabel>
+              <div className="cr-chip-group">
+                {action.legalReferences.map((ref, index) => <span key={`${ref}-${index}`} className="cr-badge">{displayLegalReference(ref)}</span>)}
+                {sourceTypeLabels(action.legalReferences).map((label) => <span key={label} className="cr-badge cr-badge--info">{label}</span>)}
+              </div>
+            </>
+          ) : null}
+          <SectionLabel>Dovezi / gate cerut</SectionLabel>
           <ul className="cr-source-list">
-            {(action.evidenceRequired.length ? action.evidenceRequired : ["dovadă execuție"]).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+            {(action.evidenceRequired.length ? action.evidenceRequired : [action.reviewStatusLabel ?? "review uman"]).map((item, index) => <li key={`${item}-${index}`}>{displayEvidenceLabel(item)}</li>)}
           </ul>
           <Link href={action.targetHref} className="cr-btn cr-btn--primary">
-            Deschide în aplicație <ExternalLink size={15} />
+            {cta} <ExternalLink size={15} />
           </Link>
         </div>
       </div>
@@ -390,7 +498,7 @@ function formatDate(value: string) {
 
 function buildClientMarkdown(record: AIGuidancePlanRecord | null, plan: GuidancePlan): string {
   return [
-    `# Plan AI Guidance — ${plan.orgName}`,
+    `# Plan AI Guidance — ${displayText(plan.orgName)}`,
     "",
     `Status: ${record?.status ?? "preview"}`,
     `Generat: ${plan.generatedAtISO}`,
@@ -398,13 +506,84 @@ function buildClientMarkdown(record: AIGuidancePlanRecord | null, plan: Guidance
     "",
     "## Acțiuni prioritizate",
     "",
-    ...plan.actions.map((action) => `- ${action.rank}. ${action.title} — ${action.legalReferences.join(", ")}`),
+    ...plan.actions.map((action) => `- ${action.rank}. ${displayText(action.title)} — ${action.legalReferences.map(displayLegalReference).join(", ")}`),
     "",
     "## Acțiuni omise",
     "",
-    ...(plan.omittedActions.length ? plan.omittedActions.map((action) => `- ${action.title}: ${action.omittedReason ?? ""}`) : ["Nu există."]),
+    ...(plan.omittedActions.length ? plan.omittedActions.map((action) => `- ${displayText(action.title)}: ${displayText(action.omittedReason ?? "")}`) : ["Nu există."]),
     "",
   ].join("\n")
+}
+
+function isExportBlockerAction(action: GuidanceAction): boolean {
+  const raw = `${action.title} ${action.why} ${action.targetHref} ${action.exportImpactLabel ?? ""}`.toLowerCase()
+  return raw.includes("audit-pack") || raw.includes("audit pack") || raw.includes("export") || raw.includes("blochează export")
+}
+
+function ctaLabelForAction(action: GuidanceAction): string {
+  const raw = `${action.title} ${action.suggestedAction} ${action.targetHref}`.toLowerCase()
+  if (raw.includes("audit-pack") || raw.includes("export") || raw.includes("blocker")) return "Vezi blocker-ele"
+  if (raw.includes("notice") || raw.includes("transparen")) return "Creează notice"
+  if (raw.includes("review")) return "Trimite la review"
+  if (raw.includes("dovad") || raw.includes("evidence")) return "Atașează dovezi"
+  if (raw.includes("registr") || raw.includes("use case") || raw.includes("candidate")) return "Confirmă use case"
+  return "Deschide finding"
+}
+
+function dataCertaintyForAction(action: GuidanceAction): string {
+  if (action.evidenceRequired.length > 0) return "Dovezi cerute"
+  if (action.source === "finding") return "State aplicație"
+  return "Recomandare"
+}
+
+function reviewStatusForAction(action: GuidanceAction): string {
+  const raw = `${action.title} ${action.suggestedAction}`.toLowerCase()
+  if (raw.includes("legal")) return "Legal review"
+  if (raw.includes("dpo") || raw.includes("gdpr") || raw.includes("ropa")) return "DPO review"
+  if (raw.includes("security") || raw.includes("logging")) return "IT/security review"
+  return "Review uman"
+}
+
+function exportImpactForAction(action: GuidanceAction): string {
+  if (isExportBlockerAction(action) || action.severity === "critical") return "Blochează export"
+  if (action.evidenceRequired.length > 0 || action.severity === "high") return "Export parțial"
+  return "Neutru"
+}
+
+function displayText(value: string): string {
+  return value
+    .replace(/\bFixture AI use case\b/gi, "Caz AI candidat")
+    .replace(/\bFixture\b/gi, "Caz AI candidat")
+}
+
+function displayLegalReference(ref: string): string {
+  return ref
+    .replace(/EU_AI_ACT\s+EU AI ACT\s+/gi, "AI Act ")
+    .replace(/EU_AI_ACT/gi, "AI Act")
+    .replace(/GDPR\s+GDPR\s+/gi, "GDPR ")
+    .replace(/INTERNAL_POLICY/gi, "Internal governance")
+    .replace(/ART\.\s*/gi, "Art. ")
+    .replace(/ANNEX\s+/gi, "Annex ")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function displayEvidenceLabel(value: string): string {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\bropa\b/gi, "RoPA")
+    .replace(/\bdpa\b/gi, "DPA")
+}
+
+function sourceTypeLabels(refs: string[]): string[] {
+  const labels = new Set<string>()
+  const joined = refs.join(" ").toLowerCase()
+  if (joined.includes("ai act") || joined.includes("eu_ai_act") || joined.includes("gdpr")) {
+    labels.add("primary law")
+  }
+  if (joined.includes("internal")) labels.add("internal policy")
+  return [...labels]
 }
 
 function rankClassName(severity: GuidanceAction["severity"]): string {

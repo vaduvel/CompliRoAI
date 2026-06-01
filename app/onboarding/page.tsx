@@ -230,7 +230,7 @@ export default function OnboardingPage() {
         }
       }
 
-      const res = await fetch("/api/onboarding", {
+      const res = await fetchWithTimeout("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -386,6 +386,19 @@ export default function OnboardingPage() {
       </section>
     </main>
   )
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs = 15000) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: init.signal ?? controller.signal,
+    })
+  } finally {
+    window.clearTimeout(timer)
+  }
 }
 
 function ProgressDots({ step, total }: { step: number; total: number }) {

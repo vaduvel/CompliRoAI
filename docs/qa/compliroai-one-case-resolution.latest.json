@@ -1,0 +1,78 @@
+{
+  "generatedAtISO": "2026-05-31T17:04:45.975Z",
+  "testId": "E2E-CAB-001",
+  "client": {
+    "cui": "RO12345678",
+    "companyName": "Apex Logistic SRL",
+    "orgId": "org-client-41128f577fc96088"
+  },
+  "before": {
+    "total": 3,
+    "open": 3
+  },
+  "resolved": [
+    {
+      "id": "import-matrix-literacy-1780246856578-lit-participant-1-02cdcefc01d8-literacy-collect-training-evidence",
+      "title": "Colectează dovada de finalizare AI Literacy pentru Participant 1",
+      "finalStatus": "resolved",
+      "reviewState": "closed"
+    },
+    {
+      "id": "client-import-ro12345678-send_intake",
+      "title": "Trimite intake-ul AI Act + GDPR către Apex Logistic SRL",
+      "finalStatus": "resolved",
+      "reviewState": "closed"
+    },
+    {
+      "id": "client-import-ro12345678-ai_literacy_task",
+      "title": "Documentează AI Literacy Art. 4 pentru Apex Logistic SRL",
+      "finalStatus": "resolved",
+      "reviewState": "closed"
+    }
+  ],
+  "after": {
+    "total": 3,
+    "open": 0,
+    "stats": {
+      "total": 3,
+      "open": 0,
+      "confirmed": 0,
+      "resolved": 3,
+      "dismissed": 0,
+      "under_monitoring": 0,
+      "critical": 0,
+      "high": 0,
+      "medium": 2,
+      "low": 1
+    }
+  },
+  "audit": {
+    "chainVerified": true,
+    "eventTypes": [
+      "finding.resolve",
+      "finding.evidence_attached",
+      "finding.confirm",
+      "finding.resolve",
+      "finding.evidence_attached",
+      "finding.confirm",
+      "finding.resolve",
+      "finding.evidence_attached",
+      "finding.confirm",
+      "finding.created",
+      "finding.created",
+      "finding.created"
+    ]
+  },
+  "export": {
+    "status": "pass",
+    "summary": {
+      "keys": [
+        "generatedAtISO",
+        "systems",
+        "overallCompliance",
+        "deadline"
+      ],
+      "generatedAtISO": "2026-05-31T17:04:45.963Z"
+    }
+  }
+}

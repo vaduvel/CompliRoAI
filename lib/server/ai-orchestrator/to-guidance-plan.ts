@@ -73,10 +73,15 @@ export function orchestratorResultToGuidancePlan(input: {
   const nowISO = input.nowISO ?? new Date().toISOString()
   const maxActions = Math.max(1, input.maxActions ?? 4)
   const proposal = input.result.proposal
+  const activeFindingIds = new Set(
+    (input.state.findings ?? [])
+      .filter((finding) => isFindingActionable(finding.findingStatus, finding.reviewState))
+      .map((finding) => finding.id),
+  )
   const candidateActions = uniquifyActionIds(dedupeActions([
-    ...proposal.proposedFindings.map(toFindingAction),
-    ...proposal.evidenceRequests.map(toEvidenceAction),
-    ...proposal.reviewTasks.map(toReviewTaskAction),
+    ...proposal.proposedFindings.filter((finding) => isLinkedFindingActionable(finding.linkedEntityType, finding.linkedEntityId, activeFindingIds)).map(toFindingAction),
+    ...proposal.evidenceRequests.filter((request) => isLinkedFindingActionable(request.linkedEntityType, request.linkedEntityId, activeFindingIds)).map(toEvidenceAction),
+    ...proposal.reviewTasks.filter((task) => isLinkedFindingActionable(task.linkedEntityType, task.linkedEntityId, activeFindingIds)).map(toReviewTaskAction),
     ...proposal.exportBlockers.map(toExportBlockerAction),
     ...proposal.clientQuestions.map((question) => toQuestionAction(question.code, question.question, question.ownerRole)),
     ...proposal.nextActions.map(toNextAction),
@@ -123,7 +128,7 @@ export function orchestratorResultToGuidancePlan(input: {
     stats: {
       openFindingsCount:
         input.state.findings?.filter(
-          (finding) => finding.findingStatus === "open" || finding.findingStatus === "confirmed"
+          (finding) => isFindingActionable(finding.findingStatus, finding.reviewState)
         ).length ?? 0,
       criticalFindingsCount,
       preventiveActionsCount: proposal.exportBlockers.length + proposal.reviewTasks.length,
@@ -132,6 +137,25 @@ export function orchestratorResultToGuidancePlan(input: {
     },
     fingerprint: fingerprintProposal(proposal, `${input.result.source}-${input.result.inputSnapshotHash}`),
   }
+}
+
+function isFindingActionable(
+  findingStatus: string | undefined,
+  reviewState: string | undefined,
+): boolean {
+  const status = findingStatus ?? "open"
+  if (status === "resolved" || status === "dismissed" || status === "under_monitoring") return false
+  if (reviewState === "closed" || reviewState === "monitoring") return false
+  return status === "open" || status === "confirmed" || reviewState === "unreviewed" || reviewState === "evidence_attached"
+}
+
+function isLinkedFindingActionable(
+  linkedEntityType: string | undefined,
+  linkedEntityId: string | undefined,
+  activeFindingIds: Set<string>,
+): boolean {
+  if (linkedEntityType !== "finding" || !linkedEntityId) return true
+  return activeFindingIds.has(linkedEntityId)
 }
 
 function toFindingAction(finding: OrchestratorProposedFinding): GuidanceAction {
@@ -158,6 +182,12 @@ function toFindingAction(finding: OrchestratorProposedFinding): GuidanceAction {
     priority,
     legalReferences: finding.legalBasis.map(formatLegalBasis),
     evidenceRequired: finding.requiredEvidence,
+    dataCertaintyLabel: finding.requiredEvidence.length > 0 ? "Dovezi cerute" : "State aplicație",
+    reviewStatusLabel: "Review uman necesar",
+    exportImpactLabel: finding.severity === "critical" || finding.severity === "blocker"
+      ? "Blochează export"
+      : "Impact export",
+    ctaLabel: finding.requiredEvidence.length > 0 ? "Atașează dovezi" : "Deschide finding",
     estimatedMinutes: estimateMinutes(priority),
   }
 }
@@ -179,6 +209,10 @@ function toEvidenceAction(request: OrchestratorEvidenceRequest): GuidanceAction 
     priority: "P2",
     legalReferences: [],
     evidenceRequired: [request.evidenceType],
+    dataCertaintyLabel: "Dovezi lipsă",
+    reviewStatusLabel: "Review după atașare",
+    exportImpactLabel: "Export parțial",
+    ctaLabel: "Atașează dovezi",
     estimatedMinutes: 12,
   }
 }
@@ -201,6 +235,12 @@ function toReviewTaskAction(task: OrchestratorReviewTask): GuidanceAction {
     priority,
     legalReferences: [],
     evidenceRequired: [],
+    dataCertaintyLabel: "State aplicație",
+    reviewStatusLabel: reviewStatusLabel(task.reviewStatus),
+    exportImpactLabel: task.reviewStatus === "needs_lawyer_review" || task.reviewStatus === "needs_dpo_review"
+      ? "Blochează export"
+      : "Impact export",
+    ctaLabel: "Trimite la review",
     estimatedMinutes: estimateMinutes(priority),
   }
 }
@@ -221,6 +261,10 @@ function toExportBlockerAction(blocker: OrchestratorExportBlocker): GuidanceActi
     priority,
     legalReferences: [],
     evidenceRequired: [],
+    dataCertaintyLabel: "Blocker determinat",
+    reviewStatusLabel: "Review necesar",
+    exportImpactLabel: "Blochează export",
+    ctaLabel: "Vezi blocker-ele",
     estimatedMinutes: estimateMinutes(priority),
   }
 }
@@ -240,6 +284,10 @@ function toQuestionAction(code: string, question: string, ownerRole: Orchestrato
     priority: "P1",
     legalReferences: [],
     evidenceRequired: ["ai_use_case_intake"],
+    dataCertaintyLabel: "Certitudine necunoscută",
+    reviewStatusLabel: "Client input necesar",
+    exportImpactLabel: "Export parțial",
+    ctaLabel: "Trimite intake",
     estimatedMinutes: 10,
   }
 }
@@ -259,6 +307,10 @@ function toNextAction(action: { code: string; title: string; priority: "P0" | "P
     priority: action.priority,
     legalReferences: [],
     evidenceRequired: [],
+    dataCertaintyLabel: "State aplicație",
+    reviewStatusLabel: "Review uman",
+    exportImpactLabel: action.targetHref.includes("audit-pack") ? "Impact export" : "Neutru",
+    ctaLabel: ctaLabelForNextAction(action),
     estimatedMinutes: estimateMinutes(action.priority),
   }
 }
@@ -408,6 +460,15 @@ function reviewReason(status: string): string {
   return "Necesită review uman înainte de închidere sau export."
 }
 
+function reviewStatusLabel(status: string): string {
+  if (status === "needs_lawyer_review") return "Legal review"
+  if (status === "needs_dpo_review") return "DPO review"
+  if (status === "needs_it_security_review") return "IT/security review"
+  if (status === "needs_management_approval") return "Management approval"
+  if (status === "needs_client_approval") return "Client approval"
+  return "Review necesar"
+}
+
 function formatLegalBasis(item: {
   instrument: "EU_AI_ACT" | "GDPR" | "CONTRACT" | "INTERNAL_POLICY"
   article?: string
@@ -415,7 +476,25 @@ function formatLegalBasis(item: {
   note?: string
 }) {
   const detail = item.article ?? item.annex ?? item.note ?? ""
-  return detail ? `${item.instrument} ${detail}` : item.instrument
+  const instrument = item.instrument === "EU_AI_ACT"
+    ? "AI Act"
+    : item.instrument === "INTERNAL_POLICY"
+      ? "Internal governance"
+      : item.instrument
+  return detail ? `${instrument} ${detail}` : instrument
+}
+
+function ctaLabelForNextAction(action: {
+  title: string
+  targetHref: string
+}) {
+  const raw = `${action.title} ${action.targetHref}`.toLowerCase()
+  if (raw.includes("audit-pack") || raw.includes("export") || raw.includes("blocker")) return "Vezi blocker-ele"
+  if (raw.includes("notice") || raw.includes("transparen")) return "Creează notice"
+  if (raw.includes("review")) return "Trimite la review"
+  if (raw.includes("dovad") || raw.includes("evidence")) return "Atașează dovezi"
+  if (raw.includes("registr") || raw.includes("use case") || raw.includes("candidate")) return "Confirmă use case"
+  return "Deschide finding"
 }
 
 function fingerprintProposal(value: unknown, suffix: string): string {

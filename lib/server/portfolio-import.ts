@@ -50,8 +50,11 @@ import {
   persistOrgStateToSupabase,
 } from "@/lib/server/supabase-org-state"
 import { listUserMemberships } from "@/lib/server/tenancy"
-import type { AIActState } from "@/lib/server/store"
-import { mergeWithDefault } from "@/lib/server/store"
+import {
+  mergeWithDefault,
+  primeStateCacheForOrg,
+  type AIActState,
+} from "@/lib/server/store"
 import { loadAIUseCasesForOrgIds } from "@/lib/server/ai-use-case-store"
 
 export type PortfolioImportTarget = {
@@ -137,7 +140,10 @@ export async function persistChangedPortfolioImportTargets(targets: PortfolioImp
   await Promise.all(
     targets
       .filter((target) => target.changed)
-      .map((target) => persistOrgStateToSupabase(target.orgId, target.state))
+      .map(async (target) => {
+        await persistOrgStateToSupabase(target.orgId, target.state)
+        primeStateCacheForOrg(target.orgId, target.state)
+      })
   )
 }
 

@@ -172,6 +172,12 @@ export type AuditPackManifest = {
     ceMarkingChecklistArt48Count?: number
     aiGuidancePlansCount?: number
   }
+  /** Export gate captured at generation time, so the ZIP proves its delivery state. */
+  readiness?: {
+    status: AuditPackExportReadinessStatus
+    packKind: AuditPackKind
+    exportBlockersCount: number
+  }
   hashAlgorithm: "sha256"
   hashChainRoot: string
   signature: string
@@ -206,7 +212,18 @@ export type BuildAuditPackOptions = {
   currentOrgId: string
   /** When true, the bundle is re-signed with a fresh cabinet signature (POST /sign). */
   reSign?: boolean
+  /** Canonical dashboard readiness at generation time. Persisted into manifest + registry. */
+  exportReadinessStatus?: AuditPackExportReadinessStatus
+  exportBlockersCount?: number
 }
+
+export type AuditPackExportReadinessStatus =
+  | "blocked"
+  | "draft_only"
+  | "ready_for_review"
+  | "approved"
+
+export type AuditPackKind = "blocked_draft" | "draft" | "review" | "final"
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Secrets / signing
@@ -285,6 +302,14 @@ export async function buildAuditPack(
   const dateLabel = generatedAt.slice(0, 10)
   const orgSlug = slugify(orgName)
   const fileName = `compliroai-audit-pack-${orgSlug}-${dateLabel}.zip`
+  const packKind = auditPackKindFor(options.exportReadinessStatus)
+  const readinessSnapshot = options.exportReadinessStatus
+    ? {
+        status: options.exportReadinessStatus,
+        packKind,
+        exportBlockersCount: options.exportBlockersCount ?? 0,
+      }
+    : undefined
 
   // ─── 2. Build the file contents (deterministic order) ────────────────────
   const files = buildFileContents({
@@ -371,6 +396,7 @@ export async function buildAuditPack(
       // Sprint 027 — AI Guidance Orchestrator plans.
       aiGuidancePlansCount: (state.aiGuidancePlans ?? []).length,
     },
+    readiness: readinessSnapshot,
     hashAlgorithm: "sha256" as const,
   }
 
@@ -436,6 +462,9 @@ export async function buildAuditPack(
       createdByUserId: options.issuedByUserId,
       createdAtISO: generatedAt,
       reSigned: options.reSign === true,
+      exportReadinessStatus: options.exportReadinessStatus,
+      exportBlockersCount: options.exportReadinessStatus ? options.exportBlockersCount ?? 0 : undefined,
+      packKind: readinessSnapshot?.packKind,
     },
   })
 
@@ -584,6 +613,9 @@ export type AuditPackRegistryEntry = {
   createdByUserId: string
   createdAtISO: string
   reSigned?: boolean
+  exportReadinessStatus?: AuditPackExportReadinessStatus
+  exportBlockersCount?: number
+  packKind?: AuditPackKind
 }
 
 const PACK_REGISTRY_KEY = "auditPacks"
@@ -636,6 +668,13 @@ async function recordAuditPackInState(input: {
   } catch {
     // Registry persistence is best-effort; the ZIP is already built.
   }
+}
+
+function auditPackKindFor(status?: AuditPackExportReadinessStatus): AuditPackKind {
+  if (status === "approved") return "final"
+  if (status === "ready_for_review") return "review"
+  if (status === "blocked") return "blocked_draft"
+  return "draft"
 }
 
 // ────────────────────────────────────────────────────────────────────────────

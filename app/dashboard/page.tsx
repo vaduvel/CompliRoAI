@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { createHash } from "node:crypto"
 import {
   Bell,
   Building2,
@@ -16,6 +17,13 @@ import {
 } from "lucide-react"
 
 import { GuidancePlanPanel } from "@/components/ai-guidance/guidance-plan-panel"
+import {
+  buildDashboardExecutionState,
+  buildGuidancePlanCoherence,
+  exportReadinessLabel,
+  type DashboardExecutionState,
+  type DashboardSnapshot,
+} from "@/lib/compliance/dashboard-coherence"
 import { buildGuidancePlan, type GuidancePlan } from "@/lib/compliance/guidance-orchestrator"
 import type { AIGuidancePlanRecord } from "@/lib/compliance/types"
 import type { ComplianceState } from "@/lib/compliance/types"
@@ -24,6 +32,7 @@ import { buildGuidancePlanFromOrchestrator } from "@/lib/server/ai-orchestrator/
 import { type WorkspaceMode } from "@/lib/server/auth"
 import { getOrgContext } from "@/lib/server/org-context"
 import { readFreshStateForOrg } from "@/lib/server/store"
+import { getMembership } from "@/lib/server/tenancy"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -37,7 +46,7 @@ type ActionCard = {
 
 type CounterItem = {
   label: string
-  count: number
+  value: number | string
   href: string
   accent: "amber" | "cobalt" | "red"
 }
@@ -58,7 +67,52 @@ const CARD_ICONS = {
   Building2,
 }
 
-function nextActionsFor(mode: WorkspaceMode): ActionCard[] {
+function nextActionsFor(
+  mode: WorkspaceMode,
+  options?: {
+    isClientExecution?: boolean
+    snapshot?: DashboardSnapshot
+  },
+): ActionCard[] {
+  if (mode === "cabinet" && options?.isClientExecution) {
+    const snapshot = options.snapshot
+    const hasCandidates = (snapshot?.aiUseCasesCandidateCount ?? 0) > 0
+    const exportBlocked = snapshot?.exportReadinessStatus === "blocked"
+    const hasMissingEvidence = (snapshot?.evidenceMissingCount ?? 0) > 0
+
+    return [
+      hasCandidates
+        ? {
+            href: "/dashboard/sisteme",
+            iconName: "CheckSquare",
+            title: "Confirmă candidate AI",
+            subtitle: "Separă utilizările AI detectate de sistemele confirmate înainte de concluzii.",
+          }
+        : {
+            href: "/dashboard/client-intake",
+            iconName: "UserPlus",
+            title: "Trimite intake clientului",
+            subtitle: "Cere fapte canonice despre AI, vendor, date personale și dovezi disponibile.",
+          },
+      {
+        href: "/dashboard/audit-pack",
+        iconName: "ShieldAlert",
+        title: exportBlocked ? "Rezolvă blocker-ele Audit Pack" : "Pregătește Audit Pack",
+        subtitle: exportBlocked
+          ? "Vezi ce dovezi și review-uri blochează exportul final."
+          : "Verifică dosarul înainte de trimitere sau export.",
+      },
+      {
+        href: hasMissingEvidence ? "/dashboard/resolve" : "/dashboard/approvals",
+        iconName: hasMissingEvidence ? "FileCheck" : "ClipboardCheck",
+        title: hasMissingEvidence ? "Atașează dovezi lipsă" : "Trimite la review",
+        subtitle: hasMissingEvidence
+          ? "Completează screenshot-uri, DPA-uri, RoPA/DPIA și note operaționale."
+          : "Trimite acțiunile pregătite către DPO, legal sau client.",
+      },
+    ]
+  }
+
   if (mode === "ai-builder") {
     return [
       {
@@ -167,6 +221,86 @@ async function buildDashboardGuidancePlan(input: {
   }
 }
 
+
+function DashboardCoherencePanel({ executionState }: { executionState: DashboardExecutionState }) {
+  const { snapshot, exportBlockers } = executionState
+  const visibleBlockers = exportBlockers.slice(0, 5)
+
+  return (
+    <section className="cr-card cr-stack cr-dashboard-coherence" aria-labelledby="dashboard-coherence-heading">
+      <div className="cr-section-heading">
+        <div>
+          <p className="cr-eyebrow">Dashboard Coherence</p>
+          <h2 id="dashboard-coherence-heading">Starea reală a dosarului</h2>
+          <p className="cr-muted">{executionState.provenanceLabel}</p>
+        </div>
+        <Link className={"cr-button cr-button--" + executionState.auditPackCta.tone} href={executionState.auditPackCta.href}>
+          {executionState.auditPackCta.label}
+        </Link>
+      </div>
+
+      <div className="cr-stat-strip cr-stat-strip--auto" aria-label="Contoare operaționale pentru dosar">
+        <div className="cr-stat">
+          <span className="cr-stat__label">AI candidate</span>
+          <strong className="cr-stat__value">{snapshot.aiUseCasesCandidateCount}</strong>
+        </div>
+        <div className="cr-stat">
+          <span className="cr-stat__label">AI confirmate</span>
+          <strong className="cr-stat__value">{snapshot.aiUseCasesConfirmedCount}</strong>
+        </div>
+        <div className="cr-stat">
+          <span className="cr-stat__label">Sisteme AI</span>
+          <strong className="cr-stat__value">{snapshot.aiSystems}</strong>
+        </div>
+        <div className="cr-stat cr-stat--warning">
+          <span className="cr-stat__label">Dovezi lipsă</span>
+          <strong className="cr-stat__value">{snapshot.evidenceMissingCount}</strong>
+        </div>
+        <div className="cr-stat cr-stat--info">
+          <span className="cr-stat__label">Review pending</span>
+          <strong className="cr-stat__value">{snapshot.reviewPendingCount}</strong>
+        </div>
+        <div className={cn("cr-stat", snapshot.exportReadinessStatus === "blocked" ? "cr-stat--critical" : "cr-stat--info")}>
+          <span className="cr-stat__label">Export</span>
+          <strong className="cr-stat__value">{exportReadinessLabel(snapshot.exportReadinessStatus)}</strong>
+        </div>
+      </div>
+
+      <div className="cr-grid cr-grid--2">
+        <div className="cr-card cr-card--subtle">
+          <p className="cr-eyebrow">Export readiness</p>
+          <h3>{exportReadinessLabel(snapshot.exportReadinessStatus)}</h3>
+          <p>
+            Audit Pack-ul poate fi exportat doar când blocker-ele sunt închise, dovezile cerute sunt atașate și review gate-urile sunt trecute de oameni responsabili.
+          </p>
+        </div>
+        <div className="cr-card cr-card--subtle">
+          <p className="cr-eyebrow">Blocker-ele Audit Pack</p>
+          {visibleBlockers.length > 0 ? (
+            <div className="cr-stack">
+              {visibleBlockers.map((blocker) => (
+                <article className="cr-stack" key={blocker.id}>
+                  <div className="cr-row cr-row--between">
+                    <span className="cr-soft-pill cr-soft-pill--warning">{blocker.code}</span>
+                    <Link className="cr-link" href={blocker.href}>Deschide</Link>
+                  </div>
+                  <h4>{blocker.title}</h4>
+                  <p>{blocker.statusLabel} · {blocker.ownerRole} · {blocker.reviewGate}</p>
+                  {blocker.requiredEvidence.length > 0 ? (
+                    <p>Dovadă cerută: {blocker.requiredEvidence.slice(0, 2).join("; ")}</p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p>Nu există blocker canonic deschis pentru export. Următorul pas este review-ul uman înainte de livrare.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default async function DashboardHomePage() {
   try {
     const ctx = await getOrgContext()
@@ -175,8 +309,15 @@ export default async function DashboardHomePage() {
 
     // Best-effort state read for counters + recent events.
     let pending = { findings: 0, dsar: 0, breach: 0, approvals: 0 }
-    let snapshot = {
+    let snapshot: DashboardSnapshot = {
       aiSystems: 0,
+      aiUseCasesCandidateCount: 0,
+      aiUseCasesConfirmedCount: 0,
+      vendorsCount: 0,
+      evidenceMissingCount: 0,
+      reviewPendingCount: 0,
+      exportReadinessStatus: "draft_only",
+      exportBlockersCount: 0,
       literacyRecords: 0,
       loggingConfigs: 0,
       pmmPlans: 0,
@@ -189,11 +330,21 @@ export default async function DashboardHomePage() {
     try {
       const state = await readFreshStateForOrg(ctx.orgId, ctx.orgName)
       dashboardState = state
+      const openFindings = state.findings?.filter(isOpenFinding) ?? []
+      const evidenceMissingCount = openFindings.filter(needsEvidence).length
+      const useCases = state.aiUseCases ?? []
+      const vendors = state.vendorRecords ?? []
+      const criticalOpenFindings = openFindings.filter((finding) => finding.severity === "critical").length
+      const reviewPendingCount =
+        (state.approvalRequests?.filter((a) => a.status === "pending").length ?? 0) +
+        openFindings.filter((finding) =>
+          finding.requiresHumanReview ||
+          finding.reviewState === "unreviewed" ||
+          finding.reviewState === "confirmed"
+        ).length
+      const exportBlockersCount = criticalOpenFindings + evidenceMissingCount
       pending = {
-        findings:
-          state.findings?.filter(
-            (f) => f.findingStatus === "open" || f.findingStatus === "confirmed"
-          ).length ?? 0,
+        findings: openFindings.length,
         dsar:
           state.dsarRequests?.filter(
             (r) =>
@@ -210,6 +361,27 @@ export default async function DashboardHomePage() {
       }
       snapshot = {
         aiSystems: state.aiSystems?.length ?? 0,
+        aiUseCasesCandidateCount: useCases.length,
+        aiUseCasesConfirmedCount: useCases.filter((item) =>
+          item.reviewStatus === "reviewed" ||
+          item.reviewStatus === "approved" ||
+          item.certaintyStatus === "dpo_reviewed" ||
+          item.certaintyStatus === "lawyer_reviewed" ||
+          item.certaintyStatus === "consultant_reviewed" ||
+          item.certaintyStatus === "client_approved"
+        ).length,
+        vendorsCount: vendors.length,
+        evidenceMissingCount,
+        reviewPendingCount,
+        exportReadinessStatus: exportReadinessFor({
+          hasOperationalData:
+            useCases.length > 0 ||
+            (state.aiSystems?.length ?? 0) > 0 ||
+            openFindings.length > 0,
+          exportBlockersCount,
+          reviewPendingCount,
+        }),
+        exportBlockersCount,
         literacyRecords: state.literacyRecords?.length ?? 0,
         loggingConfigs: state.loggingEvidence?.length ?? 0,
         pmmPlans: state.pmmPlans?.length ?? 0,
@@ -224,7 +396,9 @@ export default async function DashboardHomePage() {
         .map((e) => ({ id: e.id, createdAtISO: e.createdAtISO, message: e.message, type: e.type }))
       guidanceRecord = state.aiGuidancePlans?.[0] ?? null
       guidancePlan =
-        guidanceRecord?.plan ??
+        guidanceRecord
+          ? sanitizeGuidancePlanForDashboardState(guidanceRecord.plan, state)
+          :
         await buildDashboardGuidancePlan({
           orgId: ctx.orgId,
           orgName: orgName || "Organizația curentă",
@@ -257,9 +431,14 @@ export default async function DashboardHomePage() {
       }
     }
 
-    const actions = nextActionsFor(workspaceMode)
+    const currentMembership = await getMembership(ctx.userId, ctx.orgId).catch(() => null)
+    const isClientExecution = workspaceMode === "cabinet" && currentMembership?.role === "partner_manager"
+    const executionState = buildDashboardExecutionState(dashboardState, { isClientExecution })
+    snapshot = executionState.snapshot
+    const actions = nextActionsFor(workspaceMode, { isClientExecution, snapshot })
     const greeting = ROLE_GREETING[workspaceMode]
-    const counters = dashboardCountersFor(workspaceMode, pending, snapshot)
+    const counters = dashboardCountersFor(workspaceMode, pending, snapshot, isClientExecution)
+    const guidanceCoherence = buildGuidancePlanCoherence(executionState)
 
     return (
       <div className="cr-page cr-page--full cr-stack">
@@ -276,7 +455,9 @@ export default async function DashboardHomePage() {
           </div>
         </header>
 
-        <GuidancePlanPanel initialRecord={guidanceRecord} initialPlan={guidancePlan} />
+        <DashboardCoherencePanel executionState={executionState} />
+
+        <GuidancePlanPanel initialRecord={guidanceRecord} initialPlan={guidancePlan} coherence={guidanceCoherence} />
 
         <div className="cr-stat-strip cr-stat-strip--auto">
           {counters.map((counter) => (
@@ -384,51 +565,63 @@ export default async function DashboardHomePage() {
 function dashboardCountersFor(
   mode: WorkspaceMode,
   pending: { findings: number; dsar: number; breach: number; approvals: number },
-  snapshot: {
-    aiSystems: number
-    literacyRecords: number
-    loggingConfigs: number
-    pmmPlans: number
-    aiIncidentsOpen: number
-  },
+  snapshot: DashboardSnapshot,
+  isClientExecution = false,
 ): CounterItem[] {
   if (mode === "ai-builder") {
     return [
-      { label: "De rezolvat", count: pending.findings, href: "/dashboard/resolve", accent: "amber" },
-      { label: "Sisteme AI", count: snapshot.aiSystems, href: "/dashboard/sisteme", accent: "cobalt" },
-      { label: "Jurnalizare", count: snapshot.loggingConfigs, href: "/dashboard/logging-evidence", accent: "cobalt" },
-      { label: "Planuri PMM", count: snapshot.pmmPlans, href: "/dashboard/post-market-monitoring", accent: "cobalt" },
+      { label: "De rezolvat", value: pending.findings, href: "/dashboard/resolve", accent: "amber" },
+      { label: "Sisteme AI", value: snapshot.aiSystems, href: "/dashboard/sisteme", accent: "cobalt" },
+      { label: "Dovezi lipsă", value: snapshot.evidenceMissingCount, href: "/dashboard/resolve", accent: "amber" },
+      { label: "Review pending", value: snapshot.reviewPendingCount, href: "/dashboard/approvals", accent: "cobalt" },
     ]
   }
 
   if (mode === "cabinet") {
+    if (isClientExecution) {
+      return [
+        { label: "Findings deschise", value: pending.findings, href: "/dashboard/resolve", accent: "amber" },
+        { label: "AI candidate", value: snapshot.aiUseCasesCandidateCount, href: "/dashboard/sisteme", accent: "cobalt" },
+        { label: "AI confirmate", value: snapshot.aiUseCasesConfirmedCount, href: "/dashboard/sisteme", accent: "cobalt" },
+        { label: "Sisteme AI", value: snapshot.aiSystems, href: "/dashboard/sisteme", accent: "cobalt" },
+        { label: "Dovezi lipsă", value: snapshot.evidenceMissingCount, href: "/dashboard/resolve", accent: "amber" },
+        {
+          label: "Export readiness",
+          value: exportReadinessLabel(snapshot.exportReadinessStatus),
+          href: "/dashboard/audit-pack",
+          accent: snapshot.exportReadinessStatus === "blocked" ? "red" : "cobalt",
+        },
+      ]
+    }
+
     return [
-      { label: "De rezolvat", count: pending.findings, href: "/dashboard/resolve", accent: "amber" },
-      { label: "Sisteme AI", count: snapshot.aiSystems, href: "/dashboard/sisteme", accent: "cobalt" },
-      { label: "Aprobări pending", count: pending.approvals, href: "/dashboard/approvals", accent: "cobalt" },
-      { label: "Incidente date", count: pending.breach, href: "/dashboard/breach", accent: "red" },
+      { label: "De rezolvat", value: pending.findings, href: "/dashboard/resolve", accent: "amber" },
+      { label: "Clienți / portofoliu", value: snapshot.vendorsCount, href: "/dashboard/portofoliu", accent: "cobalt" },
+      { label: "Dovezi lipsă", value: snapshot.evidenceMissingCount, href: "/dashboard/resolve", accent: "amber" },
+      { label: "Aprobări pending", value: pending.approvals, href: "/dashboard/approvals", accent: "cobalt" },
     ]
   }
 
   return [
-    { label: "De rezolvat", count: pending.findings, href: "/dashboard/resolve", accent: "amber" },
-    { label: "Sisteme AI", count: snapshot.aiSystems, href: "/dashboard/sisteme", accent: "cobalt" },
-    { label: "AI Literacy", count: snapshot.literacyRecords, href: "/dashboard/literacy", accent: "cobalt" },
-    { label: "DSAR în curs", count: pending.dsar, href: "/dashboard/dsar", accent: "amber" },
+    { label: "De rezolvat", value: pending.findings, href: "/dashboard/resolve", accent: "amber" },
+    { label: "Sisteme AI", value: snapshot.aiSystems, href: "/dashboard/sisteme", accent: "cobalt" },
+    { label: "Dovezi lipsă", value: snapshot.evidenceMissingCount, href: "/dashboard/resolve", accent: "amber" },
+    { label: "DSAR în curs", value: pending.dsar, href: "/dashboard/dsar", accent: "amber" },
   ]
 }
 
 function CounterCard({
   label,
-  count,
+  value,
   href,
   accent,
 }: {
   label: string
-  count: number
+  value: number | string
   href: string
   accent: "amber" | "cobalt" | "red"
 }) {
+  const hasAttention = typeof value === "number" ? value > 0 : value === "Blocat" || value === "blocked"
   const color =
     accent === "amber"
       ? "var(--amber-400)"
@@ -450,10 +643,10 @@ function CounterCard({
         {label}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-        <span className="cr-stat__value" style={{ color: count > 0 ? color : "var(--ink-muted)" }}>
-          {count}
+        <span className="cr-stat__value" style={{ color: hasAttention ? color : "var(--ink-muted)" }}>
+          {value}
         </span>
-        {count > 0 && accent !== "cobalt" && (
+        {hasAttention && accent !== "cobalt" && (
           <span className={`cr-soft-pill ${accent === "red" ? "cr-soft-pill--danger" : "cr-soft-pill--warning"}`}>
             atenție
           </span>
@@ -462,3 +655,104 @@ function CounterCard({
     </Link>
   )
 }
+
+function isOpenFinding(finding: { findingStatus?: string; reviewState?: string }) {
+  const status = finding.findingStatus ?? "open"
+  if (status === "resolved" || status === "dismissed" || status === "under_monitoring") return false
+  if (finding.reviewState === "closed" || finding.reviewState === "monitoring") return false
+  return status === "open" || status === "confirmed" || finding.reviewState === "unreviewed" || finding.reviewState === "evidence_attached"
+}
+
+function sanitizeGuidancePlanForDashboardState(
+  plan: GuidancePlan,
+  state: ComplianceState,
+): GuidancePlan {
+  const inactiveFindings = (state.findings ?? []).filter((finding) => !isOpenFinding(finding))
+  if (inactiveFindings.length === 0) return plan
+
+  const inactiveTokens = inactiveFindings.flatMap((finding) =>
+    [finding.id, finding.title].filter((value): value is string => Boolean(value && value.length >= 8))
+  )
+  if (inactiveTokens.length === 0) return plan
+
+  const allActions = [...plan.actions, ...plan.omittedActions]
+  const filtered = allActions.filter((action) => {
+    if (action.source !== "finding") return true
+    const haystack = [
+      action.id,
+      action.title,
+      action.why,
+      action.targetHref,
+      ...action.sourceIds,
+    ].join(" ")
+    return !inactiveTokens.some((token) => haystack.includes(token))
+  })
+
+  if (filtered.length === allActions.length) return plan
+
+  const maxActions = Math.max(1, plan.actions.length)
+  const reranked = filtered.map((action, index) => ({
+    ...action,
+    rank: index + 1,
+    omittedReason: index < maxActions ? undefined : action.omittedReason,
+  }))
+  const actions = reranked.slice(0, maxActions)
+  const omittedActions = reranked.slice(maxActions)
+  const fingerprint = createHash("sha1")
+    .update(JSON.stringify({
+      previous: plan.fingerprint,
+      actions: actions.map((action) => action.id),
+      omitted: omittedActions.map((action) => action.id),
+      findings: (state.findings ?? []).map((finding) => [
+        finding.id,
+        finding.findingStatus,
+        finding.reviewState,
+      ]),
+    }))
+    .digest("hex")
+    .slice(0, 16)
+
+  return {
+    ...plan,
+    actions,
+    omittedActions,
+    summary: `${actions.length} acțiuni prioritizate (${plan.stats.criticalFindingsCount} critice), ${omittedActions.length} în planul complet.`,
+    coverage: {
+      shown: actions.length,
+      omitted: omittedActions.length,
+      totalCandidates: reranked.length,
+    },
+    stats: {
+      ...plan.stats,
+      openFindingsCount: (state.findings ?? []).filter(isOpenFinding).length,
+    },
+    fingerprint: `${plan.fingerprint}-live-${fingerprint}`,
+  }
+}
+
+function needsEvidence(finding: {
+  evidenceRequired?: string
+  requiredEvidenceKinds?: string[]
+  reviewState?: string
+}) {
+  const hasEvidenceRequirement =
+    Boolean(finding.evidenceRequired?.trim()) ||
+    Boolean(finding.requiredEvidenceKinds?.length)
+  const hasEvidenceAttached =
+    finding.reviewState === "evidence_attached" ||
+    finding.reviewState === "closed" ||
+    finding.reviewState === "monitoring"
+  return hasEvidenceRequirement && !hasEvidenceAttached
+}
+
+function exportReadinessFor(input: {
+  hasOperationalData: boolean
+  exportBlockersCount: number
+  reviewPendingCount: number
+}): DashboardSnapshot["exportReadinessStatus"] {
+  if (input.exportBlockersCount > 0) return "blocked"
+  if (input.reviewPendingCount > 0) return "ready_for_review"
+  if (input.hasOperationalData) return "approved"
+  return "draft_only"
+}
+

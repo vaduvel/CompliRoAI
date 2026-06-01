@@ -504,7 +504,7 @@ function AIUseCaseRegisterPanel({ onAdded }: { onAdded: (record: AIUseCaseRecord
           />
         </Field>
         <Field label="Departament">
-          <select className="cr-input" value={form.department} onChange={(event) => update("department", event.target.value)}>
+          <select aria-label="Departament" className="cr-input" value={form.department} onChange={(event) => update("department", event.target.value)}>
             <option value="unknown">Necunoscut</option>
             <option value="marketing">Marketing</option>
             <option value="customer_support">Suport clienți</option>
@@ -515,7 +515,7 @@ function AIUseCaseRegisterPanel({ onAdded }: { onAdded: (record: AIUseCaseRecord
           </select>
         </Field>
         <Field label="Proces">
-          <select className="cr-input" value={form.businessProcess} onChange={(event) => update("businessProcess", event.target.value)}>
+          <select aria-label="Proces" className="cr-input" value={form.businessProcess} onChange={(event) => update("businessProcess", event.target.value)}>
             <option value="unknown">Necunoscut</option>
             <option value="content_creation">Conținut / marketing</option>
             <option value="customer_interaction">Interacțiune clienți</option>
@@ -554,7 +554,7 @@ function AIUseCaseRegisterPanel({ onAdded }: { onAdded: (record: AIUseCaseRecord
         <TriStateField label="Scoring / ranking" value={form.scoringOrRanking} onChange={(value) => update("scoringOrRanking", value)} />
         <TriStateField label="Output public" value={form.publicOutput} onChange={(value) => update("publicOutput", value)} />
         <Field label="Human review">
-          <select className="cr-input" value={form.humanReview} onChange={(event) => update("humanReview", event.target.value)}>
+          <select aria-label="Human review" className="cr-input" value={form.humanReview} onChange={(event) => update("humanReview", event.target.value)}>
             <option value="unknown">Necunoscut</option>
             <option value="required_before_action">Obligatoriu înainte</option>
             <option value="escalation_only">Doar escaladare</option>
@@ -623,7 +623,7 @@ function TriStateField({
 }) {
   return (
     <Field label={label}>
-      <select className="cr-input" value={value} onChange={(event) => onChange(event.target.value)}>
+      <select aria-label={label} className="cr-input" value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="unknown">Nu știu</option>
         <option value="yes">Da</option>
         <option value="no">Nu</option>
