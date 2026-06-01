@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
 
 import {
   classifyAISystem,
@@ -106,8 +105,6 @@ function validCui(cui: string): boolean {
 //   ai-builder : 0 (role) → 1 (company) → 2 (builder info) → 3 (recap) = 4 steps
 //   cabinet    : 0 (role) → 1 (cabinet name + scale) → 2 (first client) → 3 (recap) = 4 steps
 export default function OnboardingPage() {
-  const router = useRouter()
-
   const [role, setRole] = useState<OnboardingRole | "">("")
   const [step, setStep] = useState<number>(0)
   const [submitting, setSubmitting] = useState(false)
@@ -250,8 +247,7 @@ export default function OnboardingPage() {
             : isAiBuilder
               ? "/dashboard"
               : "/dashboard/sisteme"
-      router.push(destination)
-      router.refresh()
+      window.location.assign(destination)
     } catch {
       setError("Eroare de rețea. Încearcă din nou.")
       setSubmitting(false)

@@ -49,8 +49,7 @@ export function PortfolioClient() {
         body: JSON.stringify({ orgId }),
       })
       if (res.ok) {
-        router.push("/dashboard/resolve")
-        router.refresh()
+        window.location.assign("/dashboard/resolve")
       } else {
         setSwitching(null)
       }

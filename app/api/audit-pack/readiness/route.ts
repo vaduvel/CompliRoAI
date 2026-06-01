@@ -9,12 +9,16 @@ import { getOrgContext } from "@/lib/server/org-context"
 import { readFreshStateForOrg } from "@/lib/server/store"
 import { listUserMemberships } from "@/lib/server/tenancy"
 
+type TargetOrgAuthorization =
+  | { ok: true; targetOrgId: string; targetOrgName: string }
+  | { ok: false; status: number; error: string }
+
 async function authorizeTargetOrg(
   userId: string,
   ownOrgId: string,
   workspaceMode: string,
   clientOrgId: string | null,
-) {
+): Promise<TargetOrgAuthorization> {
   if (!clientOrgId || clientOrgId === ownOrgId) {
     return { ok: true, targetOrgId: ownOrgId, targetOrgName: "" }
   }

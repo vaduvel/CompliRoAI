@@ -1,9 +1,8 @@
 "use client"
 import { useState, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 
 function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const nextPath = searchParams.get("next") ?? "/dashboard/sisteme"
   const initialMode = searchParams.get("mode") === "register" ? "register" : "login"
@@ -39,12 +38,8 @@ function LoginForm() {
         return
       }
 
-      if (mode === "register") {
-        router.push("/onboarding")
-      } else {
-        router.push(nextPath)
-      }
-      router.refresh()
+      const destination = mode === "register" ? "/onboarding" : nextPath
+      window.location.assign(destination)
     } catch {
       setError("Eroare de rețea. Încearcă din nou.")
     } finally {
