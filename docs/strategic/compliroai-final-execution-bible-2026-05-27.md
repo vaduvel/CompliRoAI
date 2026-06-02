@@ -3020,6 +3020,7 @@ Reguli de validare:
 - blocker-ele deterministe de export nu pot fi șterse de model din propunerea finală;
 - orice câmp de tip `autoApprove`, `autoResolve`, `approveEvidence`, `resolveFinding`, `findingStatus=resolved` sau `approvalStatus=approved` venit de la Mistral este respins;
 - niciun export final nu este aprobat de AI.
+- dacă Mistral propune o acțiune UI de tip `Audit Pack final`, `approved`, `canExportFinal` sau link cu `?final=true`, planul afișat o reduce la acțiune de readiness/review; UI nu promite export final decât când backend-ul a calculat `exportReadinessStatus=approved`.
 
 Plan invalid = respins, audit event `orchestrator_plan_rejected`, zero work items create.
 

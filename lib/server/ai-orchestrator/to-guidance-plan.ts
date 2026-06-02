@@ -289,6 +289,30 @@ function toQuestionAction(code: string, question: string, ownerRole: Orchestrato
 }
 
 function toNextAction(action: { code: string; title: string; priority: "P0" | "P1" | "P2" | "P3"; targetHref: string; ownerRole: OrchestratorOwnerRole }): GuidanceAction {
+  if (isUnsafeAuditPackFinalAction(action)) {
+    const safeCode = safeAuditPackReadinessCode(action.code)
+    return {
+      id: `guidance-next-${safeCode}`,
+      rank: 0,
+      source: "obligation",
+      sourceIds: [safeCode],
+      title: "Verifică readiness-ul Audit Pack",
+      why: "Exportul livrabil este decis doar de readiness-ul calculat din dosarul curent.",
+      suggestedAction: "Deschide Audit Pack și urmărește blocker-ele calculate din dosarul curent.",
+      suggestedOwner: toGuidanceOwnerRole(action.ownerRole),
+      targetHref: "/dashboard/audit-pack",
+      severity: severityFromPriority(action.priority),
+      priority: action.priority,
+      legalReferences: [],
+      evidenceRequired: [],
+      dataCertaintyLabel: "Readiness calculat",
+      reviewStatusLabel: "Review uman",
+      exportImpactLabel: "Impact export",
+      ctaLabel: "Vezi readiness-ul",
+      estimatedMinutes: estimateMinutes(action.priority),
+    }
+  }
+
   return {
     id: `guidance-next-${action.code}`,
     rank: 0,
@@ -309,6 +333,28 @@ function toNextAction(action: { code: string; title: string; priority: "P0" | "P
     ctaLabel: ctaLabelForNextAction(action),
     estimatedMinutes: estimateMinutes(action.priority),
   }
+}
+
+function isUnsafeAuditPackFinalAction(action: { title: string; targetHref: string }) {
+  const raw = `${action.title} ${action.targetHref}`.toLowerCase()
+  return (
+    (raw.includes("audit-pack") || raw.includes("audit pack")) &&
+    (raw.includes("final") || raw.includes("aprobat") || raw.includes("approved") || raw.includes("final=true"))
+  )
+}
+
+function safeAuditPackReadinessCode(code: string) {
+  const normalized = code
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+  if (!normalized) return "audit_pack_readiness"
+  return normalized
+    .replace(/generate|create|approve|approved|final|export/gi, "")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "") || "audit_pack_readiness"
 }
 
 function toGuidanceOwnerRole(ownerRole: OrchestratorOwnerRole): GuidanceOwnerRole {

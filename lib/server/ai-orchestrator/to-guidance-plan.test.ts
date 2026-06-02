@@ -150,4 +150,80 @@ describe("buildGuidancePlanFromOrchestrator", () => {
     const ids = [...plan.actions, ...plan.omittedActions].map((action) => action.id)
     expect(ids).toHaveLength(new Set(ids).size)
   })
+
+  it("sanitizes Mistral next actions that try to expose final Audit Pack export in UI", () => {
+    const plan = orchestratorResultToGuidancePlan({
+      orgName: "Apex Logistic SRL",
+      workspaceMode: "cabinet",
+      state: initialComplianceState,
+      result: {
+        status: "validated",
+        source: "mistral_rag",
+        inputSnapshotHash: "hash-final-export",
+        validation: {
+          ok: true,
+          warnings: [],
+          proposal: {
+            schemaVersion: ORCHESTRATOR_SCHEMA_VERSION,
+            finalLegalVerdict: false,
+            legalContext: [],
+            proposedFindings: [],
+            evidenceRequests: [],
+            reviewTasks: [],
+            nextActions: [
+              {
+                code: "generate_final_audit_pack",
+                title: "Generează Audit Pack final aprobat",
+                priority: "P0",
+                targetHref: "/dashboard/audit-pack?final=true",
+                ownerRole: "dpo",
+              },
+            ],
+            exportBlockers: [],
+            clientQuestions: [],
+            obsoleteCandidates: [],
+          },
+        },
+        proposal: {
+          schemaVersion: ORCHESTRATOR_SCHEMA_VERSION,
+          finalLegalVerdict: false,
+          legalContext: [],
+          proposedFindings: [],
+          evidenceRequests: [],
+          reviewTasks: [],
+          nextActions: [
+            {
+              code: "generate_final_audit_pack",
+              title: "Generează Audit Pack final aprobat",
+              priority: "P0",
+              targetHref: "/dashboard/audit-pack?final=true",
+              ownerRole: "dpo",
+            },
+          ],
+          exportBlockers: [],
+          clientQuestions: [],
+          obsoleteCandidates: [],
+        },
+        auditEvent: {
+          type: "orchestrator.plan_generated",
+          orgId: "org-test",
+          inputSnapshotHash: "hash-final-export",
+          source: "mistral_rag",
+          createdAtISO: "2026-06-02T10:00:00.000Z",
+          actorId: "user-1",
+        },
+      },
+      maxActions: 3,
+    })
+
+    const action = plan.actions[0]
+
+    expect(action?.title).toBe("Verifică readiness-ul Audit Pack")
+    expect(action?.suggestedAction).toBe("Deschide Audit Pack și urmărește blocker-ele calculate din dosarul curent.")
+    expect(action?.targetHref).toBe("/dashboard/audit-pack")
+    expect(action?.ctaLabel).toBe("Vezi readiness-ul")
+    expect(JSON.stringify(action).toLowerCase()).not.toContain("?final=true")
+    expect(JSON.stringify(action).toLowerCase()).not.toContain("aprobat")
+    expect(JSON.stringify(action).toLowerCase()).not.toContain("final")
+  })
 })
