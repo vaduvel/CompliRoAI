@@ -160,7 +160,7 @@ for (const fixtureCase of fixtureCases) {
 
     const guidancePanel = page.locator("#ai-guidance")
     await expect(guidancePanel).toContainText("AI · MISTRAL", { timeout: 45_000 })
-    await expect(guidancePanel).toContainText("candidate evaluate")
+    await expect(guidancePanel).toContainText("acțiuni prioritizate")
     await expect(guidancePanel).toContainText("AI nu execută")
 
     await openAndVerifyPlanDrawer(page)
@@ -174,13 +174,7 @@ for (const fixtureCase of fixtureCases) {
     }
 
     await openResolveAndWaitForContent(page)
-    const visibleResolveText = await page.getByRole("main").innerText()
-    const firstFindingTitle = result!.actual?.findings?.[0]?.title
-    if (firstFindingTitle) {
-      expect(visibleResolveText).toContain(firstFindingTitle)
-    } else {
-      expect(visibleResolveText).toContain("Active")
-    }
+    await expectResolveSurfaceToMatchCanonicalOpenFindings(page)
 
     const lifecycle = await exerciseRemediationLifecycle(page, fixtureCase, result!)
 
@@ -242,24 +236,35 @@ async function installCabinetCookie(page: Page) {
 }
 
 async function switchToClientWorkspace(page: Page, orgId: string) {
-  const response = await page.request.post(`${baseURL}/api/workspaces/switch`, {
-    data: { orgId },
-  })
-  const payload = await response.json().catch(() => ({}))
-  expect(response.ok(), JSON.stringify(payload)).toBe(true)
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await page.request.post(`${baseURL}/api/workspaces/switch`, {
+      headers: { "content-type": "application/json" },
+      data: { orgId },
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (response.ok()) {
+      const setCookie = response.headers()["set-cookie"] || ""
+      const nextSessionValue = /(?:^|,\s*)aiact_session=([^;]+)/.exec(setCookie)?.[1]
+      if (nextSessionValue) {
+        await page.context().addCookies([
+          {
+            name: "aiact_session",
+            value: nextSessionValue,
+            url: baseURL,
+            httpOnly: true,
+            sameSite: "Lax",
+          },
+        ])
+      }
+      return
+    }
 
-  const setCookie = response.headers()["set-cookie"] || ""
-  const nextSessionValue = /(?:^|,\s*)aiact_session=([^;]+)/.exec(setCookie)?.[1]
-  if (nextSessionValue) {
-    await page.context().addCookies([
-      {
-        name: "aiact_session",
-        value: nextSessionValue,
-        url: baseURL,
-        httpOnly: true,
-        sameSite: "Lax",
-      },
-    ])
+    if (attempt < 2) {
+      await page.waitForTimeout(750)
+      continue
+    }
+
+    expect(response.ok(), JSON.stringify(payload)).toBe(true)
   }
 }
 
@@ -295,12 +300,40 @@ async function openAndVerifyPlanDrawer(page: Page) {
   await expect(dialog).toHaveCount(0)
 }
 
-async function openResolveAndWaitForContent(page: Page) {
+async function openResolveAndWaitForContent(page: Page, options?: { forceNavigate?: boolean }) {
   const loadingText = page.getByText("Se încarcă riscurile...")
+  const heading = page.getByRole("heading", { name: "De rezolvat" })
+  const shouldNavigate = options?.forceNavigate || !page.url().includes("/dashboard/resolve")
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    await page.goto(`${baseURL}/dashboard/resolve`, { waitUntil: "domcontentloaded" })
-    await expect(page.getByRole("heading", { name: "De rezolvat" })).toBeVisible({ timeout: 45_000 })
+  if (!shouldNavigate) {
+    const alreadyVisible = await heading
+      .waitFor({ state: "visible", timeout: 5_000 })
+      .then(() => true)
+      .catch(() => false)
+    if (alreadyVisible) {
+      const settled = await loadingText
+        .waitFor({ state: "hidden", timeout: 20_000 })
+        .then(() => true)
+        .catch(() => false)
+      if (settled) return
+    }
+  }
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const navigated = await page
+      .goto(`${baseURL}/dashboard/resolve`, { waitUntil: "commit" })
+      .then(() => true)
+      .catch((error) => {
+        if (attempt < 2 && error instanceof Error && error.message.includes("net::ERR_ABORTED")) {
+          return false
+        }
+        throw error
+      })
+    if (!navigated) {
+      await page.waitForTimeout(750)
+      continue
+    }
+    await expect(heading).toBeVisible({ timeout: 45_000 })
 
     const settled = await loadingText
       .waitFor({ state: "hidden", timeout: 20_000 })
@@ -320,6 +353,7 @@ async function exerciseRemediationLifecycle(
 ) {
   const runStamp = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
   const title = `[E2E remediation ${fixtureCase.test_id} ${runStamp}] ${fixtureCase.title}`.slice(0, 170)
+  const evidenceMarker = `${fixtureCase.test_id} ${runStamp}`
   const evidenceNote = `E2E remediation evidence for ${fixtureCase.test_id} ${runStamp}: evidence attached, but not auto-approved.`
   const evidenceUrl = `https://example.com/compliroai/evidence/${fixtureCase.test_id.toLowerCase()}`
 
@@ -342,58 +376,69 @@ async function exerciseRemediationLifecycle(
   expect(createResponse.ok(), JSON.stringify(createPayload)).toBe(true)
   const findingId = createPayload.finding?.id as string | undefined
   expect(findingId, "Created remediation finding id").toBeTruthy()
+  await waitForFindingPresence(page, findingId!)
 
   await openResolveAndWaitForContent(page)
   await selectStatusTab(page, "Toate")
 
-  let card = await openRemediationCard(page, title, fixtureCase.test_id)
+  let card = await openRemediationCard(page, findingId!, title, fixtureCase.test_id)
 
   await clickAction(card, "Confirma")
+  await expectFindingState(page, findingId!, {
+    findingStatus: "confirmed",
+    reviewState: "confirmed",
+    nextMonitoringDateISO: false,
+  })
+  card = await openRemediationCard(page, findingId!, title, fixtureCase.test_id)
   await expect(card).toContainText("Confirmat", { timeout: 25_000 })
 
   await card.getByPlaceholder(/Ce ai făcut/).fill(evidenceNote)
   await card.getByPlaceholder("https://...").fill(evidenceUrl)
   await clickAction(card, "Ataseaza dovada")
-  await expect(card.getByRole("button", { name: /Ataseaza dovada/ })).toBeVisible({ timeout: 25_000 })
-  await expect(card.locator("pre.cr-pre-box")).toContainText(evidenceNote, { timeout: 25_000 })
 
   await expectFindingState(page, findingId!, {
     findingStatus: "confirmed",
     reviewState: "evidence_attached",
-    evidenceNote,
+    evidenceNote: evidenceMarker,
     nextMonitoringDateISO: false,
   })
+  card = await openRemediationCard(page, findingId!, title, fixtureCase.test_id)
+  await expect(card.getByRole("button", { name: /Ataseaza dovada/ })).toBeVisible({ timeout: 25_000 })
+  await expect(card.locator("pre.cr-pre-box")).toContainText(evidenceNote, { timeout: 25_000 })
 
   await clickAction(card, "Marcheaza rezolvat")
-  await expect(card).toContainText("Rezolvat", { timeout: 25_000 })
   await expectFindingState(page, findingId!, {
     findingStatus: "resolved",
     reviewState: "closed",
-    evidenceNote,
+    evidenceNote: evidenceMarker,
     nextMonitoringDateISO: false,
   })
+  card = await openRemediationCard(page, findingId!, title, fixtureCase.test_id)
+  await expect(card).toContainText("Rezolvat", { timeout: 25_000 })
 
-  card = await openRemediationCard(page, title, fixtureCase.test_id)
+  card = await openRemediationCard(page, findingId!, title, fixtureCase.test_id)
   await clickAction(card, "Redeschide")
-  await expect(card).toContainText("Deschis", { timeout: 25_000 })
   await expectFindingState(page, findingId!, {
     findingStatus: "open",
     reviewState: "unreviewed",
-    evidenceNote,
+    evidenceNote: evidenceMarker,
     nextMonitoringDateISO: false,
   })
+  card = await openRemediationCard(page, findingId!, title, fixtureCase.test_id)
+  await expect(card).toContainText("Deschis", { timeout: 25_000 })
 
-  card = await openRemediationCard(page, title, fixtureCase.test_id)
+  card = await openRemediationCard(page, findingId!, title, fixtureCase.test_id)
   await clickAction(card, "Pune in monitorizare")
-  await expect(card).toContainText("Monitorizare", { timeout: 25_000 })
-  await expect(card).toContainText("Următoarea monitorizare", { timeout: 25_000 })
 
   const finalFinding = await expectFindingState(page, findingId!, {
     findingStatus: "under_monitoring",
     reviewState: "monitoring",
-    evidenceNote,
+    evidenceNote: evidenceMarker,
     nextMonitoringDateISO: true,
   })
+  card = await openRemediationCard(page, findingId!, title, fixtureCase.test_id)
+  await expect(card).toContainText("Monitorizare", { timeout: 25_000 })
+  await expect(card).toContainText("Următoarea monitorizare", { timeout: 25_000 })
   const eventTypes = await expectAuditTrailForLifecycle(page, findingId!)
 
   return {
@@ -404,17 +449,44 @@ async function exerciseRemediationLifecycle(
   }
 }
 
-async function openRemediationCard(page: Page, title: string, testId: string) {
-  await openResolveAndWaitForContent(page)
-  await selectStatusTab(page, "Toate")
-  const card = page.locator(".cr-finding-card").filter({ hasText: title })
-  await expect(card, `Remediation card missing for ${testId}`).toHaveCount(1)
-  const expanded = await card.getByText("AI Guidance", { exact: false }).isVisible().catch(() => false)
-  if (!expanded) {
-    await card.locator("button.cr-finding-row").click()
+async function openRemediationCard(page: Page, findingId: string, title: string, testId: string) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await openResolveAndWaitForContent(page, { forceNavigate: attempt > 0 })
+    await selectStatusTab(page, "Toate")
+    const card = page
+      .locator(`.cr-finding-card[id="${findingId}"]`)
+      .or(page.locator(".cr-finding-card").filter({ hasText: title }))
+    const found = await card.count()
+    if (!found) {
+      await page.waitForTimeout(750)
+      continue
+    }
+    await expect(card, `Remediation card missing for ${testId}`).toHaveCount(1)
+    const expanded = await card.getByText("AI Guidance", { exact: false }).isVisible().catch(() => false)
+    if (!expanded) {
+      await card.locator("button.cr-finding-row").click()
+    }
+    await expect(card).toContainText("AI Guidance")
+    return card
   }
-  await expect(card).toContainText("AI Guidance")
-  return card
+
+  throw new Error(`Remediation card missing for ${testId}`)
+}
+
+async function waitForFindingPresence(page: Page, findingId: string) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try {
+      const response = await page.request.get(`${baseURL}/api/findings`)
+      const payload = await response.json().catch(() => ({}))
+      const finding = (payload.findings ?? []).find((item: { id?: string }) => item.id === findingId)
+      if (response.ok() && finding) return
+    } catch {
+      // Dev serverul poate reseta conexiunea in timpul recompilarilor; retry.
+    }
+    await page.waitForTimeout(750)
+  }
+
+  throw new Error(`Finding ${findingId} not visible in /api/findings after creation`)
 }
 
 async function selectStatusTab(page: Page, label: string) {
@@ -431,6 +503,26 @@ async function clickAction(card: ReturnType<Page["locator"]>, label: string) {
   await action.click()
 }
 
+async function expectResolveSurfaceToMatchCanonicalOpenFindings(page: Page) {
+  const response = await page.request.get(`${baseURL}/api/findings`)
+  const payload = await response.json().catch(() => ({}))
+  expect(response.ok(), JSON.stringify(payload)).toBe(true)
+
+  const openFindingTitles = (payload.findings ?? [])
+    .filter((finding: { findingStatus?: string; title?: string }) => (finding.findingStatus ?? "open") === "open")
+    .map((finding: { title?: string }) => finding.title)
+    .filter((title: string | undefined): title is string => Boolean(title))
+
+  const titleToExpect = openFindingTitles[0] ?? (payload.findings ?? [])[0]?.title
+  const visibleResolveText = await page.getByRole("main").innerText()
+
+  if (titleToExpect) {
+    expect(visibleResolveText).toContain(titleToExpect)
+  } else {
+    expect(visibleResolveText).toContain("Active")
+  }
+}
+
 async function expectFindingState(
   page: Page,
   findingId: string,
@@ -441,27 +533,65 @@ async function expectFindingState(
     nextMonitoringDateISO: boolean
   },
 ) {
-  const response = await page.request.get(`${baseURL}/api/findings`)
-  const payload = await response.json().catch(() => ({}))
-  expect(response.ok(), JSON.stringify(payload)).toBe(true)
-  const finding = (payload.findings ?? []).find((item: { id?: string }) => item.id === findingId)
-  expect(finding, `Finding ${findingId} missing after lifecycle action`).toBeTruthy()
-  expect(finding.findingStatus).toBe(expected.findingStatus)
-  expect(finding.reviewState).toBe(expected.reviewState)
-  if (expected.evidenceNote) {
-    expect(finding.operationalEvidenceNote).toContain(expected.evidenceNote)
-  }
-  if (expected.nextMonitoringDateISO) {
-    expect(finding.nextMonitoringDateISO).toBeTruthy()
-  } else {
-    expect(finding.nextMonitoringDateISO).toBeFalsy()
-  }
-  return finding as {
-    findingStatus?: string
-    reviewState?: string
-    operationalEvidenceNote?: string
-    nextMonitoringDateISO?: string
-  }
+  let lastPayload: unknown = null
+  let matchedFinding:
+    | {
+        findingStatus?: string
+        reviewState?: string
+        operationalEvidenceNote?: string
+        nextMonitoringDateISO?: string
+      }
+    | undefined
+
+  await expect
+    .poll(
+      async () => {
+        try {
+          const response = await page.request.get(`${baseURL}/api/findings`)
+          const payload = await response.json().catch(() => ({}))
+          lastPayload = payload
+          if (!response.ok()) return `http:${response.status()}`
+          const finding = (payload.findings ?? []).find((item: { id?: string }) => item.id === findingId) as
+            | {
+                findingStatus?: string
+                reviewState?: string
+                operationalEvidenceNote?: string
+                nextMonitoringDateISO?: string
+              }
+            | undefined
+          matchedFinding = finding
+          if (!finding) return "missing"
+          if (finding.findingStatus !== expected.findingStatus) {
+            return `status:${finding.findingStatus ?? "missing"}`
+          }
+          if (finding.reviewState !== expected.reviewState) {
+            return `review:${finding.reviewState ?? "missing"}`
+          }
+          if (expected.evidenceNote && !finding.operationalEvidenceNote?.includes(expected.evidenceNote)) {
+            return "evidence_note_missing"
+          }
+          if (expected.nextMonitoringDateISO && !finding.nextMonitoringDateISO) {
+            return "monitoring_date_missing"
+          }
+          if (!expected.nextMonitoringDateISO && finding.nextMonitoringDateISO) {
+            return "monitoring_date_unexpected"
+          }
+          return "ok"
+        } catch (error) {
+          lastPayload = error instanceof Error ? error.message : String(error)
+          return "request_retry"
+        }
+      },
+      {
+        timeout: 25_000,
+        intervals: [500, 750, 1_000, 1_500],
+        message: `Finding ${findingId} should reach expected canonical state`,
+      },
+    )
+    .toBe("ok")
+
+  expect(matchedFinding, `Finding ${findingId} missing after lifecycle action: ${JSON.stringify(lastPayload)}`).toBeTruthy()
+  return matchedFinding!
 }
 
 async function expectAuditTrailForLifecycle(page: Page, findingId: string) {

@@ -58,7 +58,7 @@ describe("runComplianceOrchestrator", () => {
       max_tokens?: number
       messages?: Array<{ role: string; content: string }>
     }
-    expect(requestBody.max_tokens).toBe(1_800)
+    expect(requestBody.max_tokens).toBe(4_000)
 
     const promptPayload = JSON.parse(requestBody.messages?.[1]?.content ?? "{}") as Record<string, unknown>
     expect(promptPayload.snapshotSummary).toBeTruthy()
@@ -354,6 +354,64 @@ describe("runComplianceOrchestrator", () => {
     expect(result.status).toBe("validated")
     expect(result.source).toBe("mistral_rag")
     expect(result.validation.ok).toBe(true)
+  })
+
+  it("normalizes obsolete candidate aliases without falling back", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                schemaVersion: "orchestrator.v1",
+                finalLegalVerdict: false,
+                legalContext: [
+                  {
+                    sourceId: "eurlex-ai-act-art-50",
+                    instrument: "EU_AI_ACT",
+                    reference: "Art. 50(1)",
+                    whyRelevant: "Chatbot interaction.",
+                  },
+                ],
+                proposedFindings: [],
+                evidenceRequests: [],
+                reviewTasks: [],
+                nextActions: [],
+                exportBlockers: [],
+                clientQuestions: [],
+                obsoleteCandidates: [
+                  {
+                    code: "art50_chatbot_notice_old",
+                    reason: "Finding-ul vechi nu mai este relevant.",
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    })
+
+    const result = await runComplianceOrchestrator({
+      orgId: "org-1",
+      workspaceMode: "cabinet",
+      clientId: "client-a",
+      user: { id: "user-1", role: "cabinet_consultant" },
+      state: mergeWithDefault(null),
+      ragSourceIds: ["eurlex-ai-act-art-50"],
+      mistral: { apiKey: "test-key", fetchImpl: fetchMock },
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(result.status).toBe("validated")
+    expect(result.source).toBe("mistral_rag")
+    expect(result.validation.ok).toBe(true)
+    expect(result.proposal.obsoleteCandidates).toHaveLength(1)
+    expect(result.proposal.obsoleteCandidates[0]).toMatchObject({
+      findingCode: "art50_chatbot_notice_old",
+      reason: "Finding-ul vechi nu mai este relevant.",
+    })
   })
 
   it("retries once when the first Mistral request times out", async () => {

@@ -533,7 +533,8 @@ function shouldRetryInvalidProposal(errors: string[]) {
     error.includes("whyRelevant is required") ||
     error.includes("missing evidenceRequests for requiredEvidence") ||
     error.includes("legalBasis") ||
-    error.includes("must include article, annex, or note")
+    error.includes("must include article, annex, or note") ||
+    error.includes("obsoleteCandidates[")
   )
 }
 

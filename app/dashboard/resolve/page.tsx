@@ -176,24 +176,33 @@ export default function ResolvePage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await fetchJsonWithTimeout<ListResponse>(
-        "/api/findings",
-        undefined,
-        20_000,
-      )
-      setFindings(data.findings)
-      setStats(data.stats)
-      setAuditPackReadiness(data.auditPackReadiness ?? null)
-      setAuditPackBlockers(data.auditPackBlockers ?? [])
-      setEvents([])
-      setError(null)
-    } catch {
-      setFindings([])
-      setStats(null)
-      setAuditPackReadiness(null)
-      setAuditPackBlockers([])
-      setEvents([])
-      setError("Nu am putut incarca risc-urile.")
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const data = await fetchJsonWithTimeout<ListResponse>(
+            "/api/findings",
+            undefined,
+            20_000,
+          )
+          setFindings(data.findings)
+          setStats(data.stats)
+          setAuditPackReadiness(data.auditPackReadiness ?? null)
+          setAuditPackBlockers(data.auditPackBlockers ?? [])
+          setEvents([])
+          setError(null)
+          return
+        } catch {
+          if (attempt < 1) {
+            await new Promise((resolve) => window.setTimeout(resolve, 600))
+            continue
+          }
+          setFindings([])
+          setStats(null)
+          setAuditPackReadiness(null)
+          setAuditPackBlockers([])
+          setEvents([])
+          setError("Nu am putut incarca risc-urile.")
+        }
+      }
     } finally {
       setLoading(false)
     }

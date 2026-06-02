@@ -88,6 +88,8 @@ type AIUseCaseRow = {
   archived_by: string | null
 }
 
+const AI_USE_CASE_BATCH_SIZE = 50
+
 export function aiUseCaseFromSupabaseRow(row: AIUseCaseRow): AIUseCaseRecord {
   return {
     id: row.id,
@@ -266,7 +268,10 @@ export function aiUseCaseToSupabaseRow(record: AIUseCaseRecord): AIUseCaseRow {
 
 export async function upsertAIUseCasesToSupabase(records: AIUseCaseRecord[]) {
   if (!hasSupabaseConfig() || records.length === 0) return
-  await supabaseUpsert("ai_use_cases", records.map(aiUseCaseToSupabaseRow), "public", "on_conflict=id")
+  for (let index = 0; index < records.length; index += AI_USE_CASE_BATCH_SIZE) {
+    const batch = records.slice(index, index + AI_USE_CASE_BATCH_SIZE)
+    await supabaseUpsert("ai_use_cases", batch.map(aiUseCaseToSupabaseRow), "public", "on_conflict=id")
+  }
 }
 
 export async function loadAIUseCasesForOrgIds(orgIds: string[]): Promise<Map<string, AIUseCaseRecord[]>> {
@@ -274,17 +279,21 @@ export async function loadAIUseCasesForOrgIds(orgIds: string[]): Promise<Map<str
   const uniqueOrgIds = [...new Set(orgIds.filter(Boolean))]
   if (!hasSupabaseConfig() || uniqueOrgIds.length === 0) return grouped
 
-  const rows = await supabaseSelect<AIUseCaseRow>(
-    "ai_use_cases",
-    `select=*&org_id=in.(${uniqueOrgIds.join(",")})&archived_at=is.null`,
-    "public"
-  )
+  for (let index = 0; index < uniqueOrgIds.length; index += AI_USE_CASE_BATCH_SIZE) {
+    const batch = uniqueOrgIds.slice(index, index + AI_USE_CASE_BATCH_SIZE)
+    const orgIdsParam = `(${batch.map((id) => `"${id}"`).join(",")})`
+    const rows = await supabaseSelect<AIUseCaseRow>(
+      "ai_use_cases",
+      `select=*&org_id=in.${orgIdsParam}&archived_at=is.null`,
+      "public"
+    )
 
-  for (const row of rows) {
-    const record = aiUseCaseFromSupabaseRow(row)
-    const records = grouped.get(record.orgId) ?? []
-    records.push(record)
-    grouped.set(record.orgId, records)
+    for (const row of rows) {
+      const record = aiUseCaseFromSupabaseRow(row)
+      const records = grouped.get(record.orgId) ?? []
+      records.push(record)
+      grouped.set(record.orgId, records)
+    }
   }
 
   return grouped

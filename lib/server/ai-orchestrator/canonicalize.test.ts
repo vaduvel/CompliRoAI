@@ -70,4 +70,28 @@ describe("canonicalizeOrchestratorProposal", () => {
     expect(canonical.clientQuestions).toBeUndefined()
     expect(canonical.obsoleteCandidates).toBeUndefined()
   })
+
+  it("maps obsolete candidate aliases to findingCode", () => {
+    const canonical = canonicalizeOrchestratorProposal({
+      schemaVersion: "orchestrator.v1",
+      finalLegalVerdict: false,
+      proposedFindings: [],
+      evidenceRequests: [],
+      reviewTasks: [],
+      nextActions: [],
+      exportBlockers: [],
+      clientQuestions: [],
+      obsoleteCandidates: [
+        {
+          code: "retire_old_finding",
+          reason: "Finding-ul nu mai este relevant după importul nou.",
+        } as any,
+      ],
+    })
+
+    expect(canonical.obsoleteCandidates[0]).toMatchObject({
+      findingCode: "retire_old_finding",
+      reason: "Finding-ul nu mai este relevant după importul nou.",
+    })
+  })
 })

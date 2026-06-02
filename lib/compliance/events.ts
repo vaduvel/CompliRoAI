@@ -132,6 +132,11 @@ export type EventChainVerification =
  *
  * Reguli:
  *  - Evenimentele vechi (fără selfHash) sunt skip-uite — backward compatible.
+ *  - Ledger-ul păstrează doar ultimele 200 evenimente, deci primul eveniment
+ *    hash-uit din fereastra curentă poate avea `prevHash` care pointează către
+ *    un eveniment mai vechi deja trunchiat. În cazul ăsta tratăm primul
+ *    eveniment păstrat ca ancoră a ferestrei și verificăm lanțul în interiorul
+ *    ferestrei retenționate.
  *  - Pentru cele cu hash, verificăm:
  *    1. selfHash recomputat == selfHash stocat (event neatins)
  *    2. prevHash == selfHash al evenimentului hash-uit anterior cronologic
@@ -147,7 +152,8 @@ export function verifyEventChain(events: ComplianceEvent[]): EventChainVerificat
     .filter((e) => typeof e.selfHash === "string" && e.selfHash.length > 0)
 
   const skippedLegacyCount = events.length - chronological.length
-  let prev = GENESIS_HASH
+  const anchorPrevHash = chronological[0]?.prevHash ?? GENESIS_HASH
+  let prev = anchorPrevHash
 
   for (let i = 0; i < chronological.length; i++) {
     const event = chronological[i]

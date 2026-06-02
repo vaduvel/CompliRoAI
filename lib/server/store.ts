@@ -52,6 +52,10 @@ export type AIActState = ComplianceState
 
 const stateCache = new Map<string, AIActState>()
 
+function canReuseStateCache(): boolean {
+  return !shouldUseSupabaseOrgState()
+}
+
 function getStatePath(orgId: string): string {
   return path.join(process.cwd(), ".data", `state-${orgId}.json`)
 }
@@ -105,7 +109,7 @@ async function hydrateDedicatedSupabaseState(orgId: string, state: AIActState): 
 
 export async function readState(): Promise<AIActState> {
   const { orgId } = await getOrgContext()
-  if (stateCache.has(orgId)) {
+  if (canReuseStateCache() && stateCache.has(orgId)) {
     return stateCache.get(orgId)!
   }
 
@@ -114,7 +118,6 @@ export async function readState(): Promise<AIActState> {
     try {
       const remote = await loadOrgStateFromSupabase<Partial<AIActState>>(orgId)
       const state = await hydrateDedicatedSupabaseState(orgId, mergeWithDefault(remote))
-      stateCache.set(orgId, state)
       return state
     } catch {
       // Fall through to local read on transient Supabase failure
@@ -136,7 +139,11 @@ export async function readState(): Promise<AIActState> {
 
 export async function writeState(state: AIActState): Promise<void> {
   const { orgId } = await getOrgContext()
-  stateCache.set(orgId, state)
+  if (canReuseStateCache()) {
+    stateCache.set(orgId, state)
+  } else {
+    stateCache.delete(orgId)
+  }
 
   if (shouldUseSupabaseOrgState()) {
     try {

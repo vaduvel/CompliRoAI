@@ -172,6 +172,29 @@ describe("hash chain events ledger (S2B.3)", () => {
     expect((state.events ?? []).length).toBe(200)
   })
 
+  it("verifyEventChain acceptă o fereastră trunchiată de 200 evenimente", () => {
+    let state = emptyState()
+    for (let i = 0; i < 5; i++) {
+      const events = Array.from({ length: 50 }, (_, j) =>
+        createComplianceEvent(
+          makeEvent({
+            message: `window-${i}-${j}`,
+            createdAtISO: new Date(2026, 0, 1, i, j).toISOString(),
+          })
+        )
+      )
+      state = { ...state, events: appendComplianceEvents(state, events) }
+    }
+
+    const verification = verifyEventChain(state.events!)
+    expect((state.events ?? []).length).toBe(200)
+    expect(verification.ok).toBe(true)
+    if (verification.ok) {
+      expect(verification.verifiedCount).toBe(200)
+      expect(verification.skippedLegacyCount).toBe(0)
+    }
+  })
+
   it("hash chain rămâne intact peste multe batch-uri appended", () => {
     let state = emptyState()
     for (let batch = 0; batch < 3; batch++) {

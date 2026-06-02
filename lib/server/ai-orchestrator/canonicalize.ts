@@ -33,10 +33,37 @@ export function canonicalizeOrchestratorProposal(proposal: Partial<OrchestratorP
       ? proposal.clientQuestions
       : proposal.clientQuestions as unknown as OrchestratorProposal["clientQuestions"],
     obsoleteCandidates: Array.isArray(proposal.obsoleteCandidates)
-      ? proposal.obsoleteCandidates
+      ? proposal.obsoleteCandidates.map((candidate) => normalizeObsoleteCandidate(candidate))
       : proposal.obsoleteCandidates as unknown as OrchestratorProposal["obsoleteCandidates"],
     modelNotes: Array.isArray(proposal.modelNotes)
       ? proposal.modelNotes
       : proposal.modelNotes as unknown as OrchestratorProposal["modelNotes"],
+  }
+}
+
+function normalizeObsoleteCandidate(candidate: OrchestratorProposal["obsoleteCandidates"][number]) {
+  if (!candidate || typeof candidate !== "object") return candidate
+
+  const candidateRecord = candidate as unknown as Record<string, unknown>
+  const legacyCode = typeof candidateRecord.code === "string" && candidateRecord.code.trim()
+    ? candidateRecord.code
+    : undefined
+  const legacyLinkedFindingCode =
+    typeof candidateRecord.linkedFindingCode === "string" && candidateRecord.linkedFindingCode.trim()
+      ? candidateRecord.linkedFindingCode
+      : undefined
+
+  const findingCode =
+    typeof candidate.findingCode === "string" && candidate.findingCode.trim()
+      ? candidate.findingCode
+      : typeof legacyCode === "string"
+        ? legacyCode
+        : typeof legacyLinkedFindingCode === "string"
+          ? legacyLinkedFindingCode
+          : candidate.findingCode
+
+  return {
+    ...candidate,
+    findingCode,
   }
 }

@@ -46,7 +46,7 @@ import type {
 } from "@/lib/compliance/types"
 import type { OrgContext } from "@/lib/server/org-context"
 import {
-  loadOrgStateFromSupabase,
+  loadOrgStatesFromSupabase,
   persistOrgStateToSupabase,
 } from "@/lib/server/supabase-org-state"
 import { listUserMemberships } from "@/lib/server/tenancy"
@@ -108,15 +108,16 @@ export async function loadCabinetPortfolioImportTargets(
   const clientMemberships = memberships.filter(
     (membership) => membership.status === "active" && membership.role === "partner_manager"
   )
+  const stateByOrgId = await loadOrgStatesFromSupabase<Partial<AIActState>>(
+    clientMemberships.map((membership) => membership.orgId)
+  ).catch(() => new Map<string, Partial<AIActState>>())
   const persistedUseCasesByOrg = await loadAIUseCasesForOrgIds(
     clientMemberships.map((membership) => membership.orgId)
   ).catch(() => new Map<string, AIUseCaseRecord[]>())
 
   return Promise.all(
     clientMemberships.map(async (membership) => {
-      const rawState = await loadOrgStateFromSupabase<Partial<AIActState>>(membership.orgId).catch(
-        () => null
-      )
+      const rawState = stateByOrgId.get(membership.orgId) ?? null
       const state = mergeWithDefault(rawState)
       const persistedUseCases = persistedUseCasesByOrg.get(membership.orgId) ?? []
       if (persistedUseCases.length > 0) {

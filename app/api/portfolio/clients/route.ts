@@ -25,6 +25,7 @@ import { sendMagicLinkEmail } from "@/lib/server/share-magic-link-email"
 import { buildShareUrl, createShareToken } from "@/lib/server/share-token-store"
 import {
   loadOrgStateFromSupabase,
+  loadOrgStatesFromSupabase,
   persistOrgStateToSupabase,
 } from "@/lib/server/supabase-org-state"
 import {
@@ -229,15 +230,11 @@ export async function GET() {
     const clientMemberships = memberships.filter(
       (m) => m.status === "active" && m.role === "partner_manager"
     )
+    const stateByOrgId = await loadOrgStatesFromSupabase<Partial<AIActState>>(clientMemberships.map((m) => m.orgId))
 
     const clients: ClientRow[] = await Promise.all(
       clientMemberships.map(async (m) => {
-        let state: Partial<AIActState> | null = null
-        try {
-          state = await loadOrgStateFromSupabase<AIActState>(m.orgId)
-        } catch {
-          state = null
-        }
+        const state = stateByOrgId.get(m.orgId) ?? null
         const meta = getClientMeta(state)
         return {
           orgId: m.orgId,

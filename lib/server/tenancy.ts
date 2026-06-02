@@ -51,6 +51,8 @@ type MembershipRow = {
   created_at?: string | null
 }
 
+const ORG_LOOKUP_BATCH_SIZE = 50
+
 function isUserRole(value: unknown): value is UserRole {
   return (
     value === "owner" ||
@@ -105,13 +107,17 @@ export async function listUserMemberships(userId: string): Promise<MembershipSum
   if (memberships.length === 0) return []
 
   const orgIds = [...new Set(memberships.map((m) => m.org_id))]
-  // Supabase REST `in.()` filter expects comma-separated list inside parens.
-  const orgIdsParam = `(${orgIds.map((id) => `"${id}"`).join(",")})`
-  const orgs = await supabaseSelect<OrganizationRow>(
-    "organizations",
-    `select=id,name,slug,created_at&id=in.${orgIdsParam}`,
-    "public"
-  )
+  const orgs: OrganizationRow[] = []
+  for (let index = 0; index < orgIds.length; index += ORG_LOOKUP_BATCH_SIZE) {
+    const batch = orgIds.slice(index, index + ORG_LOOKUP_BATCH_SIZE)
+    const orgIdsParam = `(${batch.map((id) => `"${id}"`).join(",")})`
+    const batchOrgs = await supabaseSelect<OrganizationRow>(
+      "organizations",
+      `select=id,name,slug,created_at&id=in.${orgIdsParam}`,
+      "public"
+    )
+    orgs.push(...batchOrgs)
+  }
   const orgById = new Map(orgs.map((o) => [o.id, o]))
 
   const summaries: MembershipSummary[] = memberships

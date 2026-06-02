@@ -92,32 +92,59 @@ describe("store Supabase hydration", () => {
     expect(state.aiUseCases?.[0]?.id).toBe("uc-chatbot-1")
   })
 
-  it("caches the hydrated state after the first Supabase read", async () => {
-    loadOrgStateFromSupabase.mockResolvedValue({
-      aiUseCases: [],
-      findings: [],
-      events: [],
-      generatedDocuments: [],
-      alerts: [],
-      literacyRecords: [],
-      aiGuidancePlans: [],
-      onboarding: { completed: false, step: 1 },
-    })
-    loadAIUseCasesForOrgIds.mockResolvedValue(
-      new Map([
-        [
-          "org-store-test",
+  it("re-reads canonical Supabase state on sequential reads so route instances do not serve stale findings", async () => {
+    loadOrgStateFromSupabase
+      .mockResolvedValueOnce({
+        aiUseCases: [],
+        findings: [],
+        events: [],
+        generatedDocuments: [],
+        alerts: [],
+        literacyRecords: [],
+        aiGuidancePlans: [],
+        onboarding: { completed: false, step: 1 },
+      })
+      .mockResolvedValueOnce({
+        aiUseCases: [],
+        findings: [],
+        events: [],
+        generatedDocuments: [],
+        alerts: [],
+        literacyRecords: [],
+        aiGuidancePlans: [],
+        onboarding: { completed: false, step: 1 },
+      })
+    loadAIUseCasesForOrgIds
+      .mockResolvedValueOnce(
+        new Map([
           [
-            {
-              id: "uc-1",
-              orgId: "org-store-test",
-              useCaseName: "ATS AI screening CV",
-              draftRiskLevel: "high_risk_candidate",
-            },
+            "org-store-test",
+            [
+              {
+                id: "uc-1",
+                orgId: "org-store-test",
+                useCaseName: "ATS AI screening CV",
+                draftRiskLevel: "high_risk_candidate",
+              },
+            ],
           ],
-        ],
-      ])
-    )
+        ])
+      )
+      .mockResolvedValueOnce(
+        new Map([
+          [
+            "org-store-test",
+            [
+              {
+                id: "uc-2",
+                orgId: "org-store-test",
+                useCaseName: "Chatbot suport clienți pe website",
+                draftRiskLevel: "limited_transparency",
+              },
+            ],
+          ],
+        ])
+      )
 
     const { readState } = await import("@/lib/server/store")
 
@@ -125,8 +152,8 @@ describe("store Supabase hydration", () => {
     const second = await readState()
 
     expect(first.aiUseCases?.[0]?.id).toBe("uc-1")
-    expect(second.aiUseCases?.[0]?.id).toBe("uc-1")
-    expect(loadOrgStateFromSupabase).toHaveBeenCalledTimes(1)
-    expect(loadAIUseCasesForOrgIds).toHaveBeenCalledTimes(1)
+    expect(second.aiUseCases?.[0]?.id).toBe("uc-2")
+    expect(loadOrgStateFromSupabase).toHaveBeenCalledTimes(2)
+    expect(loadAIUseCasesForOrgIds).toHaveBeenCalledTimes(2)
   })
 })
