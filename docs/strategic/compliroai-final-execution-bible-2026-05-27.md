@@ -2585,6 +2585,39 @@ Greutatea legală contează:
 
 Mistral nu are voie să citeze surse în afara `RagContext`.
 
+### 21.8.3a Decizie RAG stack: Mistral Search Toolkit
+
+La 28 mai 2026, Mistral a lansat `Search Toolkit` în public preview: framework open-source pentru `ingestion + retrieval + evaluation`, cu suport pentru OCR/extracție multi-format, BM25/dense/hybrid retrieval și metrici de evaluare (`recall`, `precision`, `MRR`, `NDCG`).
+
+Pentru CompliRoAI, decizia este:
+
+- `Search Toolkit` poate intra ca sidecar pentru stratul de RAG;
+- este potrivit pentru ingestia corpusului legal, monografiilor, template-urilor și evaluarea retrieval-ului;
+- nu devine sursă de adevăr juridic;
+- nu devine orchestrator și nu poate schimba verdictul deterministic;
+- aplicația principală păstrează `AI Act/GDPR truth + DeterministicPack + Validator`.
+
+Formula corectă:
+
+```txt
+Search Toolkit = motor evaluabil de retrieval
+CompliRoAI = motor de compliance și orchestrare auditabilă
+```
+
+Ce folosim de acolo:
+
+- ingestie multi-format pentru corpusul legal și documentația clientului;
+- chunking și indexing consecvent;
+- benchmark retrieval pe cele 42 de scenarii E2E;
+- query API intern care întoarce `sourceId`-uri validate.
+
+Ce nu facem:
+
+- nu rescriem aplicația în jurul toolkit-ului;
+- nu lăsăm retrieval-ul să decidă findings;
+- nu lăsăm retrieval-ul să înlocuiască `coverage matrix`, `obligation library` sau `export readiness`;
+- nu punem toolkit-ul direct în hot-path-ul UI până când benchmark-ul pe fixture pack dovedește îmbunătățire reală.
+
 ### 21.8.4 Mistral GuidedExecutionPlan
 
 Mistral returnează doar JSON structurat, validabil. Nu returnează eseu, rezumat generic sau verdict.
@@ -2977,9 +3010,12 @@ Reguli de validare:
 - `guardrails.noAutoApproval === true`;
 - fiecare `executionStep` are `ownerRole`, `requiredEvidence`, `requiresHumanApproval`;
 - fiecare `legalContext.sourceId` există în `RagContext`;
+- fiecare `legalBasis` pentru `EU_AI_ACT`/`GDPR` este ancorat într-un `legalContext` valid;
 - fiecare `obligationSummary.source` este `deterministic_engine`;
-- planul respectă `orgId/clientId/aiProjectId`;
+- planul respectă `orgId/clientId/aiProjectId` și nu poate linka entități din afara scope-ului curent;
 - niciun finding nu este creat fără legal basis și required evidence;
+- niciun `linkedFindingCode` / `obsoleteCandidate` nu poate ieși din setul de findings din scope;
+- blocker-ele deterministe de export nu pot fi șterse de model din propunerea finală;
 - niciun export final nu este aprobat de AI.
 
 Plan invalid = respins, audit event `orchestrator_plan_rejected`, zero work items create.

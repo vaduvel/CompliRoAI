@@ -70,6 +70,11 @@ export function validateOrchestratorProposal(
 ): OrchestratorValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
+  const legalContext = Array.isArray(payload) || !isRecord(payload)
+    ? []
+    : Array.isArray(payload.legalContext)
+      ? payload.legalContext
+      : []
 
   if (!isRecord(payload)) {
     return {
@@ -95,19 +100,33 @@ export function validateOrchestratorProposal(
   validateArray(payload.obsoleteCandidates, "obsoleteCandidates", errors)
 
   const proposedFindings = Array.isArray(payload.proposedFindings) ? payload.proposedFindings : []
-  proposedFindings.forEach((item, index) => validateProposedFinding(item, index, errors, warnings))
+  const proposedFindingCodes = new Set<string>()
+  proposedFindings.forEach((item) => {
+    if (isRecord(item) && typeof item.code === "string" && item.code.trim()) {
+      proposedFindingCodes.add(item.code.trim())
+    }
+  })
+  proposedFindings.forEach((item, index) =>
+    validateProposedFinding(item, index, legalContext, context, errors, warnings)
+  )
   const evidenceRequests = Array.isArray(payload.evidenceRequests) ? payload.evidenceRequests : []
-  evidenceRequests.forEach((item, index) => validateEvidenceRequest(item, index, errors))
+  evidenceRequests.forEach((item, index) =>
+    validateEvidenceRequest(item, index, proposedFindingCodes, context, errors)
+  )
   const reviewTasks = Array.isArray(payload.reviewTasks) ? payload.reviewTasks : []
-  reviewTasks.forEach((item, index) => validateReviewTask(item, index, errors))
+  reviewTasks.forEach((item, index) =>
+    validateReviewTask(item, index, proposedFindingCodes, context, errors)
+  )
   const nextActions = Array.isArray(payload.nextActions) ? payload.nextActions : []
   nextActions.forEach((item, index) => validateNextAction(item, index, errors))
   const exportBlockers = Array.isArray(payload.exportBlockers) ? payload.exportBlockers : []
   exportBlockers.forEach((item, index) => validateExportBlocker(item, index, errors))
   const clientQuestions = Array.isArray(payload.clientQuestions) ? payload.clientQuestions : []
-  clientQuestions.forEach((item, index) => validateClientQuestion(item, index, errors))
+  clientQuestions.forEach((item, index) => validateClientQuestion(item, index, context, errors))
   const obsoleteCandidates = Array.isArray(payload.obsoleteCandidates) ? payload.obsoleteCandidates : []
-  obsoleteCandidates.forEach((item, index) => validateObsoleteCandidate(item, index, errors))
+  obsoleteCandidates.forEach((item, index) =>
+    validateObsoleteCandidate(item, index, proposedFindingCodes, context, errors)
+  )
   validateLegalContext(payload.legalContext, context, errors)
   validateForbiddenLanguage(payload, errors)
   validateFindingEvidenceCoverage(proposedFindings, evidenceRequests, errors)
@@ -123,7 +142,13 @@ export function validateOrchestratorProposal(
   }
 }
 
-function validateEvidenceRequest(item: unknown, index: number, errors: string[]) {
+function validateEvidenceRequest(
+  item: unknown,
+  index: number,
+  proposedFindingCodes: Set<string>,
+  context: OrchestratorValidationContext,
+  errors: string[],
+) {
   const path = `evidenceRequests[${index}]`
   if (!isRecord(item)) {
     errors.push(`${path} must be an object`)
@@ -134,10 +159,18 @@ function validateEvidenceRequest(item: unknown, index: number, errors: string[])
   requireString(item.title, `${path}.title`, errors)
   validateOwnerRole(item.ownerRole, `${path}.ownerRole`, errors)
   validateOptionalLinkedEntityType(item.linkedEntityType, `${path}.linkedEntityType`, errors)
+  validateLinkedEntityScope(item, path, context, errors)
+  validateLinkedFindingCode(item.linkedFindingCode, `${path}.linkedFindingCode`, proposedFindingCodes, context, errors)
   validateOptionalStringArray(item.requiredMetadata, `${path}.requiredMetadata`, errors)
 }
 
-function validateReviewTask(item: unknown, index: number, errors: string[]) {
+function validateReviewTask(
+  item: unknown,
+  index: number,
+  proposedFindingCodes: Set<string>,
+  context: OrchestratorValidationContext,
+  errors: string[],
+) {
   const path = `reviewTasks[${index}]`
   if (!isRecord(item)) {
     errors.push(`${path} must be an object`)
@@ -150,6 +183,8 @@ function validateReviewTask(item: unknown, index: number, errors: string[]) {
     errors.push(`${path}.reviewStatus is invalid`)
   }
   validateOptionalLinkedEntityType(item.linkedEntityType, `${path}.linkedEntityType`, errors)
+  validateLinkedEntityScope(item, path, context, errors)
+  validateLinkedFindingCode(item.linkedFindingCode, `${path}.linkedFindingCode`, proposedFindingCodes, context, errors)
 }
 
 function validateNextAction(item: unknown, index: number, errors: string[]) {
@@ -182,7 +217,12 @@ function validateExportBlocker(item: unknown, index: number, errors: string[]) {
   requireString(item.blockedUntil, `${path}.blockedUntil`, errors)
 }
 
-function validateClientQuestion(item: unknown, index: number, errors: string[]) {
+function validateClientQuestion(
+  item: unknown,
+  index: number,
+  context: OrchestratorValidationContext,
+  errors: string[],
+) {
   const path = `clientQuestions[${index}]`
   if (!isRecord(item)) {
     errors.push(`${path} must be an object`)
@@ -192,9 +232,16 @@ function validateClientQuestion(item: unknown, index: number, errors: string[]) 
   requireString(item.question, `${path}.question`, errors)
   validateOwnerRole(item.ownerRole, `${path}.ownerRole`, errors)
   validateOptionalLinkedEntityType(item.linkedEntityType, `${path}.linkedEntityType`, errors)
+  validateLinkedEntityScope(item, path, context, errors)
 }
 
-function validateObsoleteCandidate(item: unknown, index: number, errors: string[]) {
+function validateObsoleteCandidate(
+  item: unknown,
+  index: number,
+  proposedFindingCodes: Set<string>,
+  context: OrchestratorValidationContext,
+  errors: string[],
+) {
   const path = `obsoleteCandidates[${index}]`
   if (!isRecord(item)) {
     errors.push(`${path} must be an object`)
@@ -202,6 +249,7 @@ function validateObsoleteCandidate(item: unknown, index: number, errors: string[
   }
   requireString(item.findingCode, `${path}.findingCode`, errors)
   requireString(item.reason, `${path}.reason`, errors)
+  validateLinkedFindingCode(item.findingCode, `${path}.findingCode`, proposedFindingCodes, context, errors)
 }
 
 function validateLegalContext(
@@ -297,6 +345,8 @@ function validateArray(value: unknown, path: string, errors: string[]) {
 function validateProposedFinding(
   item: unknown,
   index: number,
+  legalContext: unknown[],
+  context: OrchestratorValidationContext,
   errors: string[],
   warnings: string[],
 ) {
@@ -319,12 +369,13 @@ function validateProposedFinding(
   if (item.finalLegalVerdict !== false) {
     errors.push(`${path}.finalLegalVerdict must be false`)
   }
+  validateLinkedEntityScope(item, path, context, errors)
 
   if (!Array.isArray(item.legalBasis) || item.legalBasis.length === 0) {
     errors.push(`${path}.legalBasis must contain at least one source`)
   } else {
     item.legalBasis.forEach((basis, basisIndex) =>
-      validateLegalBasis(basis, `${path}.legalBasis[${basisIndex}]`, errors)
+      validateLegalBasis(basis, `${path}.legalBasis[${basisIndex}]`, legalContext, errors)
     )
   }
 
@@ -345,7 +396,7 @@ function validateProposedFinding(
   }
 }
 
-function validateLegalBasis(value: unknown, path: string, errors: string[]) {
+function validateLegalBasis(value: unknown, path: string, legalContext: unknown[], errors: string[]) {
   if (!isRecord(value)) {
     errors.push(`${path} must be an object`)
     return
@@ -360,6 +411,40 @@ function validateLegalBasis(value: unknown, path: string, errors: string[]) {
     (typeof basis.note !== "string" || !basis.note.trim())
   ) {
     errors.push(`${path} must include article, annex, or note`)
+  }
+
+  const instrument = String(basis.instrument)
+  if (instrument === "EU_AI_ACT" || instrument === "GDPR") {
+    const matchingContext = legalContext.filter(
+      (entry): entry is Record<string, unknown> => isRecord(entry) && String(entry.instrument) === instrument,
+    )
+
+    if (matchingContext.length === 0) {
+      errors.push(`${path} is not grounded in proposal.legalContext`)
+      return
+    }
+
+    const basisReference = [
+      typeof basis.article === "string" ? basis.article : undefined,
+      typeof basis.annex === "string" ? basis.annex : undefined,
+      typeof basis.note === "string" ? basis.note : undefined,
+    ].find((entry) => typeof entry === "string" && entry.trim().length > 0)
+
+    if (!basisReference) return
+
+    const normalizedBasisReference = normalizeReference(basisReference)
+    const isGrounded = matchingContext.some((entry) => {
+      const reference = typeof entry.reference === "string" ? entry.reference : ""
+      const normalizedContextReference = normalizeReference(reference)
+      return (
+        normalizedBasisReference.includes(normalizedContextReference) ||
+        normalizedContextReference.includes(normalizedBasisReference)
+      )
+    })
+
+    if (!isGrounded) {
+      errors.push(`${path} is not grounded in proposal.legalContext`)
+    }
   }
 }
 
@@ -381,6 +466,59 @@ function validateOptionalStringArray(value: unknown, path: string, errors: strin
   if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string" || !entry.trim())) {
     errors.push(`${path} must be an array of non-empty strings`)
   }
+}
+
+function validateLinkedEntityScope(
+  item: Record<string, unknown>,
+  path: string,
+  context: OrchestratorValidationContext,
+  errors: string[],
+) {
+  const linkedEntityType = typeof item.linkedEntityType === "string" ? item.linkedEntityType : undefined
+  const linkedEntityId = typeof item.linkedEntityId === "string" ? item.linkedEntityId : undefined
+
+  if (linkedEntityId && !linkedEntityType) {
+    errors.push(`${path}.linkedEntityType is required when linkedEntityId is present`)
+    return
+  }
+  if (!linkedEntityType || !linkedEntityId) return
+
+  const allowedForType = context.allowedLinkedEntityIdsByType?.[
+    linkedEntityType as keyof NonNullable<OrchestratorValidationContext["allowedLinkedEntityIdsByType"]>
+  ]
+  if (Array.isArray(allowedForType) && allowedForType.length > 0 && !allowedForType.includes(linkedEntityId)) {
+    errors.push(`${path}.linkedEntityId is outside the scoped ${linkedEntityType} context`)
+  }
+}
+
+function validateLinkedFindingCode(
+  value: unknown,
+  path: string,
+  proposedFindingCodes: Set<string>,
+  context: OrchestratorValidationContext,
+  errors: string[],
+) {
+  if (value === undefined) return
+  if (typeof value !== "string" || !value.trim()) {
+    errors.push(`${path} is invalid`)
+    return
+  }
+
+  const allowed = new Set<string>([
+    ...proposedFindingCodes,
+    ...(context.allowedFindingCodes ?? []),
+  ])
+  if (allowed.size > 0 && !allowed.has(value)) {
+    errors.push(`${path} is outside the scoped finding context`)
+  }
+}
+
+function normalizeReference(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 function requireString(value: unknown, path: string, errors: string[]) {

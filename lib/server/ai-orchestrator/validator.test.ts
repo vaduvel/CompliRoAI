@@ -21,6 +21,14 @@ function baseProposal(overrides: Record<string, unknown> = {}): OrchestratorProp
 describe("validateOrchestratorProposal", () => {
   it("accepts a structured compliance-work proposal", () => {
     const result = validateOrchestratorProposal(baseProposal({
+      legalContext: [
+        {
+          sourceId: "eurlex-ai-act-art-50",
+          instrument: "EU_AI_ACT",
+          reference: "Art. 50(1)",
+          whyRelevant: "Chatbot interaction.",
+        },
+      ],
       proposedFindings: [
         {
           code: "art50_chatbot_notice",
@@ -86,7 +94,9 @@ describe("validateOrchestratorProposal", () => {
           blockedUntil: "evidence_attached",
         },
       ],
-    }))
+    }), {
+      allowedRagSourceIds: ["eurlex-ai-act-art-50"],
+    })
 
     expect(result).toEqual({ ok: true, proposal: expect.any(Object), warnings: [] })
   })
@@ -219,6 +229,130 @@ describe("validateOrchestratorProposal", () => {
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.errors).toContain("legalContext[0].sourceId was not retrieved in RagContext")
+    }
+  })
+
+  it("rejects legal basis that is not grounded in retrieved legal context", () => {
+    const result = validateOrchestratorProposal(
+      baseProposal({
+        legalContext: [
+          {
+            sourceId: "eurlex-ai-act-art-50",
+            instrument: "EU_AI_ACT",
+            reference: "Art. 50(1)",
+            whyRelevant: "Chatbot interaction.",
+          },
+        ],
+        proposedFindings: [
+          {
+            code: "hr_high_risk_candidate",
+            title: "Review HR AI screening",
+            reason: "ATS-ul rankează candidați.",
+            severity: "critical",
+            ownerRole: "legal",
+            linkedEntityType: "ai_use_case",
+            linkedEntityId: "uc-hr",
+            legalBasis: [{ instrument: "EU_AI_ACT", article: "Art. 6" }],
+            requiredEvidence: ["role_risk_assessment"],
+            finalLegalVerdict: false,
+          },
+        ],
+        evidenceRequests: [
+          {
+            code: "collect_hr_risk_assessment",
+            linkedFindingCode: "hr_high_risk_candidate",
+            evidenceType: "role_risk_assessment",
+            title: "Atașează evaluarea rol/risc",
+            ownerRole: "legal",
+          },
+        ],
+      }),
+      { allowedRagSourceIds: ["eurlex-ai-act-art-50"] },
+    )
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.errors).toContain(
+        "proposedFindings[0].legalBasis[0] is not grounded in proposal.legalContext"
+      )
+    }
+  })
+
+  it("rejects linked entities outside the scoped tenant context", () => {
+    const result = validateOrchestratorProposal(
+      baseProposal({
+        proposedFindings: [
+          {
+            code: "art50_chatbot_notice",
+            title: "Adaugă notice Art. 50 pentru chatbot",
+            reason: "Chatbot public.",
+            severity: "high",
+            ownerRole: "dpo",
+            linkedEntityType: "ai_use_case",
+            linkedEntityId: "uc-other-tenant",
+            legalBasis: [{ instrument: "EU_AI_ACT", article: "Art. 50(1)" }],
+            requiredEvidence: ["transparency_notice_text"],
+            finalLegalVerdict: false,
+          },
+        ],
+        evidenceRequests: [
+          {
+            code: "collect_notice_text",
+            linkedFindingCode: "art50_chatbot_notice",
+            linkedEntityType: "ai_use_case",
+            linkedEntityId: "uc-other-tenant",
+            evidenceType: "transparency_notice_text",
+            title: "Atașează textul notice-ului",
+            ownerRole: "marketing",
+          },
+        ],
+      }),
+      {
+        allowedLinkedEntityIdsByType: {
+          ai_use_case: ["uc-chatbot"],
+        },
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.errors).toEqual(expect.arrayContaining([
+        "proposedFindings[0].linkedEntityId is outside the scoped ai_use_case context",
+        "evidenceRequests[0].linkedEntityId is outside the scoped ai_use_case context",
+      ]))
+    }
+  })
+
+  it("rejects links to unknown findings outside the scoped set", () => {
+    const result = validateOrchestratorProposal(
+      baseProposal({
+        reviewTasks: [
+          {
+            code: "review_unknown_finding",
+            title: "Revizuiește un finding inexistent",
+            ownerRole: "dpo",
+            reviewStatus: "needs_dpo_review",
+            linkedFindingCode: "finding-from-other-client",
+          },
+        ],
+        obsoleteCandidates: [
+          {
+            findingCode: "finding-from-other-client",
+            reason: "Nu mai este relevant.",
+          },
+        ],
+      }),
+      {
+        allowedFindingCodes: ["finding-1", "finding-2"],
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.errors).toEqual(expect.arrayContaining([
+        "reviewTasks[0].linkedFindingCode is outside the scoped finding context",
+        "obsoleteCandidates[0].findingCode is outside the scoped finding context",
+      ]))
     }
   })
 

@@ -174,6 +174,8 @@ export type OrchestratorProposal = {
 
 export type OrchestratorValidationContext = {
   allowedRagSourceIds?: string[]
+  allowedLinkedEntityIdsByType?: Partial<Record<OrchestratorLinkedEntityType, string[]>>
+  allowedFindingCodes?: string[]
 }
 
 export type OrchestratorValidationResult =

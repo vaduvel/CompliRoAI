@@ -115,6 +115,93 @@ describe("runComplianceOrchestrator", () => {
     expect(result.validation.ok).toBe(false)
   })
 
+  it("falls back when Mistral targets entities outside the scoped tenant context", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                schemaVersion: "orchestrator.v1",
+                finalLegalVerdict: false,
+                legalContext: [
+                  {
+                    sourceId: "eurlex-ai-act-art-50",
+                    instrument: "EU_AI_ACT",
+                    reference: "Art. 50(1)",
+                    whyRelevant: "Chatbot interaction.",
+                  },
+                ],
+                proposedFindings: [
+                  {
+                    code: "art50_chatbot_notice",
+                    title: "Adaugă notice",
+                    reason: "Chatbot public.",
+                    severity: "high",
+                    ownerRole: "customer_support",
+                    linkedEntityType: "ai_use_case",
+                    linkedEntityId: "uc-other-client",
+                    legalBasis: [{ instrument: "EU_AI_ACT", article: "Art. 50(1)" }],
+                    requiredEvidence: ["transparency_notice_text"],
+                    finalLegalVerdict: false,
+                  },
+                ],
+                evidenceRequests: [
+                  {
+                    code: "collect_notice_text",
+                    linkedFindingCode: "art50_chatbot_notice",
+                    linkedEntityType: "ai_use_case",
+                    linkedEntityId: "uc-other-client",
+                    evidenceType: "transparency_notice_text",
+                    title: "Atașează textul notice-ului",
+                    ownerRole: "customer_support",
+                  },
+                ],
+                reviewTasks: [],
+                nextActions: [],
+                exportBlockers: [],
+                clientQuestions: [],
+                obsoleteCandidates: [],
+              }),
+            },
+          },
+        ],
+      }),
+    })
+
+    const result = await runComplianceOrchestrator({
+      orgId: "org-1",
+      workspaceMode: "cabinet",
+      clientId: "client-a",
+      user: { id: "user-1", role: "cabinet_consultant" },
+      state: mergeWithDefault({
+        aiUseCases: [
+          {
+            id: "uc-chatbot",
+            clientId: "client-a",
+            useCaseName: "Chatbot site",
+            toolName: "DigiChat",
+            usesPersonalData: "unknown",
+            certaintyStatus: "self_reported",
+          },
+        ],
+      }),
+      ragSourceIds: ["eurlex-ai-act-art-50"],
+      mistral: { apiKey: "test-key", fetchImpl: fetchMock },
+    })
+
+    expect(result.status).toBe("fallback_deterministic")
+    expect(result.source).toBe("deterministic")
+    expect(result.auditEvent.type).toBe("orchestrator.plan_rejected")
+    expect(result.validation.ok).toBe(false)
+    if (!result.validation.ok) {
+      expect(result.validation.errors).toContain(
+        "proposedFindings[0].linkedEntityId is outside the scoped ai_use_case context"
+      )
+    }
+  })
+
   it("falls back deterministically when Mistral returns partial JSON", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -550,5 +637,79 @@ describe("runComplianceOrchestrator", () => {
       "transparency_notice_text",
       "transparency_screenshot",
     ])
+  })
+
+  it("carries forward deterministic export blockers when Mistral omits them", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                schemaVersion: "orchestrator.v1",
+                finalLegalVerdict: false,
+                legalContext: [
+                  {
+                    sourceId: "eurlex-ai-act-art-50",
+                    instrument: "EU_AI_ACT",
+                    reference: "Art. 50(1)",
+                    whyRelevant: "Chatbot interaction.",
+                  },
+                ],
+                proposedFindings: [],
+                evidenceRequests: [],
+                reviewTasks: [],
+                nextActions: [],
+                exportBlockers: [],
+                clientQuestions: [],
+                obsoleteCandidates: [],
+              }),
+            },
+          },
+        ],
+      }),
+    })
+
+    const result = await runComplianceOrchestrator({
+      orgId: "org-1",
+      workspaceMode: "cabinet",
+      clientId: "client-a",
+      user: { id: "user-1", role: "cabinet_consultant" },
+      state: mergeWithDefault({
+        findings: [
+          {
+            id: "finding-art50",
+            title: "Adaugă notice Art. 50",
+            detail: "Chatbot public fără notice vizibil.",
+            category: "EU_AI_ACT",
+            severity: "high",
+            risk: "high",
+            principles: [],
+            legalReference: "EU AI Act Art. 50(1)",
+            evidenceRequired: "transparency_notice_text; transparency_screenshot",
+            findingStatus: "open",
+            reviewState: "unreviewed",
+            ownerSuggestion: "customer_support",
+            createdAtISO: "2026-05-27T10:00:00.000Z",
+            sourceDocument: "ai_use_case_register",
+          },
+        ],
+      }),
+      ragSourceIds: ["eurlex-ai-act-art-50"],
+      mistral: { apiKey: "test-key", fetchImpl: fetchMock },
+    })
+
+    expect(result.status).toBe("validated")
+    expect(result.validation.ok).toBe(true)
+    if (!result.validation.ok) throw new Error("Expected validated result")
+    expect(result.validation.proposal.exportBlockers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "open_findings_block_final_export",
+          exportType: "audit_pack",
+        }),
+      ]),
+    )
   })
 })

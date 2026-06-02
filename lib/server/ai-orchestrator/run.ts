@@ -12,8 +12,10 @@ import {
 import { canonicalizeOrchestratorProposal } from "./canonicalize"
 import { validateOrchestratorProposal } from "./validator"
 import type {
+  OrchestratorLinkedEntityType,
   OrchestratorLegalContextReference,
   OrchestratorProposal,
+  OrchestratorValidationContext,
   OrchestratorValidationResult,
 } from "./types"
 
@@ -63,6 +65,7 @@ export async function runComplianceOrchestrator(
   const snapshot = buildAppStateSnapshot(input)
   const inputSnapshotHash = fingerprintSnapshot(snapshot)
   const fallback = buildDeterministicFallbackProposal(snapshot)
+  const validationContext = buildValidationContext(input, snapshot)
   const mistralRequestBase = {
     apiKey: input.mistral?.apiKey,
     model: input.mistral?.model,
@@ -129,7 +132,7 @@ export async function runComplianceOrchestrator(
     }
   }
   const validation = validateOrchestratorProposal(canonicalProposal, {
-    allowedRagSourceIds: input.ragSourceIds,
+    ...validationContext,
   })
 
   if (!validation.ok && shouldRetryInvalidProposal(validation.errors)) {
@@ -149,7 +152,7 @@ export async function runComplianceOrchestrator(
         fallback,
       )
       const retryValidation = validateOrchestratorProposal(retryCanonical, {
-        allowedRagSourceIds: input.ragSourceIds,
+        ...validationContext,
       })
       if (retryValidation.ok) {
         return {
@@ -336,6 +339,7 @@ function buildMistralPrompt(input: {
       "approve evidence",
       "fully compliant claim",
       "source outside RagContext",
+      "entity outside scoped tenant context",
     ],
     requiredRootKeys: [
       "schemaVersion",
@@ -363,6 +367,8 @@ function buildMistralPrompt(input: {
       useEmptyArraysInsteadOfOmittingKeys: true,
       everyRequiredEvidenceMustHaveMatchingEvidenceRequest: true,
       evidenceRequestsMustLinkBackToFindingOrEntity: true,
+      everyLegalBasisMustBeGroundedInLegalContext: true,
+      everyLinkedEntityMustStayInsideScopedTenantContext: true,
       keepResponseCompact: true,
       avoidMirroringEveryOpenFindingWhenRepetitive: true,
       preferTopBlockersAndHighestValueStepsOnly: true,
@@ -514,6 +520,8 @@ function buildMistralPrompt(input: {
             "Include every root array and keep the response compact.",
             "Ensure every proposed finding has evidenceRequests covering all requiredEvidence items.",
             "Ensure every legalBasis object has instrument and at least one of article, annex, or note.",
+            "Ensure every EU_AI_ACT or GDPR legalBasis is grounded in the legalContext entries you return.",
+            "Do not reference entities or findings outside the scoped tenant context from the prompt.",
           ].join(" "),
         }
       : undefined,
@@ -852,6 +860,9 @@ function repairProposalAgainstDeterministicFallback(
   const fallbackNextActionsByCode = new Map(
     fallback.nextActions.map((action) => [action.code, action]),
   )
+  const fallbackExportBlockersByCode = new Map(
+    fallback.exportBlockers.map((blocker) => [blocker.code, blocker]),
+  )
   const deterministicEvidenceTypes = new Set(
     fallback.proposedFindings.flatMap((finding) => finding.requiredEvidence),
   )
@@ -959,6 +970,15 @@ function repairProposalAgainstDeterministicFallback(
     nextActions.push(action)
     existingNextActionCodes.add(action.code)
   }
+  const exportBlockers = proposal.exportBlockers.map((blocker) =>
+    fallbackExportBlockersByCode.get(blocker.code) ?? blocker
+  )
+  const existingExportBlockerCodes = new Set(exportBlockers.map((blocker) => blocker.code))
+  for (const blocker of fallback.exportBlockers) {
+    if (existingExportBlockerCodes.has(blocker.code)) continue
+    exportBlockers.push(blocker)
+    existingExportBlockerCodes.add(blocker.code)
+  }
 
   return {
     ...proposal,
@@ -967,6 +987,39 @@ function repairProposalAgainstDeterministicFallback(
     evidenceRequests,
     reviewTasks,
     nextActions,
+    exportBlockers,
+  }
+}
+
+function buildValidationContext(
+  input: ComplianceOrchestratorRunInput,
+  snapshot: ReturnType<typeof buildAppStateSnapshot>,
+): OrchestratorValidationContext {
+  const allowedLinkedEntityIdsByType: Partial<Record<OrchestratorLinkedEntityType, string[]>> = {}
+  if (input.clientId) {
+    allowedLinkedEntityIdsByType.client = [input.clientId]
+  }
+  if (input.aiProjectId) {
+    allowedLinkedEntityIdsByType.ai_project = [input.aiProjectId]
+  }
+
+  const scopedUseCaseIds = snapshot.aiUseCases.map((record) => record.id).filter(Boolean)
+  if (scopedUseCaseIds.length > 0) {
+    allowedLinkedEntityIdsByType.ai_use_case = scopedUseCaseIds
+  }
+  const scopedSystemIds = snapshot.aiSystems.map((record) => record.id).filter(Boolean)
+  if (scopedSystemIds.length > 0) {
+    allowedLinkedEntityIdsByType.ai_system = scopedSystemIds
+  }
+  const scopedFindingIds = snapshot.findings.map((record) => record.id).filter(Boolean)
+  if (scopedFindingIds.length > 0) {
+    allowedLinkedEntityIdsByType.finding = scopedFindingIds
+  }
+
+  return {
+    allowedRagSourceIds: input.ragSourceIds,
+    allowedLinkedEntityIdsByType,
+    allowedFindingCodes: scopedFindingIds,
   }
 }
 
