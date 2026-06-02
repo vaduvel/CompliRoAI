@@ -148,33 +148,14 @@ export default function AIDiscoveryPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1200px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "28px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <Search size={20} color="#60a5fa" />
-          AI Discovery — ce AI folosești și ce date îl traversează
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+    <div className="cr-page cr-page--full cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <Search size={28} color="var(--cobalt-700)" />
+          <div>
+            <span className="cr-eyebrow">Discovery & risc</span>
+            <h1 className="cr-title">AI Discovery</h1>
+            <p className="cr-subtitle">
           Înregistrează fiecare tool AI folosit, primește scor de risc EU AI Act + GDPR automat
           + findings emise în <strong>De rezolvat</strong>. Generează AI Exposure Report
           client-facing și descarcă Policy Pack RO. Pentru detecție PII în text/blob, deschide{" "}
@@ -185,7 +166,9 @@ export default function AIDiscoveryPage() {
             PII Scan
           </a>
           .
-        </p>
+            </p>
+          </div>
+        </div>
       </div>
 
       <StatsBar summary={summary} />
@@ -198,7 +181,7 @@ export default function AIDiscoveryPage() {
         title="AI Data Map"
         subtitle="Tool-uri AI înregistrate per organizație. Click pe rând pentru detalii + acțiuni."
         action={
-          <button onClick={() => setShowWizard(true)} style={btnPrimary}>
+          <button onClick={() => setShowWizard(true)} className="cr-btn cr-btn--primary cr-btn--sm">
             <Plus size={14} /> Adaugă tool AI
           </button>
         }
@@ -374,16 +357,7 @@ function DataMapFilters({
             <button
               key={r}
               onClick={() => onRiskFilter(r)}
-              style={{
-                padding: "5px 10px",
-                fontSize: "11px",
-                fontWeight: 500,
-                borderRadius: "999px",
-                border: "1px solid " + (active ? "var(--cobalt-600)" : "var(--border-soft)"),
-                background: active ? "rgba(96,165,250,0.14)" : "var(--surface-1)",
-                color: active ? "#60a5fa" : "var(--ink-muted)",
-                cursor: "pointer",
-              }}
+              className={`cr-filter-chip ${active ? "is-active" : ""}`}
             >
               {r === "all" ? "Toate riscurile" : RISK_CANDIDATE_LABELS[r]} · {count}
             </button>
@@ -391,6 +365,7 @@ function DataMapFilters({
         })}
       </div>
       <select
+        className="cr-select"
         value={categoryFilter}
         onChange={(e) => onCategoryFilter(e.target.value as "all" | AIUseCaseCategory)}
         style={{ ...inputStyle, width: "auto", minWidth: "200px" }}
@@ -431,7 +406,11 @@ function EmptyDataMap({
         Pornește prin a înregistra tool-urile AI folosite (ChatGPT, Copilot, chatbot suport,
         scoring, HR screening). Primești evaluare risc EU AI Act + findings automat.
       </p>
-      <button onClick={onCreate} style={{ ...btnPrimary, marginTop: "14px" }}>
+      <button
+        onClick={onCreate}
+        className="cr-btn cr-btn--primary cr-btn--sm"
+        style={{ marginTop: "14px" }}
+      >
         <Plus size={14} /> Adaugă primul tool AI
       </button>
     </div>
@@ -642,10 +621,10 @@ function RecordDetail({
       )}
 
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-        <button onClick={() => setShowFollowUp(true)} style={btnSecondary}>
+        <button onClick={() => setShowFollowUp(true)} className="cr-btn cr-btn--secondary cr-btn--sm">
           <FileText size={13} /> Adaugă follow-up
         </button>
-        <button onClick={onDelete} style={btnDanger}>
+        <button onClick={onDelete} className="cr-btn cr-btn--danger cr-btn--sm">
           <Trash2 size={13} /> Șterge
         </button>
       </div>
@@ -728,7 +707,7 @@ function ExposureReportPanel({ records }: { records: AIDataMapRecord[] }) {
       title="AI Exposure Report"
       subtitle="Raport client-facing agregat din AI Data Map. Markdown ready pentru email / cabinet handoff."
       action={
-        <button onClick={generate} disabled={busy || records.length === 0} style={btnPrimary}>
+        <button onClick={generate} disabled={busy || records.length === 0} className="cr-btn cr-btn--primary cr-btn--sm">
           {busy ? <Loader2 size={14} /> : <Sparkles size={14} />}
           Generează raport
         </button>
@@ -772,10 +751,10 @@ function ExposureReportPanel({ records }: { records: AIDataMapRecord[] }) {
           </div>
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <button onClick={downloadMd} style={btnPrimary}>
+            <button onClick={downloadMd} className="cr-btn cr-btn--primary cr-btn--sm">
               <Download size={14} /> Descarcă .md
             </button>
-            <button onClick={copyMd} style={btnSecondary}>
+            <button onClick={copyMd} className="cr-btn cr-btn--secondary cr-btn--sm">
               <FileText size={13} /> Copy markdown
             </button>
             <span style={{ fontSize: "11px", color: "var(--ink-dim)", alignSelf: "center" }}>
@@ -891,7 +870,7 @@ function PolicyPackPanel() {
       title="AI Policy Pack"
       subtitle="5 template-uri RO parametrizate cu numele organizației. Personalizează și aprobă intern."
       action={
-        <button onClick={downloadBundle} disabled={!pack} style={btnPrimary}>
+        <button onClick={downloadBundle} disabled={!pack} className="cr-btn cr-btn--primary cr-btn--sm">
           <Download size={14} /> Descarcă toate (5)
         </button>
       }
@@ -919,7 +898,7 @@ function PolicyPackPanel() {
                 </div>
                 <div style={{ fontSize: "11px", color: "var(--ink-dim)" }}>{tpl.fileName}</div>
               </div>
-              <button onClick={() => downloadTemplate(tpl.id)} style={btnSecondary}>
+              <button onClick={() => downloadTemplate(tpl.id)} className="cr-btn cr-btn--secondary cr-btn--sm">
                 <Download size={12} /> Download
               </button>
             </div>
@@ -1045,28 +1024,28 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <Field label="Nume tool *">
               <input
+                className="cr-input"
                 type="text"
                 value={toolName}
                 onChange={(e) => setToolName(e.target.value)}
                 placeholder="ex: ChatGPT, Copilot, HireVue, Salesforce Einstein"
-                style={inputStyle}
                 required
               />
             </Field>
             <Field label="Vendor">
               <input
+                className="cr-input"
                 type="text"
                 value={vendor}
                 onChange={(e) => setVendor(e.target.value)}
                 placeholder="ex: OpenAI, Microsoft, Salesforce"
-                style={inputStyle}
               />
             </Field>
             <Field label="Tip deployment">
               <select
+                className="cr-select"
                 value={deploymentMode}
                 onChange={(e) => setDeploymentMode(e.target.value as AIDeploymentMode)}
-                style={inputStyle}
               >
                 {ALL_DEPLOYMENT_MODES.map((m) => (
                   <option key={m} value={m}>
@@ -1077,6 +1056,7 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             </Field>
             <Field label="Descriere utilizare (detaliu intern)">
               <textarea
+                className="cr-input cr-textarea"
                 value={useCaseDescription}
                 onChange={(e) => setUseCaseDescription(e.target.value)}
                 placeholder="ex: Screening CV-uri candidați pentru rolurile tech"
@@ -1090,6 +1070,7 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <Field label="Categorii date input (1 pe linie)">
               <textarea
+                className="cr-input cr-textarea"
                 value={inputDataCategories}
                 onChange={(e) => setInputDataCategories(e.target.value)}
                 placeholder={"chat\ncv\ncod\ndate client"}
@@ -1098,6 +1079,7 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             </Field>
             <Field label="Categorii date output (1 pe linie)">
               <textarea
+                className="cr-input cr-textarea"
                 value={outputDataCategories}
                 onChange={(e) => setOutputDataCategories(e.target.value)}
                 placeholder={"text\nclasificare\ndecizie"}
@@ -1127,9 +1109,9 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <Field label="Vendor region">
                 <select
+                  className="cr-select"
                   value={vendorRegion}
                   onChange={(e) => setVendorRegion(e.target.value as AIVendorRegion)}
-                  style={inputStyle}
                 >
                   {ALL_VENDOR_REGIONS.map((r) => (
                     <option key={r} value={r}>
@@ -1140,9 +1122,9 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
               </Field>
               <Field label="Training pe date client">
                 <select
+                  className="cr-select"
                   value={trainingDataUsage}
                   onChange={(e) => setTrainingDataUsage(e.target.value as AITrainingDataUsage)}
-                  style={inputStyle}
                 >
                   {ALL_TRAINING_USAGE.map((t) => (
                     <option key={t} value={t}>
@@ -1156,11 +1138,11 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             {dpaSigned && (
               <Field label="DPA URL (opțional)">
                 <input
+                  className="cr-input"
                   type="url"
                   value={dpaUrl}
                   onChange={(e) => setDpaUrl(e.target.value)}
                   placeholder="https://vendor.com/dpa"
-                  style={inputStyle}
                 />
               </Field>
             )}
@@ -1171,6 +1153,7 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             />
             <Field label="Note (opțional)">
               <textarea
+                className="cr-input cr-textarea"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="ex: aprobat de DPO pe 17 mai, verificat DPF lista"
@@ -1207,7 +1190,8 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             type="button"
             onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3 | 4) : s))}
             disabled={step === 1}
-            style={{ ...btnGhost, opacity: step === 1 ? 0.5 : 1 }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
+            style={{ opacity: step === 1 ? 0.5 : 1 }}
           >
             Înapoi
           </button>
@@ -1215,12 +1199,12 @@ function WizardModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             <button
               type="button"
               onClick={() => setStep((s) => (s < 4 ? ((s + 1) as 1 | 2 | 3 | 4) : s))}
-              style={btnPrimary}
+              className="cr-btn cr-btn--primary cr-btn--sm"
             >
               Continuă
             </button>
           ) : (
-            <button type="button" onClick={handleSubmit} disabled={busy} style={btnPrimary}>
+            <button type="button" onClick={handleSubmit} disabled={busy} className="cr-btn cr-btn--primary cr-btn--sm">
               {busy ? <Loader2 size={14} /> : <CheckCircle2 size={14} />}
               Înregistrează tool
             </button>
@@ -1312,6 +1296,7 @@ function FollowUpModal({
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <Field label="Notă *">
           <textarea
+            className="cr-input cr-textarea"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="ex: Solicitat DPA de la OpenAI pe 17 mai 2026; aștept răspuns."
@@ -1322,10 +1307,10 @@ function FollowUpModal({
           <div style={{ fontSize: "12px", color: "#f87171" }}>{err}</div>
         )}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button onClick={onClose} style={btnGhost}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
-          <button onClick={handleSubmit} disabled={busy} style={btnPrimary}>
+          <button onClick={handleSubmit} disabled={busy} className="cr-btn cr-btn--primary cr-btn--sm">
             {busy ? <Loader2 size={14} /> : <CheckCircle2 size={14} />}
             Salvează
           </button>
@@ -1577,52 +1562,4 @@ const inputStyle: React.CSSProperties = {
   fontFamily: "inherit",
   width: "100%",
   boxSizing: "border-box",
-}
-
-const btnPrimary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  fontSize: "13px",
-  fontWeight: 500,
-  borderRadius: "6px",
-  border: "none",
-  background: "var(--cobalt-600)",
-  color: "white",
-  cursor: "pointer",
-}
-
-const btnSecondary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "6px 10px",
-  fontSize: "12px",
-  fontWeight: 500,
-  borderRadius: "6px",
-  border: "1px solid var(--border-soft)",
-  background: "var(--surface-1)",
-  color: "var(--ink)",
-  cursor: "pointer",
-}
-
-const btnGhost: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "6px 10px",
-  fontSize: "12px",
-  fontWeight: 500,
-  borderRadius: "6px",
-  border: "1px solid transparent",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  cursor: "pointer",
-}
-
-const btnDanger: React.CSSProperties = {
-  ...btnSecondary,
-  color: "#f87171",
-  borderColor: "rgba(248,113,113,0.3)",
 }

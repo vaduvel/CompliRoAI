@@ -1,0 +1,27 @@
+project:
+  id: PRJ-CRM-AGENT
+  name: "CRM Follow-up Agent"
+  client: "BlueDesk SaaS SRL"
+  intended_purpose: "Suggest CRM updates and draft follow-up emails. Human must approve before sending."
+  lifecycle_stage: "pilot"
+
+system:
+  system_name: "CRM Agent v2"
+  model_provider: "Mistral AI"
+  model_name: "mistral-large-latest"
+  deployment: "api_integration"
+  human_review_required: true
+
+data:
+  personal_data: true
+  confidential_data: true
+  data_categories:
+    - customer_contact
+    - crm_notes
+    - sales_opportunity
+
+risk:
+  affects_people: true
+  semi_automated_action: true
+  automated_decision: false
+  public_output: false

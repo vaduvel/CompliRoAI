@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Send, ShieldAlert, Trash2 } from "lucide-react"
 import type { AISystemRecord, AISystemRiskLevel } from "@/lib/compliance/types"
+import type { AISystemDisplayAssessment } from "@/lib/ai-inventory/system-assessment"
 
 const RISK_LABELS: Record<AISystemRiskLevel, string> = {
   minimal: "Minimal",
@@ -11,7 +12,10 @@ const RISK_LABELS: Record<AISystemRiskLevel, string> = {
   high: "Ridicat",
 }
 
-const RISK_BADGE_STYLES: Record<AISystemRiskLevel, React.CSSProperties> = {
+const RISK_BADGE_STYLES: Record<
+  AISystemRiskLevel | AISystemDisplayAssessment["riskTone"],
+  React.CSSProperties
+> = {
   minimal: {
     background: "var(--emerald-soft)",
     color: "var(--emerald-400)",
@@ -26,6 +30,11 @@ const RISK_BADGE_STYLES: Record<AISystemRiskLevel, React.CSSProperties> = {
     background: "var(--amber-soft)",
     color: "var(--amber-400)",
     border: "1px solid rgba(251,191,36,0.2)",
+  },
+  critical: {
+    background: "rgba(239,68,68,0.12)",
+    color: "#ef4444",
+    border: "1px solid rgba(239,68,68,0.22)",
   },
 }
 
@@ -42,6 +51,7 @@ const PURPOSE_LABELS: Record<string, string> = {
 
 interface AISystemsListProps {
   systems: AISystemRecord[]
+  systemAssessments?: Map<string, AISystemDisplayAssessment>
   onDelete: (id: string) => void
   /** When "cabinet", each row exposes a "Trimite spre aprobare" button. */
   workspaceMode?: "imm-classic" | "ai-builder" | "cabinet"
@@ -86,6 +96,7 @@ interface AISystemsListProps {
 
 export function AISystemsList({
   systems,
+  systemAssessments,
   onDelete,
   workspaceMode = "imm-classic",
   systemsRequiringFriaIds,
@@ -97,7 +108,11 @@ export function AISystemsList({
 }: AISystemsListProps) {
   const isCabinet = workspaceMode === "cabinet"
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [createdLink, setCreatedLink] = useState<{ url: string; systemName: string } | null>(null)
+  const [createdLink, setCreatedLink] = useState<{
+    url: string
+    systemName: string
+    delivery: "sent" | "created"
+  } | null>(null)
 
   async function handleSendApproval(system: AISystemRecord) {
     const email = window.prompt(`Email-ul clientului pentru aprobarea sistemului "${system.name}":`)
@@ -120,7 +135,12 @@ export function AISystemsList({
         alert(data.error ?? "Generare link eșuată.")
         return
       }
-      setCreatedLink({ url: data.url, systemName: system.name })
+      const emailDelivery = data.email as { ok?: boolean; channel?: string } | null
+      setCreatedLink({
+        url: data.url,
+        systemName: system.name,
+        delivery: emailDelivery?.ok === true && emailDelivery.channel === "resend" ? "sent" : "created",
+      })
     } catch {
       alert("Eroare de rețea. Încearcă din nou.")
     } finally {
@@ -130,6 +150,7 @@ export function AISystemsList({
   if (systems.length === 0) {
     return (
       <div
+        className="cr-empty"
         style={{
           padding: "40px 24px",
           textAlign: "center",
@@ -148,6 +169,7 @@ export function AISystemsList({
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       {createdLink && (
         <div
+          className="cr-alert cr-alert--info"
           style={{
             display: "flex",
             alignItems: "center",
@@ -163,7 +185,7 @@ export function AISystemsList({
           <Send size={14} style={{ color: "var(--cobalt-400)" }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 500 }}>
-              Magic link trimis pentru &quot;{createdLink.systemName}&quot;
+              Magic link {createdLink.delivery === "sent" ? "trimis" : "creat"} pentru &quot;{createdLink.systemName}&quot;
             </div>
             <code
               style={{
@@ -210,11 +232,15 @@ export function AISystemsList({
         </div>
       )}
       {systems.map((system) => {
-        const badgeStyle = RISK_BADGE_STYLES[system.riskLevel] ?? RISK_BADGE_STYLES.minimal
-        const riskLabel = RISK_LABELS[system.riskLevel] ?? system.riskLevel
-        const actionCount = system.recommendedActions?.length ?? 0
+        const assessment = systemAssessments?.get(system.id)
+        const badgeStyle =
+          assessment?.riskTone
+            ? RISK_BADGE_STYLES[assessment.riskTone]
+            : (RISK_BADGE_STYLES[system.riskLevel] ?? RISK_BADGE_STYLES.minimal)
+        const riskLabel =
+          assessment?.riskLabel ?? RISK_LABELS[system.riskLevel] ?? system.riskLevel
+        const actionCount = assessment?.actionCount ?? system.recommendedActions?.length ?? 0
         const needsFria =
-          system.riskLevel === "high" &&
           systemsRequiringFriaIds?.has(system.id) === true
         const needsOversight = systemsRequiringOversightIds?.has(system.id) === true
         const needsLogging = systemsRequiringLoggingIds?.has(system.id) === true
@@ -320,7 +346,7 @@ export function AISystemsList({
                   Acest sistem necesită config Logging (Art. 12 + Art. 26(6))
                 </span>
                 <Link
-                  href={`/dashboard/logging-evidence?systemId=${encodeURIComponent(system.id)}`}
+                  href={`/dashboard/logging-evidence?systemId=${encodeURIComponent(system.id)}&systemName=${encodeURIComponent(system.name)}`}
                   style={{
                     color: "#fbbf24",
                     fontWeight: 600,
@@ -410,6 +436,7 @@ export function AISystemsList({
               </div>
             )}
           <div
+            className="cr-card"
             style={{
               display: "flex",
               alignItems: "center",
@@ -493,12 +520,18 @@ export function AISystemsList({
                 }}
               >
                 <span style={{ fontSize: "11px", color: "var(--ink-muted)" }}>
-                  {PURPOSE_LABELS[system.purpose] ?? system.purpose}
+                  {assessment?.purposeLabel ?? PURPOSE_LABELS[system.purpose] ?? system.purpose}
                 </span>
 
                 {system.vendor && (
                   <span style={{ fontSize: "11px", color: "var(--ink-dim)" }}>
                     · {system.vendor}
+                  </span>
+                )}
+
+                {assessment && assessment.linkedUseCaseCount > 0 && (
+                  <span style={{ fontSize: "10px", color: "var(--ink-dim)" }}>
+                    · {assessment.linkedUseCaseCount} use case{assessment.linkedUseCaseCount !== 1 ? "-uri" : ""}
                   </span>
                 )}
 
@@ -542,6 +575,7 @@ export function AISystemsList({
             {/* Send for approval (cabinet only) */}
             {isCabinet && (
               <button
+                className="cr-btn cr-btn--sm"
                 onClick={() => handleSendApproval(system)}
                 disabled={busyId === system.id}
                 aria-label={`Trimite spre aprobare ${system.name}`}
@@ -569,6 +603,7 @@ export function AISystemsList({
 
             {/* Delete button */}
             <button
+              className="cr-icon-button"
               onClick={() => onDelete(system.id)}
               aria-label={`Șterge sistemul ${system.name}`}
               style={{

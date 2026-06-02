@@ -152,6 +152,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/onboarding",
+    "/api/authority-cooperation/:path*",
     "/api/((?!auth|v1).*)",
   ],
 }

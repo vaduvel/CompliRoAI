@@ -1,0 +1,12 @@
+{
+  "questionnaire_name": "Enterprise AI Supplier Check - urgent",
+  "deadline": "2026-05-27",
+  "requesting_company": "MegaRetail Enterprise SA",
+  "questions": [
+    "List AI systems",
+    "Provide AI policy",
+    "Provide staff AI training proof",
+    "Provide vendor DPA"
+  ],
+  "expected_export": "draft_only_with_caveats"
+}

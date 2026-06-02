@@ -9,8 +9,7 @@ export default async function PortofoliuPage() {
   const h = await headers()
   const workspaceMode = h.get("x-aiact-workspace-mode")
   if (workspaceMode !== "cabinet") {
-    // Solo users have no portfolio — bounce them to their dashboard.
-    redirect("/dashboard/sisteme")
+    redirect("/dashboard/module-unavailable?module=portofoliu")
   }
 
   return <PortfolioClient />

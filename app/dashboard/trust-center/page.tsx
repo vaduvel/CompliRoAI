@@ -122,7 +122,7 @@ export default function TrustCenterDashboard() {
 
   if (loading) {
     return (
-      <div style={{ padding: "60px 40px", textAlign: "center", color: "var(--ink-dim)" }}>
+      <div className="cr-page cr-empty">
         <Loader2 size={24} style={{ animation: "spin 1s linear infinite", marginBottom: 8 }} />
         <div>Se încarcă Trust Center…</div>
       </div>
@@ -132,20 +132,23 @@ export default function TrustCenterDashboard() {
   const tokens = data?.tokens ?? []
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 1280, margin: "0 auto" }}>
+    <div className="cr-page cr-page--full cr-stack">
       {/* Header */}
-      <header style={{ marginBottom: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-          <Eye size={22} color="var(--ink)" />
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--ink)", margin: 0, letterSpacing: "-0.01em" }}>
-            Trust Center
-          </h1>
+      <header className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <Eye size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">Colaborare</div>
+            <h1 className="cr-title">Trust Center</h1>
+            <p className="cr-subtitle">
+              Generează link-uri publice pe care le poți trimite clienților sau auditorilor pentru a dovedi postura
+              ta de compliance (AI Act + GDPR + DORA/NIS2). Pagina publică afișează doar counts agregate + frameworks
+              declarate + hash root al ultimului audit pack. NU expune findings, breach details sau nume vendori.
+            </p>
+          </div>
         </div>
-        <p style={{ fontSize: 13, color: "var(--ink-dim)", lineHeight: 1.55, maxWidth: 760, margin: 0 }}>
-          Generează link-uri publice pe care le poți trimite clienților sau auditorilor pentru a dovedi postura ta de
-          compliance (AI Act + GDPR + DORA/NIS2). Pagina publică afișează doar counts agregate + frameworks declarate +
-          hash root al ultimului audit pack. NU expune findings, breach details sau nume vendori.
-        </p>
       </header>
 
       {/* Action bar */}
@@ -441,8 +444,11 @@ export default function TrustCenterDashboard() {
               <Plus size={18} color="var(--accent)" />
               <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)", margin: 0 }}>Creează link Trust Center</h2>
               <button
+                aria-label="Închide formularul Trust Center"
+                className="cr-btn cr-btn--icon cr-btn--sm"
                 onClick={() => setShowCreate(false)}
-                style={{ marginLeft: "auto", border: "none", background: "transparent", cursor: "pointer", color: "var(--ink-dim)" }}
+                style={{ marginLeft: "auto" }}
+                type="button"
               >
                 <X size={16} />
               </button>

@@ -50,64 +50,34 @@ type Context = {
 }
 
 const containerStyle: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#f6f7fb",
+  minHeight: "100dvh",
+  background: "var(--bg)",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
   padding: "32px 20px",
-  fontFamily:
-    "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-  color: "#0f172a",
+  fontFamily: "var(--font-body-v3)",
+  color: "var(--ink)",
 }
 
 const cardStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: 640,
-  background: "#ffffff",
-  borderRadius: 12,
-  border: "1px solid #e2e8f0",
+  background: "var(--surface-0)",
+  borderRadius: "var(--r-xl)",
+  border: "1px solid var(--border)",
   padding: 32,
   marginTop: 24,
-  boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
+  boxShadow: "var(--shadow-md)",
 }
 
 const labelStyle: React.CSSProperties = {
   fontSize: 12,
-  color: "#64748b",
-  fontWeight: 500,
+  color: "var(--ink-dim)",
+  fontWeight: 650,
   marginBottom: 4,
   display: "block",
   letterSpacing: "0.02em",
-}
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 12px",
-  border: "1px solid #cbd5e1",
-  borderRadius: 6,
-  fontSize: 14,
-  outline: "none",
-  color: "#0f172a",
-  background: "#fff",
-  boxSizing: "border-box",
-}
-
-const primaryBtnBase: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 8,
-  padding: "11px 20px",
-  borderRadius: 6,
-  border: "none",
-  color: "#fff",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-}
-
-function primaryBtn(color: string): React.CSSProperties {
-  return { ...primaryBtnBase, background: color }
 }
 
 function formatDate(iso: string): string {
@@ -163,7 +133,7 @@ export function ShareTokenClient({ token }: { token: string }) {
         <Header branding={DEFAULT_BRANDING} />
         <div style={{ ...cardStyle, textAlign: "center" }}>
           <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
-          <p style={{ marginTop: 12, color: "#64748b", fontSize: 14 }}>
+          <p style={{ marginTop: 12, color: "var(--ink-muted)", fontSize: 14 }}>
             Verificăm linkul…
           </p>
         </div>
@@ -182,10 +152,10 @@ export function ShareTokenClient({ token }: { token: string }) {
               gap: 12,
               alignItems: "flex-start",
               padding: 14,
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: 8,
-              color: "#b91c1c",
+              background: "var(--red-soft)",
+              border: "1px solid var(--red-border)",
+              borderRadius: "var(--r-lg)",
+              color: "var(--red-700)",
             }}
           >
             <AlertCircle size={18} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -214,10 +184,10 @@ export function ShareTokenClient({ token }: { token: string }) {
               gap: 12,
               alignItems: "flex-start",
               padding: 14,
-              background: "#ecfdf5",
-              border: "1px solid #a7f3d0",
-              borderRadius: 8,
-              color: "#047857",
+              background: "var(--emerald-soft)",
+              border: "1px solid var(--emerald-border)",
+              borderRadius: "var(--r-lg)",
+              color: "var(--emerald-700)",
               marginBottom: 16,
             }}
           >
@@ -229,7 +199,7 @@ export function ShareTokenClient({ token }: { token: string }) {
               <span style={{ fontSize: 13 }}>{submitted.message}</span>
             </div>
           </div>
-          <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
+          <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: 0 }}>
             Poți închide această pagină. Vom anunța cabinetul automat.
           </p>
         </div>
@@ -243,7 +213,7 @@ export function ShareTokenClient({ token }: { token: string }) {
       <div style={containerStyle}>
         <Header branding={branding} />
         <div style={cardStyle}>
-          <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>
+          <p style={{ margin: 0, color: "var(--ink-muted)", fontSize: 14 }}>
             Acest link a fost deja folosit.
           </p>
         </div>
@@ -256,7 +226,7 @@ export function ShareTokenClient({ token }: { token: string }) {
       <div style={containerStyle}>
         <Header branding={branding} />
         <div style={cardStyle}>
-          <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>
+          <p style={{ margin: 0, color: "var(--ink-muted)", fontSize: 14 }}>
             Acest link nu mai este activ. Cere cabinetului unul nou.
           </p>
         </div>
@@ -328,9 +298,9 @@ function Header({ branding }: { branding: Branding }) {
             height: 36,
             borderRadius: 6,
             objectFit: "contain",
-            background: "#fff",
+            background: "var(--surface-0)",
             padding: 2,
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--border)",
           }}
         />
       ) : (
@@ -351,8 +321,8 @@ function Header({ branding }: { branding: Branding }) {
         </div>
       )}
       <div>
-        <div style={{ fontSize: 15, fontWeight: 600 }}>{branding.brandName}</div>
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>{tagline}</div>
+        <div style={{ fontSize: 15, fontFamily: "var(--font-display-v3)", fontWeight: 720 }}>{branding.brandName}</div>
+        <div style={{ fontSize: 11, color: "var(--ink-dim)", marginTop: 1 }}>{tagline}</div>
       </div>
     </header>
   )
@@ -373,8 +343,8 @@ function Footer({ branding }: { branding: Branding }) {
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: 11, color: "#64748b" }}>
-        Trimis de <strong style={{ color: "#0f172a" }}>{branding.brandName}</strong>
+      <div style={{ fontSize: 11, color: "var(--ink-dim)" }}>
+        Trimis de <strong style={{ color: "var(--ink)" }}>{branding.brandName}</strong>
         {branding.contactEmail ? (
           <>
             {" · "}
@@ -401,7 +371,7 @@ function Footer({ branding }: { branding: Branding }) {
         ) : null}
       </div>
       {branding.isCustom && (
-        <div style={{ fontSize: 10, color: "#cbd5e1" }}>Powered by CompliRoAI</div>
+        <div style={{ fontSize: 10, color: "var(--ink-subtle)" }}>Powered by CompliRoAI</div>
       )}
     </footer>
   )
@@ -414,15 +384,15 @@ function ContextHeader({ ctx, branding }: { ctx: Context; branding: Branding }) 
   return (
     <div style={{ marginBottom: 24 }}>
       <p style={{ ...labelStyle, marginBottom: 6 }}>De la</p>
-      <h1 style={{ fontSize: 20, margin: 0, color: "#0f172a", fontWeight: 600 }}>
+      <h1 style={{ fontSize: 22, margin: 0, color: "var(--ink-strong)", fontFamily: "var(--font-display-v3)", fontWeight: 750, letterSpacing: "-0.02em" }}>
         {cabinet}
       </h1>
       {ctx.targetLabel && (
-        <p style={{ fontSize: 13, color: "#475569", marginTop: 8 }}>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>
           {ctx.targetLabel}
         </p>
       )}
-      <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 8 }}>
+      <p style={{ fontSize: 12, color: "var(--ink-dim)", marginTop: 8 }}>
         Linkul expiră la {formatDate(ctx.expiresAtISO)}.
       </p>
     </div>
@@ -480,10 +450,10 @@ function IntakeForm({
       onSubmit={handleSubmit}
       style={{ display: "flex", flexDirection: "column", gap: 16 }}
     >
-      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600 }}>
+      <h2 style={{ margin: 0, fontSize: 18, fontFamily: "var(--font-display-v3)", fontWeight: 720 }}>
         Completează datele firmei
       </h2>
-      <p style={{ fontSize: 13, color: "#475569", margin: 0 }}>
+      <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: 0 }}>
         Aceste informații ne ajută să generăm raportul de conformitate AI Act +
         GDPR pentru firma ta.
       </p>
@@ -494,7 +464,7 @@ function IntakeForm({
           value={form.contactName}
           onChange={(e) => setForm({ ...form, contactName: e.target.value })}
           placeholder="Ex: Ana Popescu"
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
 
@@ -505,7 +475,7 @@ function IntakeForm({
           value={form.contactEmail}
           onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
           placeholder="ana@firma.ro"
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
 
@@ -515,7 +485,7 @@ function IntakeForm({
           value={form.companyName}
           onChange={(e) => setForm({ ...form, companyName: e.target.value })}
           placeholder="Firma SRL"
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
 
@@ -524,7 +494,7 @@ function IntakeForm({
           value={form.companyCui}
           onChange={(e) => setForm({ ...form, companyCui: e.target.value })}
           placeholder="RO12345678"
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
 
@@ -535,7 +505,8 @@ function IntakeForm({
             setForm({ ...form, aiSystemsInUse: e.target.value })
           }
           placeholder="Ex: ChatGPT pentru drafting, Copilot pentru cod, scoring automat în CRM…"
-          style={{ ...inputStyle, minHeight: 80, resize: "vertical" }}
+          className="cr-input cr-textarea"
+          style={{ minHeight: 80 }}
         />
       </Field>
 
@@ -544,16 +515,17 @@ function IntakeForm({
           value={form.observations}
           onChange={(e) => setForm({ ...form, observations: e.target.value })}
           placeholder="Detalii pe care vrei să le știe cabinetul…"
-          style={{ ...inputStyle, minHeight: 60, resize: "vertical" }}
+          className="cr-input cr-textarea"
+          style={{ minHeight: 60 }}
         />
       </Field>
 
       {err && (
         <div
           style={{
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            color: "#b91c1c",
+            background: "var(--red-soft)",
+            border: "1px solid var(--red-border)",
+            color: "var(--red-700)",
             fontSize: 13,
             padding: "10px 12px",
             borderRadius: 6,
@@ -566,7 +538,8 @@ function IntakeForm({
       <button
         type="submit"
         disabled={submitting}
-        style={{ ...primaryBtn(branding.primaryColor), opacity: submitting ? 0.7 : 1 }}
+        className="cr-btn cr-btn--primary"
+        style={{ background: branding.primaryColor, opacity: submitting ? 0.7 : 1 }}
       >
         {submitting ? "Se trimite…" : "Trimite datele"}
       </button>
@@ -619,16 +592,16 @@ function ApprovalForm({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600 }}>
+      <h2 style={{ margin: 0, fontSize: 18, fontFamily: "var(--font-display-v3)", fontWeight: 720 }}>
         Aprobă sistemul AI
       </h2>
       {target ? (
         <div
           style={{
-            border: "1px solid #e2e8f0",
-            borderRadius: 8,
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-lg)",
             padding: 14,
-            background: "#f8fafc",
+            background: "var(--surface-1)",
           }}
         >
           <p style={{ ...labelStyle, marginBottom: 2 }}>Sistem AI</p>
@@ -637,7 +610,7 @@ function ApprovalForm({
               margin: 0,
               fontSize: 15,
               fontWeight: 600,
-              color: "#0f172a",
+              color: "var(--ink-strong)",
             }}
           >
             {target.name ?? targetLabel ?? "—"}
@@ -649,7 +622,7 @@ function ApprovalForm({
               flexWrap: "wrap",
               marginTop: 10,
               fontSize: 12,
-              color: "#475569",
+              color: "var(--ink-muted)",
             }}
           >
             {target.purpose && (
@@ -663,7 +636,7 @@ function ApprovalForm({
               <ul
                 style={{
                   fontSize: 13,
-                  color: "#475569",
+                  color: "var(--ink-muted)",
                   marginTop: 12,
                   paddingLeft: 18,
                   lineHeight: 1.5,
@@ -676,7 +649,7 @@ function ApprovalForm({
             )}
         </div>
       ) : (
-        <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: 0 }}>
           {targetLabel ?? "Sistem AI selectat de cabinet."}
         </p>
       )}
@@ -686,7 +659,7 @@ function ApprovalForm({
           value={approverName}
           onChange={(e) => setApproverName(e.target.value)}
           placeholder="Ex: Ana Popescu"
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
       <Field label="Email-ul tău">
@@ -695,16 +668,16 @@ function ApprovalForm({
           value={approverEmail}
           onChange={(e) => setApproverEmail(e.target.value)}
           placeholder="ana@firma.ro"
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
 
       {err && (
         <div
           style={{
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            color: "#b91c1c",
+            background: "var(--red-soft)",
+            border: "1px solid var(--red-border)",
+            color: "var(--red-700)",
             fontSize: 13,
             padding: "10px 12px",
             borderRadius: 6,
@@ -719,7 +692,7 @@ function ApprovalForm({
           type="button"
           disabled={submitting}
           onClick={() => submitDecision("approved")}
-          style={primaryBtn("#10b981")}
+          className="cr-btn cr-btn--success"
         >
           {submitting ? "Se trimite…" : "Aprobă sistemul AI"}
         </button>
@@ -727,11 +700,7 @@ function ApprovalForm({
           type="button"
           disabled={submitting}
           onClick={() => submitDecision("rejected")}
-          style={{
-            ...primaryBtn("#ffffff"),
-            color: "#b91c1c",
-            border: "1px solid #fecaca",
-          }}
+          className="cr-btn cr-btn--danger"
         >
           Respinge
         </button>
@@ -752,11 +721,11 @@ function ReportPlaceholder({ ctx, branding }: { ctx: Context; branding: Branding
         }}
       >
         <FileText size={18} style={{ color: branding.primaryColor }} />
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600 }}>
+      <h2 style={{ margin: 0, fontSize: 18, fontFamily: "var(--font-display-v3)", fontWeight: 720 }}>
           {ctx.targetLabel ?? "Raport de conformitate"}
         </h2>
       </div>
-      <p style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, margin: 0 }}>
+      <p style={{ fontSize: 13, color: "var(--ink-muted)", lineHeight: 1.6, margin: 0 }}>
         Acesta este un link de tip raport. Cabinetul a partajat conținutul cu
         tine read-only. Conținutul detaliat va fi vizibil aici în versiunile
         următoare.
@@ -765,8 +734,8 @@ function ReportPlaceholder({ ctx, branding }: { ctx: Context; branding: Branding
         style={{
           marginTop: 12,
           padding: "8px 10px",
-          background: "#f1f5f9",
-          color: "#64748b",
+          background: "var(--surface-2)",
+          color: "var(--ink-dim)",
           fontSize: 11,
           borderRadius: 6,
         }}
@@ -790,7 +759,7 @@ function Field({
     <div>
       <label style={labelStyle}>
         {label}
-        {required && <span style={{ color: "#dc2626" }}> *</span>}
+        {required && <span style={{ color: "var(--red-600)" }}> *</span>}
       </label>
       {children}
     </div>
@@ -805,8 +774,8 @@ function Badge({ children }: { children: React.ReactNode }) {
         alignItems: "center",
         padding: "2px 8px",
         borderRadius: 4,
-        background: "#e2e8f0",
-        color: "#475569",
+        background: "var(--surface-2)",
+        color: "var(--ink-muted)",
         fontSize: 11,
         fontWeight: 500,
       }}

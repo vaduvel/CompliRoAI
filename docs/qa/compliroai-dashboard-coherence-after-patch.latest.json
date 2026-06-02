@@ -1,0 +1,31 @@
+{
+  "url": "http://127.0.0.1:3001/dashboard",
+  "screenshotPath": "/Users/vaduvadaniel/Documents/Codex/CompliRoAI/output/playwright/dashboard-coherence/ui-coherence-after-patch.png",
+  "hasOldCandidateText": true,
+  "hasNewCandidateText": true,
+  "findingsOpenLine": null,
+  "exportReadinessLine": null,
+  "stillShowsResolvedGdprAction": true,
+  "hasReviewVendorAction": true,
+  "lines": [
+    "Plan de execuție AI · Apex UI Flow 1780247598352 SRL",
+    "4 acțiuni prioritizate (0 critice), 8 în planul complet. · 12 acțiuni candidate evaluate · 0 sisteme AI confirmate · sursă: engine determinist + Mistral · prompt v1.2",
+    "Review vendor/model pentru Chatbot suport clienți cu recomandări de răspuns",
+    "Atașează dovezile cerute și trimite finding-ul la review.",
+    "Atașează dovezi",
+    "Revizuiește registrul AI și findings deschise",
+    "Revizuiește registrul AI și findings deschise",
+    "Verifică GDPR/RoPA/DPIA pentru utilizarea AI: Chatbot suport clienți cu recomandări de răspuns",
+    "Atașează dovezile cerute și trimite finding-ul la review.",
+    "Atașează dovezi",
+    "FINDINGS DESCHISE",
+    "AI USE CASES CANDIDATE",
+    "SISTEME AI CONFIRMATE",
+    "EXPORT READINESS",
+    "Rezolvă blocker-ele Audit Pack",
+    "Atașează dovezi lipsă",
+    "Acțiune generată din Registru AI: Verifică GDPR/RoPA/DPIA pentru utilizarea AI: Chatbot suport clienți cu recomandări de răspuns",
+    "Acțiune generată din Registru AI: Review vendor/model pentru Chatbot suport clienți cu recomandări de răspuns"
+  ],
+  "errors": []
+}

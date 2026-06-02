@@ -1,0 +1,14 @@
+before:
+  provider: OpenAI
+  model: gpt-4.1
+  human_review_required: true
+  logs_enabled: true
+after:
+  provider: Mistral AI
+  model: mistral-large-latest
+  human_review_required: true
+  logs_enabled: true
+expected_review:
+  - model_card_update
+  - eval_after_change
+  - client_approval

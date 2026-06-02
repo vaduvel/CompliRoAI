@@ -1,0 +1,17 @@
+{
+  "client_cui": "RO33214567",
+  "department": "hr_recruitment",
+  "tool_name": "ChatGPT Personal",
+  "use_case": "Sumarizare CV-uri",
+  "personal_data": "yes",
+  "confidential_data": "yes",
+  "automated_decision": "unknown",
+  "human_review": "unknown",
+  "account_type": "personal",
+  "expected_findings": [
+    "shadow_ai_personal_account",
+    "dpia_hr_ai",
+    "vendor_training_opt_out",
+    "high_risk_review_if_screening"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "change_id": "CHG-001",
+  "test_case_id": "E2E-CHG-001",
+  "project_id": "PRJ-SUPPORT-AGENT",
+  "change_type": "provider_change;model_change",
+  "previous_version": "openai:gpt-4.1:v1",
+  "new_version": "mistral:mistral-large-latest:v2",
+  "changed_by": "cto@devidevs.example",
+  "go_live_at": "2026-06-03",
+  "rollback_available": "yes",
+  "expected_findings": "change_impact_assessment;rerun_role_risk;model_card_update;eval_after_change;client_approval"
+}

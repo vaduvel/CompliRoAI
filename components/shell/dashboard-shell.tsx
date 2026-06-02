@@ -49,6 +49,7 @@ import {
 } from "./nav-config"
 import type { BillingTier } from "@/lib/compliance/types"
 import type { WorkspaceMode } from "@/lib/server/auth"
+import type { UserRole } from "@/lib/server/tenancy"
 
 // Lucide icon registry — mapped by string name so nav-config can stay framework-free.
 const ICON_REGISTRY: Record<string, React.ComponentType<{ size?: number }>> = {
@@ -99,6 +100,8 @@ interface Props {
   tier?: BillingTier
   /** ISO string when trial ends — used to compute days remaining. */
   trialEndsAtISO?: string
+  /** Active membership role for the current org, used to separate cabinet HQ from client execution. */
+  activeWorkspaceRole?: UserRole
 }
 
 const BANNER_DISMISS_KEY = "compliroai_trial_banner_dismissed"
@@ -132,9 +135,11 @@ export function DashboardShell({
   workspaceMode = "imm-classic",
   tier = "free_trial",
   trialEndsAtISO,
+  activeWorkspaceRole,
 }: Props) {
   const router = useRouter()
   const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [exitingExecution, setExitingExecution] = useState(false)
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -144,6 +149,33 @@ export function DashboardShell({
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" })
     router.push("/login")
+  }
+
+  async function handleExitExecution() {
+    if (exitingExecution) return
+    setExitingExecution(true)
+    try {
+      const response = await fetch("/api/workspaces/exit-execution", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(
+          typeof data?.error === "string"
+            ? data.error
+            : "Nu am putut reveni în workspace-ul cabinetului."
+        )
+      }
+      router.push(typeof data?.destination === "string" ? data.destination : "/dashboard/portofoliu")
+      router.refresh()
+    } catch (error) {
+      // Keep the shell usable even if the session refresh fails.
+      console.error(error)
+      router.push("/dashboard/portofoliu")
+    } finally {
+      setExitingExecution(false)
+    }
   }
 
   function dismissBanner() {
@@ -160,79 +192,58 @@ export function DashboardShell({
   const showTrialBanner =
     tier === "free_trial" && !bannerDismissed && trialDaysLeft !== null
   const isUrgent = trialDaysLeft !== null && trialDaysLeft <= 3
+  const modeLabel =
+    workspaceMode === "cabinet"
+      ? "Cabinet"
+      : workspaceMode === "ai-builder"
+        ? "AI Builder"
+        : "IMM"
+  const isClientExecution = workspaceMode === "cabinet" && activeWorkspaceRole === "partner_manager"
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "240px 1fr",
-        minHeight: "100vh",
-        background: "var(--bg)",
-      }}
-    >
+    <div className="cr-app-shell">
       {/* Sidebar */}
-      <aside
-        style={{
-          background: "var(--bg-sidebar)",
-          borderRight: "1px solid var(--border)",
-          display: "flex",
-          flexDirection: "column",
-          padding: "16px 12px",
-          gap: "4px",
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflowY: "auto",
-        }}
-      >
+      <aside className="cr-app-sidebar">
         {/* Logo */}
-        <div
-          style={{
-            padding: "8px 12px 14px",
-            borderBottom: "1px solid var(--border-soft)",
-            marginBottom: "8px",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            CompliRoAI
+        <div className="cr-app-brandbar">
+          <div aria-hidden="true" className="cr-app-logo">
+            C
           </div>
-          <div style={{ fontSize: "11px", color: "var(--ink-dim)", marginTop: "2px" }}>
-            {workspaceMode === "cabinet"
-              ? "Mod cabinet · AI Act + GDPR"
-              : workspaceMode === "ai-builder"
-                ? "Mod AI Builder · Annex IV + FRIA"
-                : "AI Act · România"}
+          <div className="cr-app-brand">
+            <div className="cr-app-brand__name">
+              CompliRoAI
+            </div>
+            <div className="cr-app-brand__sub">
+              {workspaceMode === "cabinet"
+                ? "Cabinet · AI Act + GDPR"
+                : workspaceMode === "ai-builder"
+                  ? "AI Builder · Annex IV + FRIA"
+                  : "IMM · AI Act readiness"}
+            </div>
+          </div>
+          <div
+            aria-label="3 notificări"
+            title="3 notificări"
+            className="cr-app-bell"
+          >
+            <Bell size={15} />
+            <span className="cr-app-bell__count">
+              3
+            </span>
           </div>
         </div>
 
         {/* Workspace switcher — only renders when there's >1 workspace. */}
-        <div style={{ padding: "0 4px 8px" }}>
+        <div className="cr-app-switcher-slot">
           <WorkspaceSwitcher />
         </div>
 
         {/* Nav — grouped by section */}
-        <nav style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
+        <nav className="cr-nav">
           {navGroups.map((group) => (
-            <div key={group.section} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div key={group.section} className="cr-nav-section">
               {group.label && (
-                <div
-                  style={{
-                    padding: "10px 12px 4px",
-                    fontSize: "10px",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    color: "var(--ink-subtle)",
-                  }}
-                >
+                <div className="cr-nav-label">
                   {group.label}
                 </div>
               )}
@@ -250,48 +261,20 @@ export function DashboardShell({
         </nav>
 
         {/* User footer */}
-        <div
-          style={{
-            borderTop: "1px solid var(--border-soft)",
-            paddingTop: "12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "2px",
-          }}
-        >
+        <div className="cr-sidebar-footer">
           {orgName && (
-            <div
-              style={{
-                fontSize: "12px",
-                color: "var(--ink-muted)",
-                padding: "4px 12px",
-                fontWeight: 500,
-              }}
-            >
+            <div className="cr-sidebar-footer__org">
               {orgName}
             </div>
           )}
           {userEmail && (
-            <div style={{ fontSize: "11px", color: "var(--ink-dim)", padding: "0 12px 6px" }}>
+            <div className="cr-sidebar-footer__email">
               {userEmail}
             </div>
           )}
           <button
             onClick={handleLogout}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              fontSize: "13px",
-              color: "var(--ink-dim)",
-              width: "100%",
-              textAlign: "left",
-            }}
+            className="cr-sidebar-logout"
           >
             <LogOut size={14} />
             Ieși din cont
@@ -300,33 +283,39 @@ export function DashboardShell({
       </aside>
 
       {/* Main */}
-      <main
-        style={{
-          background: "var(--bg)",
-          overflowY: "auto",
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <main className="cr-app-main cr-shell-surface">
+        {orgName ? (
+          <div className="cr-work-context">
+            <div className="cr-work-context__copy">
+              <span aria-hidden="true" className="cr-work-context__dot" />
+              <span className="cr-no-wrap">Lucrezi pentru</span>
+              <strong
+                className="cr-work-context__strong"
+              >
+                {orgName}
+              </strong>
+              <span className="cr-work-context__sep">·</span>
+              <span>mod {modeLabel}</span>
+            </div>
+            {isClientExecution ? (
+              <button
+                type="button"
+                onClick={handleExitExecution}
+                disabled={exitingExecution}
+                className="cr-btn cr-btn--sm"
+              >
+                {exitingExecution ? "Revin în cabinet..." : "← Ieși din execuție"}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         {showTrialBanner && (
           <div
             role="status"
-            style={{
-              background: isUrgent
-                ? "var(--red-soft)"
-                : "var(--cobalt-soft)",
-              borderBottom: `1px solid ${isUrgent ? "var(--red-500)" : "var(--cobalt-soft-strong)"}`,
-              color: "var(--ink)",
-              padding: "10px 20px",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              fontSize: "13px",
-            }}
+            className={isUrgent ? "cr-trial-banner cr-trial-banner--urgent" : "cr-trial-banner"}
           >
-            <Sparkles size={15} color={isUrgent ? "var(--red-400)" : "var(--cobalt-400)"} />
-            <div style={{ flex: 1 }}>
+            <Sparkles size={15} />
+            <div className="cr-trial-banner__copy">
               <strong>Trial CompliRoAI:</strong>{" "}
               {trialDaysLeft === 0
                 ? "trial-ul expiră astăzi"
@@ -336,11 +325,7 @@ export function DashboardShell({
               .{" "}
               <a
                 href="/dashboard/setari/billing/checkout"
-                style={{
-                  color: isUrgent ? "var(--red-400)" : "var(--cobalt-400)",
-                  textDecoration: "underline",
-                  fontWeight: 500,
-                }}
+                className="cr-trial-banner__link"
               >
                 Activează abonament
               </a>
@@ -349,15 +334,7 @@ export function DashboardShell({
               type="button"
               onClick={dismissBanner}
               aria-label="Închide banner trial"
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "var(--ink-dim)",
-                cursor: "pointer",
-                fontSize: "16px",
-                lineHeight: 1,
-                padding: "0 4px",
-              }}
+              className="cr-trial-banner__close"
             >
               ×
             </button>

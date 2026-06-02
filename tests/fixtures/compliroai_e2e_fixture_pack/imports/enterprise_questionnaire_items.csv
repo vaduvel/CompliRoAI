@@ -1,0 +1,6 @@
+﻿questionnaire_id,item_id,question,expected_evidence,severity_if_missing
+Q-ENT-001,Q1,List all AI systems used to deliver the service.,ai_system_register,high
+Q-ENT-001,Q2,Do you have an internal AI acceptable use policy?,ai_policy,high
+Q-ENT-001,Q3,Do staff using AI receive AI literacy training?,ai_literacy_completion_proof,high
+Q-ENT-001,Q4,Provide vendor/DPA evidence for third-party AI providers.,vendor_dpa,high
+Q-ENT-001,Q5,Are you ISO 42001 certified?,iso42001_certificate,medium

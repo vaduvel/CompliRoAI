@@ -17,6 +17,7 @@ import path from "node:path"
 
 import { writeFileSafe } from "./fs-safe"
 import { getOrgContext } from "./org-context"
+import { loadAIUseCasesForOrgIds } from "./ai-use-case-store"
 import {
   loadOrgStateFromSupabase,
   persistOrgStateToSupabase,
@@ -51,6 +52,10 @@ export type AIActState = ComplianceState
 
 const stateCache = new Map<string, AIActState>()
 
+function canReuseStateCache(): boolean {
+  return !shouldUseSupabaseOrgState()
+}
+
 function getStatePath(orgId: string): string {
   return path.join(process.cwd(), ".data", `state-${orgId}.json`)
 }
@@ -75,22 +80,44 @@ export function mergeWithDefault(partial: Partial<AIActState> | null | undefined
     events: partial.events ?? base.events,
     generatedDocuments: partial.generatedDocuments ?? base.generatedDocuments,
     aiSystems: partial.aiSystems ?? base.aiSystems,
+    aiUseCases: partial.aiUseCases ?? base.aiUseCases,
     literacyRecords: partial.literacyRecords ?? base.literacyRecords,
+    aiGuidancePlans: partial.aiGuidancePlans ?? base.aiGuidancePlans,
     // Onboarding: păstrează existing sau cade pe default {completed:false, step:1}.
     onboarding: partial.onboarding ?? base.onboarding,
   }
 }
 
+async function hydrateDedicatedSupabaseState(orgId: string, state: AIActState): Promise<AIActState> {
+  if (!shouldUseSupabaseOrgState()) return state
+
+  try {
+    const persistedUseCasesByOrg = await loadAIUseCasesForOrgIds([orgId])
+    const persistedUseCases = persistedUseCasesByOrg.get(orgId)
+    if (persistedUseCases && persistedUseCases.length > 0) {
+      return {
+        ...state,
+        aiUseCases: persistedUseCases,
+      }
+    }
+  } catch {
+    // Keep org_state as fallback if the dedicated table is temporarily unavailable.
+  }
+
+  return state
+}
+
 export async function readState(): Promise<AIActState> {
   const { orgId } = await getOrgContext()
-  if (stateCache.has(orgId)) return stateCache.get(orgId)!
+  if (canReuseStateCache() && stateCache.has(orgId)) {
+    return stateCache.get(orgId)!
+  }
 
   // Supabase path
   if (shouldUseSupabaseOrgState()) {
     try {
       const remote = await loadOrgStateFromSupabase<Partial<AIActState>>(orgId)
-      const state = mergeWithDefault(remote)
-      stateCache.set(orgId, state)
+      const state = await hydrateDedicatedSupabaseState(orgId, mergeWithDefault(remote))
       return state
     } catch {
       // Fall through to local read on transient Supabase failure
@@ -112,7 +139,11 @@ export async function readState(): Promise<AIActState> {
 
 export async function writeState(state: AIActState): Promise<void> {
   const { orgId } = await getOrgContext()
-  stateCache.set(orgId, state)
+  if (canReuseStateCache()) {
+    stateCache.set(orgId, state)
+  } else {
+    stateCache.delete(orgId)
+  }
 
   if (shouldUseSupabaseOrgState()) {
     try {
@@ -124,6 +155,10 @@ export async function writeState(state: AIActState): Promise<void> {
   }
 
   await writeFileSafe(getStatePath(orgId), JSON.stringify(state, null, 2))
+}
+
+export function primeStateCacheForOrg(orgId: string, state: AIActState): void {
+  stateCache.set(orgId, state)
 }
 
 // ── DPO-OS adapter pattern (drop-in compat pentru module portate) ────────────

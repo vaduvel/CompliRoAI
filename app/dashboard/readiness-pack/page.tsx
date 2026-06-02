@@ -173,34 +173,18 @@ export default function ReadinessPackPage() {
       : clients.find((c) => c.orgId === selectedClient)?.orgName ?? "client necunoscut"
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "960px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          AI Act Readiness Pack
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Rapoarte & dosar</div>
+          <h1 className="cr-title">AI Act Readiness Pack</h1>
+          <p className="cr-subtitle">
           {workspaceMode === "cabinet"
             ? "Generează în 2 minute un pachet complet de conformitate AI Act pentru un client. Brand-uit cu logo-ul cabinetului tău, gata de facturat."
             : "Generează un pachet complet de conformitate AI Act pentru organizația ta — rezumat executiv, inventar, evidență training, notificări transparență, plan high-risk."}
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* Explainer card */}
@@ -467,9 +451,9 @@ export default function ReadinessPackPage() {
               size={12}
               style={{ display: "inline", verticalAlign: "middle", marginRight: "6px" }}
             />
-            Nu ai încă clienți în portofoliu. Adaugă din{" "}
-            <a href="/dashboard/portofoliu" style={{ color: "var(--cobalt-400)" }}>
-              Portofoliu
+            Nu ai încă clienți în portofoliu. Importă sau adaugă primul client din{" "}
+            <a href="/dashboard/clienti" style={{ color: "var(--cobalt-400)" }}>
+              Clienți
             </a>
             .
           </div>

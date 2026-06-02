@@ -55,64 +55,32 @@ export default function SupportPage() {
   const [openIdx, setOpenIdx] = useState<number | null>(0)
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "880px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-stack">
       <Link
         href="/dashboard/resolve"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "6px",
-          fontSize: "12px",
-          color: "var(--ink-muted)",
-          textDecoration: "none",
-        }}
+        className="cr-link"
+        style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
       >
         <ArrowLeft size={13} /> Inapoi la De rezolvat
       </Link>
 
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <HelpCircle size={20} style={{ color: "var(--cobalt-400)" }} />
-          <h1
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "22px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              margin: 0,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Ghid lifecycle risc-uri
-          </h1>
+      <div className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <HelpCircle size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">De rezolvat</div>
+            <h1 className="cr-title">Ghid lifecycle risc-uri</h1>
+            <p className="cr-subtitle">
+              Decizii rapide despre cum să folosești cockpit-ul de rezolvare. Toate
+              acțiunile sunt audit-clean (hash chain SHA-256).
+            </p>
+          </div>
         </div>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "8px" }}>
-          Decizii rapide despre cum sa folosesti cockpit-ul de rezolvare. Toate
-          actiunile sunt audit-clean (hash chain SHA-256).
-        </p>
       </div>
 
-      <div
-        style={{
-          padding: "12px 16px",
-          background: "rgba(96,165,250,0.08)",
-          border: "1px solid rgba(96,165,250,0.2)",
-          borderRadius: "8px",
-          display: "flex",
-          gap: "10px",
-          alignItems: "flex-start",
-          fontSize: "12px",
-          color: "var(--cobalt-400)",
-        }}
-      >
+      <div className="cr-alert cr-alert--info">
         <ShieldCheck size={14} style={{ flexShrink: 0, marginTop: "1px" }} />
         <div>
           <strong style={{ fontWeight: 600 }}>Regula de aur</strong> — orice

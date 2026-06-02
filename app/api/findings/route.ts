@@ -8,7 +8,12 @@
  */
 import { NextResponse } from "next/server"
 
+import {
+  buildDashboardExecutionState,
+  exportReadinessLabel,
+} from "@/lib/compliance/dashboard-coherence"
 import { getOrgContext } from "@/lib/server/org-context"
+import { readFreshStateForOrg } from "@/lib/server/store"
 import {
   createFinding,
   isFindingCategory,
@@ -32,10 +37,35 @@ export async function GET() {
   try {
     const ctx = await getOrgContext()
     const { findings, stats } = await readFindings(ctx.orgId)
-    return NextResponse.json({ findings, stats })
-  } catch {
+    const state = await readFreshStateForOrg(ctx.orgId, ctx.orgName)
+    const executionState = buildDashboardExecutionState(state, {
+      isClientExecution: ctx.workspaceMode === "cabinet",
+    })
+
+    return NextResponse.json({
+      findings,
+      stats,
+      auditPackReadiness: {
+        status: executionState.snapshot.exportReadinessStatus,
+        label: exportReadinessLabel(executionState.snapshot.exportReadinessStatus),
+        blockersCount: executionState.exportBlockers.length,
+        evidenceMissingCount: executionState.snapshot.evidenceMissingCount,
+        reviewPendingCount: executionState.snapshot.reviewPendingCount,
+      },
+      auditPackBlockers: executionState.exportBlockers,
+    })
+  } catch (error) {
+    console.error("GET /api/findings failed", error)
     return NextResponse.json(
-      { error: "Nu am putut incarca risk-urile." },
+      {
+        error: "Nu am putut incarca risk-urile.",
+        details:
+          process.env.NODE_ENV === "production"
+            ? undefined
+            : error instanceof Error
+              ? error.message
+              : String(error),
+      },
       { status: 500 },
     )
   }

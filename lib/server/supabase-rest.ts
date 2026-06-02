@@ -124,6 +124,15 @@ async function request<T>(
   }
 
   const text = await res.text()
-  if (!text) return undefined as T
-  return JSON.parse(text) as T
+  if (!text.trim()) return undefined as T
+  try {
+    return JSON.parse(text) as T
+  } catch (error) {
+    const snippet = text.slice(0, 300)
+    throw new Error(
+      `Supabase invalid JSON (${method} ${table}): ${
+        error instanceof Error ? error.message : String(error)
+      }; body=${JSON.stringify(snippet)}`,
+    )
+  }
 }

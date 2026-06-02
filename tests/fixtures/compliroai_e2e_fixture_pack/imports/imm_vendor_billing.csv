@@ -1,0 +1,4 @@
+﻿org_name,vendor_name,product_name,billing_email,invoice_month,ai_tool_suspected
+Contabil Plus Expert SRL,OpenAI,ChatGPT Plus,office@contabil-plus.example,2026-05,yes
+Contabil Plus Expert SRL,Canva,Canva Pro AI,marketing@contabil-plus.example,2026-05,yes
+Contabil Plus Expert SRL,Microsoft,Microsoft 365 Business,admin@contabil-plus.example,2026-05,unknown

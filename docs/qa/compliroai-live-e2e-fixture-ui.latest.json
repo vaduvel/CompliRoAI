@@ -1,0 +1,850 @@
+{
+  "generatedAtISO": "2026-06-01T22:52:19.990Z",
+  "baseUrl": "http://127.0.0.1:3105",
+  "total": 42,
+  "passed": 42,
+  "failed": 0,
+  "checks": [
+    {
+      "testId": "E2E-CAB-001",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "client_import",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-jwh76otv",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CAB-002",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "no_file_checklist",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-t83g2mxp",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CAB-003",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "client_import",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-gmp4ir2x",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CAB-004",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "vendor_import",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-w3yszd9f",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CAB-005",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "json_fixture:intake_partial_response.json",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-fvpyof6o",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CAB-006",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "client_import",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-m7ss6ffw",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHAT-001",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "ai_use_case_import",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-ti6vlu9l",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHAT-002",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "ai_use_case_import",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-0g1vya0t",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHAT-003",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "synthetic_chatbot_unknown_human_review",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-jxw7mayz",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHAT-004",
+      "status": "pass",
+      "client": "Urban Medica SRL",
+      "setupKind": "synthetic_medical_chatbot_triage",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-j7k6q6wj",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHAT-005",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "chatbot_notice_evidence_attach",
+      "note": "1/1 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-foeb2j2o",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-HR-001",
+      "status": "pass",
+      "client": "NordHire Recrutare SRL",
+      "setupKind": "ai_use_case_import",
+      "note": "5/5 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-mvd9ctdy",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-HR-002",
+      "status": "pass",
+      "client": "NordHire Recrutare SRL",
+      "setupKind": "json_fixture:intake_shadow_ai_hr.json",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-jy2vitzz",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-HR-003",
+      "status": "pass",
+      "client": "NordHire Recrutare SRL",
+      "setupKind": "ai_use_case_import",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-6bbkac3m",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-HR-004",
+      "status": "pass",
+      "client": "NordHire Recrutare SRL",
+      "setupKind": "json_fixture:hr_emotion_interview_candidate.json",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-u2ior167",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-HR-005",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "json_fixture:employee_monitoring_ai.json",
+      "note": "5/5 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-t1agpv31",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-IMM-001",
+      "status": "pass",
+      "client": "Contabil Plus Expert SRL",
+      "setupKind": "no_file_plus_department_survey",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-qsm0a83j",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-IMM-002",
+      "status": "pass",
+      "client": "Contabil Plus Expert SRL",
+      "setupKind": "department_survey_ingestion",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-717er3sf",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-IMM-003",
+      "status": "pass",
+      "client": "Contabil Plus Expert SRL",
+      "setupKind": "billing_shadow_ai_ingestion",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-vfj67mwy",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-IMM-004",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "website_chatbot_unknown_check",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-m19k62vr",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-IMM-005",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "ai_policy_evidence_attach",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-fcai9i7u",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-QUES-001",
+      "status": "pass",
+      "client": "Contabil Plus Expert SRL",
+      "setupKind": "questionnaire_ingestion",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-3x8vbw9s",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-QUES-002",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "questionnaire_ingestion",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-ez5wrl0d",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-QUES-003",
+      "status": "pass",
+      "client": "Contabil Plus Expert SRL",
+      "setupKind": "questionnaire_ingestion",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-ccp15brh",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-QUES-004",
+      "status": "pass",
+      "client": "Contabil Plus Expert SRL",
+      "setupKind": "questionnaire_ingestion",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-fur86zvf",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-QUES-005",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "questionnaire_ingestion",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-ye1ok5sm",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-BLD-001",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "yaml_fixture:builder_support_agent_ai_compliance.yaml",
+      "note": "5/5 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-oeqzhi5l",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-BLD-002",
+      "status": "pass",
+      "client": "NordHire Recrutare SRL",
+      "setupKind": "yaml_fixture:builder_hr_ranker_ai_compliance.yaml",
+      "note": "5/5 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-uwswjb0j",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-BLD-003",
+      "status": "pass",
+      "client": "Construct Expert Proiect SRL",
+      "setupKind": "yaml_fixture:builder_contract_summarizer.yaml",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-oz7q2tf0",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-BLD-004",
+      "status": "pass",
+      "client": "BlueDesk SaaS SRL",
+      "setupKind": "yaml_fixture:builder_crm_agent.yaml",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-h3egsds8",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-BLD-005",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "yaml_fixture:builder_support_agent_ai_compliance.yaml",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-jkf51z2t",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-BLD-006",
+      "status": "pass",
+      "client": "Urban Medica SRL",
+      "setupKind": "yaml_fixture:builder_medical_intake.yaml",
+      "note": "5/5 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-pxxypwye",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHG-001",
+      "status": "pass",
+      "client": "DeviDevs Automation SRL",
+      "setupKind": "change_event_ingestion",
+      "note": "5/5 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-8xdvbbbs",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHG-002",
+      "status": "pass",
+      "client": "DeviDevs Automation SRL",
+      "setupKind": "change_event_ingestion",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-hyf3mr8b",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHG-003",
+      "status": "pass",
+      "client": "DeviDevs Automation SRL",
+      "setupKind": "change_event_ingestion",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-0ggoy2qw",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHG-004",
+      "status": "pass",
+      "client": "BlueDesk SaaS SRL",
+      "setupKind": "change_event_ingestion",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-04s78y37",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHG-005",
+      "status": "pass",
+      "client": "DeviDevs Automation SRL",
+      "setupKind": "change_event_ingestion",
+      "note": "4/4 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-nlnsgpgt",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHG-006",
+      "status": "pass",
+      "client": "NordHire Recrutare SRL",
+      "setupKind": "change_event_ingestion",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-dakxnesz",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-CHG-007",
+      "status": "pass",
+      "client": "DeviDevs Automation SRL",
+      "setupKind": "change_event_ingestion",
+      "note": "3/3 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-jngi9w27",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-X-001",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "tenant_isolation_live_check",
+      "note": "1/1 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-sa442mmc",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-X-002",
+      "status": "pass",
+      "client": "Magazine Online SRL",
+      "setupKind": "repeated_import_idempotency",
+      "note": "2/2 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-09ul6hr6",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    },
+    {
+      "testId": "E2E-X-003",
+      "status": "pass",
+      "client": "Apex Logistic SRL",
+      "setupKind": "export_overclaim_guardrail",
+      "note": "1/1 expected findings matched; remediation lifecycle reached under_monitoring",
+      "lifecycle": {
+        "findingId": "finding-c8jpc26v",
+        "finalStatus": "under_monitoring",
+        "reviewState": "monitoring",
+        "eventTypes": [
+          "finding.monitor",
+          "finding.reopen",
+          "finding.resolve",
+          "finding.evidence_attached",
+          "finding.confirm",
+          "finding.created"
+        ]
+      }
+    }
+  ],
+  "sourceMatrixReport": "/Users/vaduvageorge/Desktop/eu-ai-act/docs/qa/compliroai-live-e2e-fixture-matrix.latest.json"
+}

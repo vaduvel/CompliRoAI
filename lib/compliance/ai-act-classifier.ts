@@ -51,6 +51,89 @@ function severityToLegacyRisk(severity: "critical" | "high" | "medium"): "high" 
   return severity === "critical" || severity === "high" ? "high" : "low"
 }
 
+function isKnownPurpose(value: string): value is AISystemPurpose {
+  return value in KNOWN_CLASSIFICATIONS
+}
+
+function normalizePurposeText(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+}
+
+function resolvePurposeDescriptor(input: AISystemPurpose | string): {
+  purpose: AISystemPurpose
+  matchedBy: "exact" | "heuristic" | "fallback"
+} {
+  if (isKnownPurpose(input)) {
+    return { purpose: input, matchedBy: "exact" }
+  }
+
+  const normalized = normalizePurposeText(input)
+  if (!normalized) {
+    return { purpose: "other", matchedBy: "fallback" }
+  }
+
+  const keywordMatchers: Array<{ purpose: AISystemPurpose; matches: string[] }> = [
+    {
+      purpose: "image-manipulation-intimate",
+      matches: ["deepfake", "nudif", "intimate", "sexual", "synthetic nude", "face swap"],
+    },
+    {
+      purpose: "biometric-identification",
+      matches: ["biometric", "face recognition", "facial recognition", "identificare faciala"],
+    },
+    {
+      purpose: "hr-screening",
+      matches: ["hr", "candidate", "recruit", "recruitment", "cv", "resume", "hiring", "screening", "ranking"],
+    },
+    {
+      purpose: "credit-scoring",
+      matches: ["credit", "loan", "scoring", "underwriting", "lending"],
+    },
+    {
+      purpose: "fraud-detection",
+      matches: ["fraud", "aml", "anti money laundering", "suspicious transaction"],
+    },
+    {
+      purpose: "marketing-personalization",
+      matches: ["marketing", "personalization", "recommendation", "ad targeting", "campaign optimization"],
+    },
+    {
+      purpose: "support-chatbot",
+      matches: ["chatbot", "customer support", "support bot", "helpdesk", "customer service", "assistant"],
+    },
+    {
+      purpose: "decision-support",
+      matches: [
+        "decision support",
+        "recomand",
+        "suggest",
+        "triage",
+        "simptom",
+        "crm",
+        "follow up",
+        "drone",
+        "irig",
+      ],
+    },
+    {
+      purpose: "document-assistant",
+      matches: ["document", "contract", "draft", "summar", "copilot", "knowledge assistant"],
+    },
+  ]
+
+  for (const matcher of keywordMatchers) {
+    if (matcher.matches.some((needle) => normalized.includes(needle))) {
+      return { purpose: matcher.purpose, matchedBy: "heuristic" }
+    }
+  }
+
+  return { purpose: "other", matchedBy: "fallback" }
+}
+
 // Clasificare automată pentru tipuri cunoscute (din canon)
 const KNOWN_CLASSIFICATIONS: Record<AISystemPurpose, {
   riskLevel: AIActRiskLevel
@@ -117,6 +200,17 @@ const KNOWN_CLASSIFICATIONS: Record<AISystemPurpose, {
       "Disclosure pe pagina /trust",
     ],
   },
+  "decision-support": {
+    riskLevel: "limited_risk",
+    article: "Art. 50 / review contextual",
+    reason:
+      "Sistem AI asistiv sau recomandativ cu impact contextual — cere validare de use-case, date și oversight înainte de verdict final.",
+    requiredActions: [
+      "Confirmă domeniul concret de utilizare și persoanele afectate",
+      "Verifică dacă intră într-un domeniu Annex III sau într-un review GDPR",
+      "Documentează human oversight și logging unde există impact operațional",
+    ],
+  },
   "document-assistant": {
     riskLevel: "minimal_risk",
     article: "—",
@@ -146,8 +240,9 @@ const KNOWN_CLASSIFICATIONS: Record<AISystemPurpose, {
   },
 }
 
-export function classifyAISystem(purpose: AISystemPurpose): AIActClassification {
-  const known = KNOWN_CLASSIFICATIONS[purpose]
+export function classifyAISystem(purpose: AISystemPurpose | string): AIActClassification {
+  const descriptor = resolvePurposeDescriptor(purpose)
+  const known = KNOWN_CLASSIFICATIONS[descriptor.purpose]
   // Deadlines per Omnibus Agreement 7 mai 2026:
   //   - High-risk Annex III stand-alone: 2 dec 2027
   //   - Nudifier/CSAM filters (GPAI providers): 2 dec 2026
@@ -157,10 +252,17 @@ export function classifyAISystem(purpose: AISystemPurpose): AIActClassification 
     known.deadlineOverride ??
     (known.riskLevel === "high_risk" ? "2027-12-02" : undefined)
 
+  const reason =
+    descriptor.matchedBy === "heuristic"
+      ? `${known.reason} Detectat automat din descriere liberă; confirmă manual în cockpit.`
+      : descriptor.matchedBy === "fallback"
+        ? "Tip necunoscut din descriere liberă — clasificat implicit ca limited risk. Confirmă manual."
+        : known.reason
+
   return {
     riskLevel: known.riskLevel,
     article: known.article,
-    reason: known.reason,
+    reason,
     deadline,
     requiredActions: known.requiredActions,
     autoDetected: true,

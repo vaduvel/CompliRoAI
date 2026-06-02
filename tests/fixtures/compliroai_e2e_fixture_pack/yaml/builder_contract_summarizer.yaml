@@ -1,0 +1,27 @@
+project:
+  id: PRJ-LEGAL-SUMMARY
+  name: "Legal Contract Summarizer"
+  client: "Construct Expert Proiect SRL"
+  intended_purpose: "Create internal summaries of commercial contracts for legal human review."
+  lifecycle_stage: "pilot"
+
+system:
+  system_name: "LegalDoc Summarizer"
+  model_provider: "OpenAI / CogniSync"
+  model_name: "vendor_managed"
+  deployment: "enterprise_saas"
+  human_review_required: true
+
+data:
+  personal_data: true
+  confidential_data: true
+  data_categories:
+    - contracts
+    - signatory_names
+    - commercial_terms
+    - trade_secrets
+
+risk:
+  affects_people: false
+  automated_decision: false
+  public_output: false

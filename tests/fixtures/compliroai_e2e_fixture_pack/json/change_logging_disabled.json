@@ -1,0 +1,12 @@
+{
+  "change_id": "CHG-003",
+  "test_case_id": "E2E-CHG-003",
+  "project_id": "PRJ-SUPPORT-AGENT",
+  "change_type": "logging_change",
+  "previous_version": "logging_enabled",
+  "new_version": "logging_disabled",
+  "changed_by": "dev@devidevs.example",
+  "go_live_at": "2026-05-26",
+  "rollback_available": "yes",
+  "expected_findings": "logging_after_change;auditability_broken;security_review"
+}

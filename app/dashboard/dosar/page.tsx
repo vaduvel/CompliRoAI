@@ -149,49 +149,22 @@ export default function DosarPage() {
   const evidenceCount = useMemo(() => countEvidence(findings), [findings])
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Dosar
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Rapoarte & dosar</span>
+          <h1 className="cr-title">Dosar audit</h1>
+          <p className="cr-subtitle">
           Istoric inchideri, dovezi atasate si audit trail hash-chained.
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
@@ -262,40 +235,18 @@ function Tabs({
     { key: "audit", label: "Audit trail", icon: <History size={13} />, count: auditCount },
   ]
   return (
-    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+    <div className="cr-segment-bar">
       {tabs.map((t) => {
         const active = t.key === value
         return (
           <button
             key={t.key}
             onClick={() => onChange(t.key)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "8px 14px",
-              fontSize: "12px",
-              fontWeight: active ? 600 : 500,
-              color: active ? "var(--cobalt-400)" : "var(--ink-muted)",
-              background: active ? "rgba(96,165,250,0.10)" : "transparent",
-              border: "1px solid",
-              borderColor: active ? "rgba(96,165,250,0.3)" : "var(--border-soft)",
-              borderRadius: "8px",
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
+            className={`cr-tab${active ? " is-active" : ""}`}
           >
             {t.icon}
             {t.label}
-            <span
-              style={{
-                fontSize: "11px",
-                color: "var(--ink-dim)",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {t.count}
-            </span>
+            <span className="cr-tab__count">{t.count}</span>
           </button>
         )
       })}
@@ -538,6 +489,7 @@ function EvidenceVaultTab({ findings }: { findings: ScanFinding[] }) {
           }}
         />
         <input
+            className="cr-input"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cauta in dovezi (titlu finding, text, fisier)..."
@@ -783,8 +735,8 @@ function EventRow({ event, compact }: { event: ComplianceEvent; compact: boolean
         <button
           onClick={copyHash}
           title="Copiaza hash-ul (selfHash) pentru audit"
+          className="cr-btn cr-btn--secondary cr-btn--sm"
           style={{
-            ...btnGhost,
             fontFamily: "ui-monospace, SFMono-Regular, monospace",
             color: copied ? "#34d399" : "var(--ink-dim)",
           }}
@@ -874,24 +826,6 @@ function EmptyPanel({
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-//   Style tokens (inline)
-// ────────────────────────────────────────────────────────────────────────────
-
-const btnGhost: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "4px",
-  padding: "3px 6px",
-  fontSize: "10px",
-  fontWeight: 500,
-  background: "transparent",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "4px",
-  cursor: "pointer",
-  transition: "all 0.15s",
-}
-
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 12px",
@@ -912,4 +846,3 @@ const paragraphStyle: React.CSSProperties = {
   lineHeight: 1.55,
   whiteSpace: "pre-wrap",
 }
-

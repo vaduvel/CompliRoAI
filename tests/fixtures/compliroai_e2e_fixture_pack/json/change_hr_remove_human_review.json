@@ -1,0 +1,12 @@
+{
+  "change_id": "CHG-006",
+  "test_case_id": "E2E-CHG-006",
+  "project_id": "PRJ-HR-RANKER",
+  "change_type": "human_review_change",
+  "previous_version": "human_review_required",
+  "new_version": "human_review_none",
+  "changed_by": "hr_client@example.com",
+  "go_live_at": "2026-06-07",
+  "rollback_available": "yes",
+  "expected_findings": "human_review_removed;high_risk_controls_broken;legal_review"
+}

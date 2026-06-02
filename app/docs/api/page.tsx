@@ -1,5 +1,5 @@
-// Sprint 023 — Public docs page for the /api/v1 developer surface.
-// Server component — pure HTML+inline styles. No auth required.
+// Public docs page for the CompliRoAI /api/v1 developer surface.
+// Server component — no auth required.
 
 import type { Metadata } from "next"
 import Link from "next/link"
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function ApiDocsPage() {
   return (
-    <main style={pageStyle}>
+    <main className="cr-docs-page cr-docs-api-page" style={pageStyle}>
       <header style={headerStyle}>
         <p style={breadcrumb}>
           <Link href="/" style={linkStyle}>← Acasă</Link>
@@ -32,7 +32,7 @@ export default function ApiDocsPage() {
         <p style={leadStyle}>
           API public stabil pe versiunea <code style={inlineCode}>v1</code>. Breaking
           changes vor fi publicate la <code style={inlineCode}>/api/v2</code> ulterior;
-          v1 rămâne disponibilă forever.
+          v1 rămâne disponibilă pe termen lung.
         </p>
       </header>
 
@@ -181,15 +181,14 @@ export default function ApiDocsPage() {
 
       <Section title="SDK TypeScript">
         <p>
-          Zero dependencies. Funcționează în Node 18+ și browsers. Distribuit
-          inițial prin copy în repo-ul tău; pachet npm{" "}
-          <code style={inlineCode}>@compliroai/client</code> va fi publicat în
-          Sprint 24.
+          Zero dependencies. Funcționează în Node 18+ și browsers. Folosește
+          SDK-ul din workspace-ul AI Builder sau instalează pachetul{" "}
+          <code style={inlineCode}>@compliroai/client</code> când este publicat în registry-ul tău.
         </p>
         <h3 style={h3Style}>Install</h3>
         <pre style={preStyle}>
-          <code>{`# Copiază lib/sdk/{client.ts,index.ts} în repo-ul tău,
-# sau (Sprint 24+) instalează pachet npm:
+          <code>{`# Copiază lib/sdk/{client.ts,index.ts} în repo-ul tău
+# sau instalează pachetul npm când este disponibil:
 # npm install @compliroai/client`}</code>
         </pre>
         <h3 style={h3Style}>Quickstart</h3>
@@ -233,7 +232,7 @@ if (gate.verdict === "review_required") {
           <code>{`import json, os, urllib.request
 
 req = urllib.request.Request(
-    "https://compliscanag.vercel.app/api/v1/gate",
+    "https://eu-ai-act-beige.vercel.app/api/v1/gate",
     method="POST",
     headers={
         "Authorization": f"Bearer {os.environ['COMPLIROAI_KEY']}",
@@ -333,9 +332,9 @@ function Endpoint({
           {method}
         </span>
         <code style={{ ...inlineCode, fontSize: "14px" }}>{path}</code>
-        <span style={{ fontSize: "11px", color: "#666", marginLeft: "auto" }}>scope: {scope}</span>
+        <span style={{ fontSize: "11px", color: "var(--ink-dim)", marginLeft: "auto" }}>scope: {scope}</span>
       </div>
-      <p style={{ margin: "8px 0", color: "#444", fontSize: "14px" }}>{summary}</p>
+      <p style={{ margin: "8px 0", color: "var(--ink-muted)", fontSize: "14px" }}>{summary}</p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "8px", marginTop: "8px" }}>
         <div>
           <p style={labelStyle}>Request body</p>
@@ -358,8 +357,8 @@ function Th({ children }: { children: React.ReactNode }) {
         textAlign: "left",
         fontSize: "11px",
         textTransform: "uppercase",
-        color: "#666",
-        borderBottom: "1px solid #e5e7eb",
+        color: "var(--ink-dim)",
+        borderBottom: "1px solid var(--border)",
       }}
     >
       {children}
@@ -377,9 +376,9 @@ function Tr({
   action: string
 }) {
   const colors = {
-    pass: { bg: "#dcfce7", fg: "#166534" },
-    review_required: { bg: "#fef3c7", fg: "#92400e" },
-    blocked: { bg: "#fee2e2", fg: "#991b1b" },
+    pass: { bg: "var(--emerald-soft)", fg: "var(--emerald-700)" },
+    review_required: { bg: "var(--amber-soft)", fg: "var(--amber-700)" },
+    blocked: { bg: "var(--red-soft)", fg: "var(--red-700)" },
   }
   return (
     <tr>
@@ -410,30 +409,54 @@ const pageStyle: React.CSSProperties = {
   maxWidth: "960px",
   margin: "0 auto",
   padding: "48px 24px 80px",
-  fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-  color: "#1f2937",
+  minHeight: "100dvh",
+  fontFamily: "var(--font-body-v3)",
+  color: "var(--ink)",
+  background: "var(--bg)",
   lineHeight: 1.6,
 }
 
 const headerStyle: React.CSSProperties = { marginBottom: "32px" }
-const breadcrumb: React.CSSProperties = { color: "#6b7280", fontSize: "13px", margin: "0 0 16px" }
-const h1Style: React.CSSProperties = { fontSize: "32px", fontWeight: 700, margin: "0 0 12px" }
-const leadStyle: React.CSSProperties = { fontSize: "16px", color: "#4b5563", margin: "0 0 12px" }
+const breadcrumb: React.CSSProperties = { color: "var(--ink-dim)", fontSize: "13px", margin: "0 0 16px" }
+const h1Style: React.CSSProperties = {
+  fontFamily: "var(--font-display-v3)",
+  fontSize: "40px",
+  lineHeight: 1.08,
+  fontWeight: 750,
+  letterSpacing: "-0.035em",
+  color: "var(--ink-strong)",
+  margin: "0 0 12px",
+}
+const leadStyle: React.CSSProperties = { fontSize: "16px", color: "var(--ink-muted)", margin: "0 0 12px" }
 
 const sectionStyle: React.CSSProperties = {
   marginTop: "32px",
   paddingTop: "20px",
-  borderTop: "1px solid #e5e7eb",
+  borderTop: "1px solid var(--border)",
 }
-const h2Style: React.CSSProperties = { fontSize: "20px", fontWeight: 700, margin: "0 0 12px" }
-const h3Style: React.CSSProperties = { fontSize: "15px", fontWeight: 700, margin: "16px 0 8px", color: "#4b5563" }
+const h2Style: React.CSSProperties = {
+  fontFamily: "var(--font-display-v3)",
+  fontSize: "22px",
+  fontWeight: 720,
+  letterSpacing: "-0.02em",
+  color: "var(--ink-strong)",
+  margin: "0 0 12px",
+}
+const h3Style: React.CSSProperties = {
+  fontFamily: "var(--font-display-v3)",
+  fontSize: "15px",
+  fontWeight: 700,
+  margin: "16px 0 8px",
+  color: "var(--ink-muted)",
+}
 
 const inlineCode: React.CSSProperties = {
-  background: "#f3f4f6",
+  background: "var(--surface-2)",
   padding: "1px 6px",
   borderRadius: "4px",
-  fontFamily: "ui-monospace, SF Mono, monospace",
+  fontFamily: "var(--font-mono-v3)",
   fontSize: "13px",
+  color: "var(--cobalt-700)",
 }
 
 const preStyle: React.CSSProperties = {
@@ -444,21 +467,21 @@ const preStyle: React.CSSProperties = {
   overflow: "auto",
   fontSize: "12.5px",
   lineHeight: 1.55,
-  fontFamily: "ui-monospace, SF Mono, monospace",
+  fontFamily: "var(--font-mono-v3)",
   margin: "8px 0",
 }
 
 const ulStyle: React.CSSProperties = {
   paddingLeft: "20px",
-  color: "#374151",
+  color: "var(--ink-muted)",
 }
 
 const tableStyle: React.CSSProperties = {
   width: "100%",
   borderCollapse: "collapse",
   marginTop: "12px",
-  background: "white",
-  border: "1px solid #e5e7eb",
+  background: "var(--surface-0)",
+  border: "1px solid var(--border)",
   borderRadius: "8px",
   overflow: "hidden",
 }
@@ -466,12 +489,12 @@ const tableStyle: React.CSSProperties = {
 const tdStyle: React.CSSProperties = {
   padding: "10px 12px",
   fontSize: "13px",
-  borderBottom: "1px solid #f1f5f9",
+  borderBottom: "1px solid var(--border-soft)",
   verticalAlign: "top",
 }
 
 const linkStyle: React.CSSProperties = {
-  color: "#2563eb",
+  color: "var(--cobalt-700)",
   textDecoration: "none",
   fontWeight: 500,
 }
@@ -479,17 +502,18 @@ const linkStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: "11px",
   textTransform: "uppercase",
-  color: "#6b7280",
+  color: "var(--ink-dim)",
   letterSpacing: "0.05em",
   margin: "0 0 4px",
 }
 
 const endpointCardStyle: React.CSSProperties = {
-  border: "1px solid #e5e7eb",
-  borderRadius: "10px",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius-md)",
   padding: "16px 18px",
   marginBottom: "12px",
-  background: "white",
+  background: "var(--surface-0)",
+  boxShadow: "var(--shadow-xs)",
 }
 
 const methodBadge: React.CSSProperties = {
@@ -497,17 +521,17 @@ const methodBadge: React.CSSProperties = {
   borderRadius: "6px",
   fontSize: "12px",
   fontWeight: 700,
-  fontFamily: "ui-monospace, SF Mono, monospace",
+  fontFamily: "var(--font-mono-v3)",
 }
 
-const methodGET: React.CSSProperties = { background: "#dbeafe", color: "#1e40af" }
-const methodPOST: React.CSSProperties = { background: "#dcfce7", color: "#166534" }
-const methodDELETE: React.CSSProperties = { background: "#fee2e2", color: "#991b1b" }
+const methodGET: React.CSSProperties = { background: "var(--cobalt-soft)", color: "var(--cobalt-800)" }
+const methodPOST: React.CSSProperties = { background: "var(--emerald-soft)", color: "var(--emerald-700)" }
+const methodDELETE: React.CSSProperties = { background: "var(--red-soft)", color: "var(--red-700)" }
 
 const footerStyle: React.CSSProperties = {
   marginTop: "48px",
   paddingTop: "20px",
-  borderTop: "1px solid #e5e7eb",
-  color: "#6b7280",
+  borderTop: "1px solid var(--border)",
+  color: "var(--ink-dim)",
   fontSize: "13px",
 }

@@ -15,7 +15,9 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 import { buildAuditPack } from "@/lib/server/audit-pack-builder"
+import { buildDashboardExecutionState } from "@/lib/compliance/dashboard-coherence"
 import { getOrgContext } from "@/lib/server/org-context"
+import { readFreshStateForOrg } from "@/lib/server/store"
 import { listUserMemberships } from "@/lib/server/tenancy"
 
 async function authorizeClientOrg(
@@ -28,7 +30,7 @@ async function authorizeClientOrg(
   )
 }
 
-async function generate(request: NextRequest, clientOrgId: string | null, reSign: boolean) {
+async function generate(request: NextRequest, clientOrgId: string | null, reSign: boolean, finalExport: boolean) {
   let ctx
   try {
     ctx = await getOrgContext()
@@ -53,6 +55,23 @@ async function generate(request: NextRequest, clientOrgId: string | null, reSign
   }
 
   try {
+    const targetOrgId = clientOrgId ?? ctx.orgId
+    const targetState = await readFreshStateForOrg(targetOrgId, clientOrgId ? "" : ctx.orgName)
+    const executionState = buildDashboardExecutionState(targetState, {
+      isClientExecution: Boolean(clientOrgId),
+    })
+
+    if (finalExport && executionState.snapshot.exportReadinessStatus !== "approved") {
+      return NextResponse.json(
+        {
+          error: "Audit Pack final blocat: dosarul nu este aprobat pentru export final.",
+          exportReadinessStatus: executionState.snapshot.exportReadinessStatus,
+          exportBlockers: executionState.exportBlockers,
+        },
+        { status: 409 },
+      )
+    }
+
     const result = await buildAuditPack(ctx.orgId, {
       clientOrgId: clientOrgId ?? undefined,
       issuedByUserId: ctx.userId,
@@ -60,6 +79,8 @@ async function generate(request: NextRequest, clientOrgId: string | null, reSign
       workspaceMode: ctx.workspaceMode,
       currentOrgId: ctx.orgId,
       reSign,
+      exportReadinessStatus: executionState.snapshot.exportReadinessStatus,
+      exportBlockersCount: executionState.exportBlockers.length,
     })
 
     const body = new Uint8Array(result.zipBuffer)
@@ -71,6 +92,8 @@ async function generate(request: NextRequest, clientOrgId: string | null, reSign
         "Content-Length": String(result.sizeBytes),
         "X-Audit-Pack-Hash-Root": result.hashChainRoot,
         "X-Audit-Pack-File-Count": String(result.manifest.contents.length + 1),
+        "X-Audit-Pack-Readiness": executionState.snapshot.exportReadinessStatus,
+        "X-Audit-Pack-Blockers": String(executionState.exportBlockers.length),
       },
     })
   } catch (err) {
@@ -82,15 +105,16 @@ async function generate(request: NextRequest, clientOrgId: string | null, reSign
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const clientOrgId = url.searchParams.get("clientOrgId")
-  return generate(request, clientOrgId, false)
+  const finalExport = url.searchParams.get("final") === "true"
+  return generate(request, clientOrgId, false, finalExport)
 }
 
 export async function POST(request: NextRequest) {
-  let body: { clientOrgId?: string; reSign?: boolean } = {}
+  let body: { clientOrgId?: string; reSign?: boolean; final?: boolean } = {}
   try {
     body = await request.json()
   } catch {
     // empty body is fine
   }
-  return generate(request, body.clientOrgId ?? null, body.reSign === true)
+  return generate(request, body.clientOrgId ?? null, body.reSign === true, body.final === true)
 }

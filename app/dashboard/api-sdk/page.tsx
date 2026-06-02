@@ -82,10 +82,10 @@ export default function APISDKPage() {
 
   const fetchCallLog = useCallback(async () => {
     try {
-      const res = await fetch("/api/dashboard", { credentials: "include" })
+      const res = await fetch("/api/api-call-log", { credentials: "include" })
       if (!res.ok) return
-      const json = (await res.json()) as { state?: { apiCallLogs?: ApiCallLog[] } }
-      setCallLog((json.state?.apiCallLogs ?? []).slice(0, 20))
+      const json = (await res.json()) as { logs?: ApiCallLog[] }
+      setCallLog((json.logs ?? []).slice(0, 20))
     } catch {
       // Best-effort — call log surfaces in /dashboard already.
     }
@@ -168,30 +168,33 @@ export default function APISDKPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div style={pageWrap}>
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div style={headerCard}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <Code2 size={28} style={{ color: "var(--cobalt-400)" }} />
+      <div className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <Code2 size={20} />
+          </span>
           <div>
-            <h1 style={h1Style}>API / SDK pentru AI Builders</h1>
-            <p style={subtitleStyle}>
+            <div className="cr-eyebrow">AI Builder · integrare</div>
+            <h1 className="cr-title">API / SDK pentru AI Builders</h1>
+            <p className="cr-subtitle">
               Integrează CompliRoAI în pipeline-ul tău de build/deploy.
               Clasifică sisteme AI, primește verdict pass/review/blocked și
               loghează deployments — tot prin REST + SDK TypeScript.
             </p>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <span style={versionBadge}>API v1 · stable</span>
-          <a href="/docs/api" target="_blank" rel="noopener" style={linkBtn}>
+        <div className="cr-actions">
+          <span className="cr-badge cr-badge--ok">API v1 · stable</span>
+          <a href="/docs/api" target="_blank" rel="noopener" className="cr-btn">
             <ExternalLink size={14} /> Docs publice
           </a>
         </div>
       </div>
 
       {error && (
-        <div style={errorBanner}>
+        <div className="cr-alert cr-alert--danger">
           <AlertCircle size={16} /> {error}
         </div>
       )}
@@ -242,7 +245,7 @@ if (gate.verdict !== "pass") {
         title="Chei API"
         icon={<Key size={18} />}
         right={
-          <button style={primaryBtn} onClick={() => setShowCreateModal(true)}>
+          <button className="cr-btn cr-btn--primary cr-btn--sm" onClick={() => setShowCreateModal(true)}>
             <Plus size={14} /> Generează cheie nouă
           </button>
         }
@@ -303,7 +306,7 @@ if (gate.verdict !== "pass") {
                   </Td>
                   <Td>
                     {k.status === "active" ? (
-                      <button onClick={() => handleRevoke(k.id)} style={dangerBtn}>
+                      <button onClick={() => handleRevoke(k.id)} className="cr-btn cr-btn--danger cr-btn--sm">
                         Revocă
                       </button>
                     ) : (
@@ -407,7 +410,7 @@ if (gate.verdict !== "pass") {
         title="Apeluri API recente"
         icon={<Activity size={18} />}
         right={
-          <button onClick={fetchCallLog} style={ghostBtn} aria-label="Reîncarcă">
+          <button onClick={fetchCallLog} className="cr-btn cr-btn--secondary cr-btn--sm" aria-label="Reîncarcă">
             <RefreshCw size={14} /> Reîncarcă
           </button>
         }
@@ -496,7 +499,7 @@ if (gate.verdict !== "pass") {
                   value={formLabel}
                   onChange={(e) => setFormLabel(e.target.value)}
                   placeholder="ex: Production CI/CD"
-                  style={inputStyle}
+                  className="cr-input"
                   maxLength={64}
                 />
               </label>
@@ -528,10 +531,10 @@ if (gate.verdict !== "pass") {
                 </div>
               </div>
               <div style={{ display: "flex", gap: "8px", marginTop: "20px", justifyContent: "flex-end" }}>
-                <button style={ghostBtn} onClick={closeModal} disabled={creating}>
+                <button className="cr-btn cr-btn--secondary cr-btn--sm" onClick={closeModal} disabled={creating}>
                   Anulează
                 </button>
-                <button style={primaryBtn} onClick={handleCreate} disabled={creating}>
+                <button className="cr-btn cr-btn--primary cr-btn--sm" onClick={handleCreate} disabled={creating}>
                   {creating ? (
                     <>
                       <Loader2 size={14} className="spin" /> Se creează...
@@ -561,14 +564,14 @@ if (gate.verdict !== "pass") {
                     {revealToken ? newKeyToken : maskToken(newKeyToken)}
                   </code>
                   <button
-                    style={iconBtn}
+                    className="cr-btn cr-btn--icon cr-btn--sm"
                     onClick={() => setRevealToken((v) => !v)}
                     aria-label={revealToken ? "Ascunde" : "Arată"}
                   >
                     {revealToken ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                   <button
-                    style={iconBtn}
+                    className="cr-btn cr-btn--icon cr-btn--sm"
                     onClick={() => {
                       void navigator.clipboard.writeText(newKeyToken)
                     }}
@@ -579,7 +582,7 @@ if (gate.verdict !== "pass") {
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
-                <button style={primaryBtn} onClick={closeModal}>
+                <button className="cr-btn cr-btn--primary cr-btn--sm" onClick={closeModal}>
                   Am salvat token-ul
                 </button>
               </div>
@@ -638,7 +641,7 @@ function CodeBlock({ title, content, language }: { title: string; content: strin
           {title} · {language}
         </span>
         <button
-          style={iconBtn}
+          className="cr-btn cr-btn--icon cr-btn--sm"
           onClick={() => {
             void navigator.clipboard.writeText(content)
             setCopied(true)
@@ -674,7 +677,14 @@ function EndpointCard({
     <div style={endpointWrap}>
       <button
         type="button"
-        style={endpointHeaderBtn}
+        className="cr-btn cr-btn--secondary cr-btn--sm"
+        style={{
+          width: "100%",
+          justifyContent: "space-between",
+          borderRadius: 0,
+          borderWidth: 0,
+          borderBottom: expanded ? "1px solid var(--border-soft)" : 0,
+        }}
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
@@ -760,7 +770,7 @@ function Modal({
           <h2 id="api-modal-title" style={{ ...h2Style, margin: 0 }}>
             {title}
           </h2>
-          <button type="button" style={iconBtn} onClick={onClose} aria-label="Închide">
+          <button type="button" className="cr-btn cr-btn--icon cr-btn--sm" onClick={onClose} aria-label="Închide">
             <X size={16} />
           </button>
         </header>
@@ -975,57 +985,6 @@ const codeBlockHeader: CSSProperties = {
   borderBottom: "none",
   borderRadius: "10px 10px 0 0",
   padding: "6px 14px",
-}
-
-const primaryBtn: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  borderRadius: "8px",
-  background: "var(--cobalt-500)",
-  color: "white",
-  border: "none",
-  fontSize: "13px",
-  fontWeight: 600,
-  cursor: "pointer",
-}
-
-const ghostBtn: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  borderRadius: "8px",
-  background: "transparent",
-  color: "var(--ink)",
-  border: "1px solid var(--surface-border)",
-  fontSize: "13px",
-  cursor: "pointer",
-}
-
-const iconBtn: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "28px",
-  height: "28px",
-  borderRadius: "6px",
-  background: "transparent",
-  color: "var(--ink)",
-  border: "1px solid var(--surface-border)",
-  cursor: "pointer",
-}
-
-const dangerBtn: CSSProperties = {
-  background: "transparent",
-  color: "var(--red-700)",
-  border: "1px solid var(--red-300)",
-  borderRadius: "6px",
-  padding: "4px 10px",
-  fontSize: "12px",
-  cursor: "pointer",
-  fontWeight: 500,
 }
 
 const tableStyle: CSSProperties = {

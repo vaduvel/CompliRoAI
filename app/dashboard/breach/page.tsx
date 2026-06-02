@@ -240,54 +240,26 @@ export default function BreachPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <ShieldAlert size={20} color="#f87171" />
-          Incident date personale — notificare ANSPDCP 72h
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+    <div className="cr-page cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <ShieldAlert size={28} color="var(--red-700)" />
+          <div>
+            <span className="cr-eyebrow">Conformitate GDPR</span>
+            <h1 className="cr-title">Incident date personale · 72h</h1>
+            <p className="cr-subtitle">
           GDPR Art. 33 (notificare autoritate) + Art. 34 (notificare persoane vizate) · countdown 72h
           live · finding rescue auto-emis în <strong>De rezolvat</strong>
-        </p>
+            </p>
+          </div>
+        </div>
       </div>
 
       <StatsBar summary={summary} />
 
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
@@ -302,7 +274,7 @@ export default function BreachPage() {
         }}
       >
         <FilterTabs value={filter} onChange={setFilter} records={records} />
-        <button onClick={() => setShowCreate(true)} style={btnPrimary}>
+        <button onClick={() => setShowCreate(true)} className="cr-btn cr-btn--primary cr-btn--sm">
           <Plus size={14} /> Înregistrează breach
         </button>
       </div>
@@ -447,16 +419,7 @@ function FilterTabs({
           <button
             key={tab.value}
             onClick={() => onChange(tab.value)}
-            style={{
-              padding: "6px 12px",
-              fontSize: "12px",
-              fontWeight: 500,
-              borderRadius: "999px",
-              border: "1px solid " + (active ? "var(--cobalt-600)" : "var(--border-soft)"),
-              background: active ? "rgba(96,165,250,0.14)" : "var(--surface-1)",
-              color: active ? "#60a5fa" : "var(--ink-muted)",
-              cursor: "pointer",
-            }}
+            className={`cr-filter-chip ${active ? "is-active" : ""}`}
           >
             {tab.label} · {tab.count}
           </button>
@@ -489,7 +452,7 @@ function EmptyState({ hasAny, onCreate }: { hasAny: boolean; onCreate: () => voi
         Înregistrează un incident de securitate a datelor pentru a porni cronometrul de 72h și a
         emite automat un finding rescue în <strong>De rezolvat</strong>.
       </p>
-      <button onClick={onCreate} style={{ ...btnPrimary, marginTop: "14px" }}>
+      <button onClick={onCreate} className="cr-btn cr-btn--primary cr-btn--sm" style={{ marginTop: "14px" }}>
         <Plus size={14} /> Înregistrează breach
       </button>
     </div>
@@ -724,7 +687,7 @@ function BreachDetail({
               Status: <strong>{record.anspdcpNotification?.status ?? "draft"}</strong>. Acțiune
               necesară: trimite notificarea către ANSPDCP cu numărul de înregistrare.
             </span>
-            <button onClick={() => setShowAnspdcp(true)} style={btnSecondary}>
+            <button onClick={() => setShowAnspdcp(true)} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Mail size={13} /> Marchează ANSPDCP trimis
             </button>
           </div>
@@ -755,7 +718,7 @@ function BreachDetail({
           </div>
         ) : record.subjectNotificationRequired ? (
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <button onClick={() => setShowSubjects(true)} style={btnSecondary}>
+            <button onClick={() => setShowSubjects(true)} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Mail size={13} /> Marchează persoane notificate
             </button>
           </div>
@@ -794,10 +757,10 @@ function BreachDetail({
 
       {/* Actions */}
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
-        <button onClick={onExport} style={btnSecondary}>
+        <button onClick={onExport} className="cr-btn cr-btn--secondary cr-btn--sm">
           <Download size={13} /> Export markdown (Audit Pack)
         </button>
-        <button onClick={onDelete} style={btnDanger}>
+        <button onClick={onDelete} className="cr-btn cr-btn--danger cr-btn--sm">
           <Trash2 size={13} /> Șterge breach
         </button>
       </div>
@@ -996,12 +959,13 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ex: Acces neautorizat la fileserver HR"
-            style={inputStyle}
+            className="cr-input"
             required
           />
         </Field>
         <Field label="Descriere completă *">
           <textarea
+            className="cr-input cr-textarea"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Ce s-a întâmplat, când și cum a fost descoperit..."
@@ -1011,7 +975,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
         </Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
           <Field label="Cauză *">
-            <select value={cause} onChange={(e) => setCause(e.target.value as BreachCause)} style={inputStyle}>
+            <select value={cause} onChange={(e) => setCause(e.target.value as BreachCause)} className="cr-input">
               {ALL_CAUSES.map((c) => (
                 <option key={c} value={c}>
                   {CAUSE_LABELS[c]}
@@ -1023,7 +987,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             <select
               value={severity}
               onChange={(e) => setSeverity(e.target.value as BreachSeverity)}
-              style={inputStyle}
+              className="cr-input"
             >
               {ALL_SEVERITIES.map((s) => (
                 <option key={s} value={s}>
@@ -1038,7 +1002,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
             type="datetime-local"
             value={discoveredAt}
             onChange={(e) => setDiscoveredAt(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
             required
           />
         </Field>
@@ -1074,12 +1038,13 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
               value={affectedCount}
               onChange={(e) => setAffectedCount(e.target.value)}
               placeholder="120"
-              style={inputStyle}
+              className="cr-input"
               min={0}
             />
           </Field>
           <Field label="Categorii persoane vizate (1 pe linie)">
             <textarea
+            className="cr-input cr-textarea"
               value={affectedCategoriesText}
               onChange={(e) => setAffectedCategoriesText(e.target.value)}
               placeholder={"Angajați activi\nClienți B2C"}
@@ -1089,6 +1054,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
         </div>
         <Field label="Sisteme afectate (1 pe linie)">
           <textarea
+            className="cr-input cr-textarea"
             value={affectedSystemsText}
             onChange={(e) => setAffectedSystemsText(e.target.value)}
             placeholder={"fileserver-hr\nActive Directory\nMailchimp"}
@@ -1097,6 +1063,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
         </Field>
         <Field label="Consecințe probabile pentru persoanele vizate">
           <textarea
+            className="cr-input cr-textarea"
             value={likelyConsequences}
             onChange={(e) => setLikelyConsequences(e.target.value)}
             placeholder="Ex: Posibilă utilizare CNP/IBAN pentru fraudă financiară..."
@@ -1113,6 +1080,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
         </label>
         <Field label="Măsuri de limitare luate (1 pe linie)">
           <textarea
+            className="cr-input cr-textarea"
             value={containmentText}
             onChange={(e) => setContainmentText(e.target.value)}
             placeholder={"Resetare parole\nIzolare server compromis"}
@@ -1121,6 +1089,7 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
         </Field>
         <Field label="Măsuri preventive (1 pe linie)">
           <textarea
+            className="cr-input cr-textarea"
             value={preventionText}
             onChange={(e) => setPreventionText(e.target.value)}
             placeholder={"MFA pe toate conturile\nAudit acces lunar"}
@@ -1136,10 +1105,10 @@ function CreateModal({ onClose, onDone }: { onClose: () => void; onDone: () => P
         )}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" onClick={onClose} style={btnGhost}>
+          <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
-          <button type="submit" disabled={busy} style={btnPrimary}>
+          <button type="submit" disabled={busy} className="cr-btn cr-btn--primary cr-btn--sm">
             {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             Înregistrează
           </button>
@@ -1230,7 +1199,7 @@ function NotifyAnspdcpModal({
             value={refNum}
             onChange={(e) => setRefNum(e.target.value)}
             placeholder="ANSPDCP-2026-12345"
-            style={inputStyle}
+            className="cr-input"
             required
           />
         </Field>
@@ -1239,7 +1208,7 @@ function NotifyAnspdcpModal({
             type="datetime-local"
             value={submittedAt}
             onChange={(e) => setSubmittedAt(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
             required
           />
         </Field>
@@ -1260,6 +1229,7 @@ function NotifyAnspdcpModal({
         )}
         <Field label={late ? "Justificare depășire 72h *" : "Justificare depășire 72h (dacă e cazul)"}>
           <textarea
+            className="cr-input cr-textarea"
             value={delayJust}
             onChange={(e) => setDelayJust(e.target.value)}
             placeholder="Ex: Incidentul a fost confirmat tehnic abia după 96h..."
@@ -1272,7 +1242,7 @@ function NotifyAnspdcpModal({
             <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--ink-muted)", textTransform: "uppercase" }}>
               Preview narativă
             </div>
-            <button type="button" onClick={copyNarrative} style={btnGhost}>
+            <button type="button" onClick={copyNarrative} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Copy size={12} /> Copiază
             </button>
           </div>
@@ -1301,10 +1271,10 @@ function NotifyAnspdcpModal({
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" onClick={onClose} style={btnGhost}>
+          <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
-          <button type="submit" disabled={busy} style={btnPrimary}>
+          <button type="submit" disabled={busy} className="cr-btn cr-btn--primary cr-btn--sm">
             {busy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
             Confirmă trimitere
           </button>
@@ -1410,7 +1380,7 @@ function NotifySubjectsModal({
                 onChange={(e) =>
                   setMethod(e.target.value as "email" | "letter" | "public_communication" | "other")
                 }
-                style={inputStyle}
+                className="cr-input"
               >
                 <option value="email">Email</option>
                 <option value="letter">Scrisoare</option>
@@ -1423,7 +1393,7 @@ function NotifySubjectsModal({
                 type="datetime-local"
                 value={sentAt}
                 onChange={(e) => setSentAt(e.target.value)}
-                style={inputStyle}
+                className="cr-input"
                 required
               />
             </Field>
@@ -1431,6 +1401,7 @@ function NotifySubjectsModal({
         ) : (
           <Field label="Motiv documentat de ce NU e necesară notificarea persoanelor (Art. 34(3)) *">
             <textarea
+            className="cr-input cr-textarea"
               value={skipReason}
               onChange={(e) => setSkipReason(e.target.value)}
               placeholder="Ex: Datele au fost criptate cu o cheie inaccesibilă atacatorului — risc redus pentru persoanele vizate."
@@ -1448,10 +1419,10 @@ function NotifySubjectsModal({
         )}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" onClick={onClose} style={btnGhost}>
+          <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
-          <button type="submit" disabled={busy} style={btnPrimary}>
+          <button type="submit" disabled={busy} className="cr-btn cr-btn--primary cr-btn--sm">
             {busy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
             {mode === "notify" ? "Marchează notificat" : "Documentează skip"}
           </button>
@@ -1569,52 +1540,4 @@ const inputStyle: React.CSSProperties = {
   fontFamily: "inherit",
   width: "100%",
   boxSizing: "border-box",
-}
-
-const btnPrimary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  fontSize: "13px",
-  fontWeight: 500,
-  borderRadius: "6px",
-  border: "none",
-  background: "var(--cobalt-600)",
-  color: "white",
-  cursor: "pointer",
-}
-
-const btnSecondary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "6px 10px",
-  fontSize: "12px",
-  fontWeight: 500,
-  borderRadius: "6px",
-  border: "1px solid var(--border-soft)",
-  background: "var(--surface-1)",
-  color: "var(--ink)",
-  cursor: "pointer",
-}
-
-const btnGhost: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "6px 10px",
-  fontSize: "12px",
-  fontWeight: 500,
-  borderRadius: "6px",
-  border: "1px solid transparent",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  cursor: "pointer",
-}
-
-const btnDanger: React.CSSProperties = {
-  ...btnSecondary,
-  color: "#f87171",
-  borderColor: "rgba(248,113,113,0.3)",
 }

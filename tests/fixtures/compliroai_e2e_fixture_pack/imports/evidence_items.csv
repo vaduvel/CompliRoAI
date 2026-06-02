@@ -1,0 +1,10 @@
+﻿evidence_id,client_cui,linked_test_id,type,path,certainty_after_attach,requires_review
+EV-001,RO24567890,E2E-CHAT-005,transparency_notice_text,evidence/EV-CHATBOT-NOTICE-MAGAZINE.md,evidence_attached,legal
+EV-002,RO24567890,E2E-CHAT-001,screenshot_placeholder,evidence/EV-CHATBOT-SCREENSHOT-NO-NOTICE.txt,evidence_attached,consultant
+EV-003,RO24567890,E2E-CHAT-002,vendor_dpa,evidence/EV-VENDOR-DPA-OPENAI-DEMO.md,evidence_attached,dpo
+EV-004,RO33214567,E2E-HR-001,dpia_screening,evidence/EV-DPIA-HR-NORDHIRE-DRAFT.md,evidence_attached,dpo
+EV-005,RO70004567,E2E-BLD-001,eval_report,evidence/EV-EVAL-REPORT-SUPPORT-AGENT.json,evidence_attached,engineering
+EV-006,RO70004567,E2E-BLD-001,sample_logs,evidence/EV-LOG-SAMPLE-SUPPORT-AGENT.jsonl,evidence_attached,it_security
+EV-007,RO12345678,E2E-IMM-005,ai_policy,evidence/EV-AI-POLICY-APEX-v1.md,evidence_attached,management
+EV-008,RO24567890,E2E-QUES-005,previous_audit_pack,evidence/EV-PREVIOUS-AUDIT-PACK-MAGO.txt,evidence_attached,consultant
+EV-009,RO70004567,E2E-CHG-001,model_config_before_after,evidence/EV-MODEL-CONFIG-CHANGE-BEFORE-AFTER.yaml,system_detected,engineering

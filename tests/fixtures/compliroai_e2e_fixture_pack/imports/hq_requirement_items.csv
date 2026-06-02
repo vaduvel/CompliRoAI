@@ -1,0 +1,4 @@
+﻿questionnaire_id,item_id,question,expected_evidence,severity_if_missing
+Q-HQ-001,HQ1,Provide local AI register and risk classification status.,ai_use_case_register;risk_classification_report,high
+Q-HQ-001,HQ2,Provide local monitoring plan for AI systems in production.,monitoring_plan,high
+Q-HQ-001,HQ3,Provide evidence pack and review owners for open AI risks.,evidence_pack;owner_assignment,high

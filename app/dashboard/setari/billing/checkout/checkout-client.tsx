@@ -50,56 +50,29 @@ export function CheckoutClient({ tiers, currentTier, stripeReady }: Props) {
   const oneOffTiers = tiers.filter((t) => t.tier === "one_off_audit")
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
+    <div className="cr-page cr-stack">
       <Link
         href="/dashboard/setari/billing"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 13,
-          color: "var(--ink-muted)",
-          textDecoration: "none",
-          marginBottom: 16,
-        }}
+        className="cr-link"
+        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
       >
         <ArrowLeft size={14} />
         Înapoi la facturare
       </Link>
 
-      <header style={{ marginBottom: 32 }}>
-        <h1
-          style={{
-            fontFamily: "var(--font-display, 'Space Grotesk', sans-serif)",
-            fontSize: 32,
-            fontWeight: 700,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Alege planul potrivit
-        </h1>
-        <p style={{ color: "var(--ink-muted)", marginTop: 8, fontSize: 15, maxWidth: 600 }}>
-          Toate planurile includ Audit Pack, Breach 72h, DPIA, RoPA și DSAR. Alege în
-          funcție de mărimea echipei și volumul de clienți.
-        </p>
+      <header className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Setări & facturare</div>
+          <h1 className="cr-title">Alege planul potrivit</h1>
+          <p className="cr-subtitle">
+            Toate planurile includ Audit Pack, DPIA, RoPA, DSAR și modulele AI Act
+            relevante rolului tău. Alege după mărimea echipei și volumul de clienți.
+          </p>
+        </div>
       </header>
 
       {!stripeReady && (
-        <div
-          style={{
-            background: "#fef3c7",
-            border: "1px solid #fde68a",
-            borderRadius: 10,
-            padding: 16,
-            marginBottom: 24,
-            color: "#92400e",
-            display: "flex",
-            gap: 12,
-            alignItems: "flex-start",
-          }}
-        >
+        <div className="cr-alert cr-alert--warning">
           <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: 2 }} />
           <div style={{ fontSize: 14, lineHeight: 1.6 }}>
             <strong>Plățile online sunt în pregătire.</strong> Stripe va fi activat în
@@ -113,17 +86,7 @@ export function CheckoutClient({ tiers, currentTier, stripeReady }: Props) {
       )}
 
       {error && (
-        <div
-          style={{
-            background: "#fee2e2",
-            border: "1px solid #fecaca",
-            borderRadius: 10,
-            padding: 14,
-            marginBottom: 24,
-            color: "#991b1b",
-            fontSize: 14,
-          }}
-        >
+        <div className="cr-alert cr-alert--danger">
           {error}
         </div>
       )}
@@ -205,6 +168,7 @@ function TierCard({
   const highlight = tier.highlighted
   return (
     <div
+      className="cr-card"
       style={{
         background: "var(--bg-surface, #fff)",
         border: highlight ? "2px solid var(--cobalt-500, #3b5bdb)" : "1px solid var(--border-soft, #e2e8f0)",
@@ -298,6 +262,7 @@ function TierCard({
         </div>
       ) : (
         <button
+          className={`cr-btn ${highlight ? "cr-btn--primary" : ""}`}
           onClick={onClick}
           disabled={disabled || isLoading}
           style={{

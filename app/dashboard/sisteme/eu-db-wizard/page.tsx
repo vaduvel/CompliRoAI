@@ -23,6 +23,7 @@ const PURPOSE_LABELS: Record<AISystemPurpose, string> = {
   "fraud-detection": "Detectare fraudă",
   "marketing-personalization": "Personalizare marketing",
   "support-chatbot": "Chatbot suport",
+  "decision-support": "Suport decizional",
   "document-assistant": "Asistent documente",
   "image-manipulation-intimate": "Generare conținut intim (INTERZIS Omnibus 2026)",
   "other": "Altul",
@@ -90,20 +91,7 @@ function BtnPrimary({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        padding: "8px 16px",
-        background: disabled ? "var(--bg-hover)" : "var(--cobalt-600)",
-        border: "none",
-        borderRadius: "6px",
-        fontSize: "13px",
-        fontWeight: 500,
-        color: disabled ? "var(--ink-dim)" : "#fff",
-        cursor: disabled ? "not-allowed" : "pointer",
-        transition: "background 0.15s",
-      }}
+      className="cr-btn cr-btn--primary cr-btn--sm"
     >
       {children}
     </button>
@@ -121,18 +109,7 @@ function BtnOutline({
     <button
       type="button"
       onClick={onClick}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        padding: "8px 14px",
-        background: "transparent",
-        border: "1px solid var(--border)",
-        borderRadius: "6px",
-        fontSize: "13px",
-        color: "var(--ink-muted)",
-        cursor: "pointer",
-      }}
+      className="cr-btn cr-btn--secondary cr-btn--sm"
     >
       {children}
     </button>
@@ -212,7 +189,7 @@ export default function EUDatabaseWizardPage() {
       : { bg: "var(--amber-soft)", color: "var(--amber-400)", border: "rgba(251,191,36,0.2)" }
 
   return (
-    <div style={{ padding: "32px", maxWidth: "760px", display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="cr-page cr-stack">
 
       {/* Back link */}
       <div>
@@ -225,14 +202,15 @@ export default function EUDatabaseWizardPage() {
       </div>
 
       {/* Page intro */}
-      <div>
-        <h1 style={{ fontFamily: "var(--font-display-v3)", fontSize: "22px", fontWeight: 600, color: "var(--ink)", margin: 0, letterSpacing: "-0.02em" }}>
-          Înregistrare EU AI Database
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">AI Builder</div>
+          <h1 className="cr-title">Înregistrare EU AI Database</h1>
+          <p className="cr-subtitle">
           Wizard pentru pregătirea înregistrării sistemului AI high-risk conform Art. 71 AI Act.
           Deadline standalone high-risk: 2 decembrie 2027.
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* Stepper */}
@@ -268,6 +246,7 @@ export default function EUDatabaseWizardPage() {
             <div>
               <label style={fieldLabel}>Numele sistemului *</label>
               <input
+                className="cr-input"
                 style={fieldInput}
                 placeholder="HR Scorer, Chatbot Intern..."
                 value={form.systemName}
@@ -277,6 +256,7 @@ export default function EUDatabaseWizardPage() {
             <div>
               <label style={fieldLabel}>Scop / Categorie</label>
               <select
+                className="cr-select"
                 style={fieldInput}
                 value={form.purpose}
                 onChange={(e) =>
@@ -291,6 +271,7 @@ export default function EUDatabaseWizardPage() {
             <div>
               <label style={fieldLabel}>Descriere sistem</label>
               <textarea
+                className="cr-input cr-textarea"
                 style={{ ...fieldInput, resize: "vertical" }}
                 rows={3}
                 placeholder="Ce face sistemul, ce date procesează..."
@@ -323,6 +304,7 @@ export default function EUDatabaseWizardPage() {
               <div>
                 <label style={fieldLabel}>Numele organizației</label>
                 <input
+                  className="cr-input"
                   style={fieldInput}
                   value={form.orgName}
                   onChange={(e) => setForm((p) => ({ ...p, orgName: e.target.value }))}
@@ -331,6 +313,7 @@ export default function EUDatabaseWizardPage() {
               <div>
                 <label style={fieldLabel}>Email contact</label>
                 <input
+                  className="cr-input"
                   type="email"
                   style={fieldInput}
                   value={form.orgEmail}
@@ -341,6 +324,7 @@ export default function EUDatabaseWizardPage() {
             <div>
               <label style={fieldLabel}>Adresa sediului social</label>
               <input
+                className="cr-input"
                 style={fieldInput}
                 value={form.orgAddress}
                 onChange={(e) => setForm((p) => ({ ...p, orgAddress: e.target.value }))}
@@ -349,6 +333,7 @@ export default function EUDatabaseWizardPage() {
             <div>
               <label style={fieldLabel}>State membre UE (unde e folosit sistemul)</label>
               <input
+                className="cr-input"
                 style={fieldInput}
                 placeholder="RO, DE, FR"
                 value={form.memberStates}
@@ -358,6 +343,7 @@ export default function EUDatabaseWizardPage() {
             <div>
               <label style={fieldLabel}>Măsuri de supraveghere umană (human oversight)</label>
               <textarea
+                className="cr-input cr-textarea"
                 style={{ ...fieldInput, resize: "vertical" }}
                 rows={2}
                 placeholder="Confirmare umană obligatorie, audit periodic..."
@@ -502,7 +488,7 @@ export default function EUDatabaseWizardPage() {
               </p>
               <p style={{ fontSize: "12px", color: "var(--red-400)", margin: 0 }}>
                 JSON-ul generat este un <strong>draft de pregătire</strong>, nu o înregistrare validată oficial.
-                AI Act Compliance nu este certificat ca organism de evaluare a conformității EU AI Act.
+                CompliRoAI nu este certificat ca organism de evaluare a conformității EU AI Act.
                 Înainte de submit, documentația trebuie verificată de un expert legal sau consultant
                 certificat în AI Act.
               </p>
@@ -547,7 +533,7 @@ export default function EUDatabaseWizardPage() {
                 Important
               </p>
               <p style={{ fontSize: "12px", color: "var(--amber-400)", margin: 0 }}>
-                AI Act Compliance NU trimite automat la EU AI Database. Submiterea este responsabilitatea organizației.
+                CompliRoAI NU trimite automat la EU AI Database. Submiterea este responsabilitatea organizației.
                 Termenul pentru sisteme high-risk standalone:{" "}
                 <strong>2 decembrie 2027</strong> (extins prin Omnibus Agreement, 7 mai 2026).
               </p>

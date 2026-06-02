@@ -10,12 +10,14 @@ type OrgStateRow<T> = {
   updated_at?: string
 }
 
+const ORG_STATE_BATCH_SIZE = 50
+
 export function getConfiguredDataBackend(): "local" | "supabase" | "hybrid" {
   // Preferă AIACT_DATA_BACKEND (mandate § 20 — env prefix AIACT_*), cu fallback
   // pe COMPLISCAN_DATA_BACKEND pentru deploy-uri legacy.
-  const raw =
-    process.env.AIACT_DATA_BACKEND ?? process.env.COMPLISCAN_DATA_BACKEND
-  const value = raw?.trim().toLowerCase()
+  const raw = [process.env.AIACT_DATA_BACKEND, process.env.COMPLISCAN_DATA_BACKEND]
+    .find((value) => typeof value === "string" && value.trim() !== "")
+  const value = raw?.replace(/\\n/g, "\n").trim().toLowerCase()
   if (value === "supabase") return "supabase"
   if (value === "hybrid") return "hybrid"
   return "local"
@@ -33,7 +35,33 @@ export async function loadOrgStateFromSupabase<T>(orgId: string): Promise<T | nu
     `select=org_id,state,updated_at&org_id=eq.${encodeURIComponent(orgId)}&limit=1`,
     "public"
   )
+  if (!Array.isArray(rows)) return null
   return rows[0]?.state ?? null
+}
+
+export async function loadOrgStatesFromSupabase<T>(orgIds: string[]): Promise<Map<string, T>> {
+  if (!shouldUseSupabaseOrgState()) return new Map()
+
+  const uniqueOrgIds = [...new Set(orgIds.filter(Boolean))]
+  if (uniqueOrgIds.length === 0) return new Map()
+
+  const rows: OrgStateRow<T>[] = []
+  for (let index = 0; index < uniqueOrgIds.length; index += ORG_STATE_BATCH_SIZE) {
+    const batch = uniqueOrgIds.slice(index, index + ORG_STATE_BATCH_SIZE)
+    const orgIdsParam = `(${batch.map((id) => `"${id}"`).join(",")})`
+    const batchRows = await supabaseSelect<OrgStateRow<T>>(
+      "org_state",
+      `select=org_id,state,updated_at&org_id=in.${orgIdsParam}`,
+      "public"
+    )
+    rows.push(...batchRows)
+  }
+
+  return new Map(
+    rows
+      .filter((row) => row?.org_id)
+      .map((row) => [row.org_id, row.state] as const)
+  )
 }
 
 export async function persistOrgStateToSupabase<T>(orgId: string, state: T): Promise<void> {

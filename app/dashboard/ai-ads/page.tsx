@@ -276,44 +276,25 @@ export default function AIAdsPage() {
   }
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 1280, margin: "0 auto" }}>
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-        <Megaphone size={32} color="#60a5fa" />
-        <h1
-          style={{
-            fontSize: 28,
-            fontWeight: 600,
-            color: "var(--text-primary, #e2e8f0)",
-            margin: 0,
-          }}
-        >
-          AI Ads &amp; Claims
-        </h1>
+      <div className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <Megaphone size={32} color="var(--cobalt-700)" />
+          <div>
+            <div className="cr-eyebrow">Conformitate · marketing AI</div>
+            <h1 className="cr-title">AI Ads &amp; Claims</h1>
+            <p className="cr-subtitle">
+              AI Ads Compliance Pack: ce afirmă AI-ul despre brand, pe ce sursă, cine a
+              aprobat, ce date au fost folosite și ce risc legal există.
+            </p>
+          </div>
+        </div>
       </div>
-      <p
-        style={{
-          color: "var(--text-secondary, #94a3b8)",
-          fontSize: 14,
-          marginBottom: 24,
-          maxWidth: 820,
-          lineHeight: 1.6,
-        }}
-      >
-        AI Ads Compliance Pack: ce afirmă AI-ul despre brand, pe ce sursă, cine a
-        aprobat, ce date au fost folosite și ce risc legal există.
-      </p>
 
       {/* Summary bar */}
       {summary && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
-            gap: 12,
-            marginBottom: 24,
-          }}
-        >
+        <div className="cr-stat-strip">
           <StatCard
             icon={<Megaphone size={16} />}
             label="Campanii"
@@ -351,30 +332,12 @@ export default function AIAdsPage() {
       )}
 
       {/* Tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          borderBottom: "1px solid rgba(148,163,184,0.12)",
-          marginBottom: 24,
-        }}
-      >
+      <div className="cr-segment-bar">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            style={{
-              padding: "10px 16px",
-              background: "transparent",
-              border: "none",
-              color: activeTab === t.key ? "#60a5fa" : "var(--text-secondary, #94a3b8)",
-              cursor: "pointer",
-              fontSize: 14,
-              fontWeight: activeTab === t.key ? 600 : 400,
-              borderBottom:
-                activeTab === t.key ? "2px solid #60a5fa" : "2px solid transparent",
-              marginBottom: -1,
-            }}
+            className={activeTab === t.key ? "cr-tab is-active" : "cr-tab"}
           >
             {t.label}
           </button>
@@ -382,24 +345,14 @@ export default function AIAdsPage() {
       </div>
 
       {error && (
-        <div
-          style={{
-            padding: 12,
-            background: "rgba(248,113,113,0.1)",
-            border: "1px solid rgba(248,113,113,0.3)",
-            borderRadius: 8,
-            color: "#f87171",
-            fontSize: 13,
-            marginBottom: 16,
-          }}
-        >
+        <div className="cr-alert cr-alert--danger">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8" }}>
-          <Loader2 size={16} className="animate-spin" /> Încărcare...
+        <div className="cr-empty">
+          <Loader2 size={16} className="cr-spin" /> Încărcare...
         </div>
       ) : (
         <>
@@ -532,39 +485,16 @@ function StatCard({
   urgent?: boolean
 }) {
   return (
-    <div
-      style={{
-        padding: 14,
-        background: "rgba(15,23,42,0.4)",
-        border: "1px solid rgba(148,163,184,0.12)",
-        borderRadius: 8,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          color: urgent ? "#fb923c" : "#60a5fa",
-          fontSize: 12,
-          marginBottom: 6,
-        }}
-      >
+    <div className={urgent ? "cr-stat cr-stat--warning" : "cr-stat"}>
+      <div className="cr-stat__label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {icon}
         <span>{label}</span>
       </div>
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 600,
-          color: "var(--text-primary, #e2e8f0)",
-          lineHeight: 1.1,
-        }}
-      >
+      <div className="cr-stat__value">
         {value}
       </div>
       {hint && (
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{hint}</div>
+        <div className="cr-stat__sub">{hint}</div>
       )}
     </div>
   )
@@ -608,7 +538,7 @@ function CampaignsTab({
         <h2 style={{ fontSize: 18, color: "var(--text-primary, #e2e8f0)", margin: 0 }}>
           Campanii AI Ads ({campaigns.length})
         </h2>
-        <button onClick={onNew} style={btnPrimary}>
+        <button onClick={onNew} className="cr-btn cr-btn--primary cr-btn--sm">
           <Plus size={14} /> Adaugă campanie
         </button>
       </div>
@@ -680,7 +610,7 @@ function CampaignsTab({
                     onClick={() =>
                       setExpanded((e) => ({ ...e, [c.id]: !e[c.id] }))
                     }
-                    style={btnGhost}
+                    className="cr-btn cr-btn--secondary cr-btn--sm"
                     aria-label="Toggle"
                   >
                     {expanded[c.id] ? (
@@ -689,7 +619,7 @@ function CampaignsTab({
                       <ChevronDown size={14} />
                     )}
                   </button>
-                  <button onClick={() => handleDelete(c.id)} style={btnDanger}>
+                  <button onClick={() => handleDelete(c.id)} className="cr-btn cr-btn--danger cr-btn--sm">
                     <X size={14} />
                   </button>
                 </div>
@@ -734,7 +664,7 @@ function CampaignsTab({
                   </div>
                   <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
                     <button
-                      style={btnGhost}
+                      className="cr-btn cr-btn--secondary cr-btn--sm"
                       onClick={() => {
                         setActiveCampaign(c.id)
                         setActiveTab("approvals")
@@ -743,7 +673,7 @@ function CampaignsTab({
                       <CheckCircle2 size={12} /> Înregistrează aprobare
                     </button>
                     <button
-                      style={btnGhost}
+                      className="cr-btn cr-btn--secondary cr-btn--sm"
                       onClick={() => {
                         setActiveCampaign(c.id)
                         setActiveTab("tracking")
@@ -799,7 +729,7 @@ function ClaimsTab({
         <h2 style={{ fontSize: 18, color: "var(--text-primary, #e2e8f0)", margin: 0 }}>
           Claims registry ({claims.length})
         </h2>
-        <button onClick={onNew} style={btnPrimary}>
+        <button onClick={onNew} className="cr-btn cr-btn--primary cr-btn--sm">
           <Plus size={14} /> Adaugă afirmație
         </button>
       </div>
@@ -885,7 +815,7 @@ function ClaimsTab({
                       </ul>
                     )}
                   </div>
-                  <button onClick={() => handleDelete(cl.id)} style={btnDanger}>
+                  <button onClick={() => handleDelete(cl.id)} className="cr-btn cr-btn--danger cr-btn--sm">
                     <X size={14} />
                   </button>
                 </div>
@@ -950,7 +880,7 @@ function ApprovalsTab({
                     {list.length} aprobări înregistrate
                   </div>
                 </div>
-                <button onClick={() => onNew(c.id)} style={btnPrimary}>
+                <button onClick={() => onNew(c.id)} className="cr-btn cr-btn--primary cr-btn--sm">
                   <Plus size={12} /> Înregistrează aprobare
                 </button>
               </div>
@@ -1071,7 +1001,7 @@ function TrackingTab({
                     {tr ? `Review ${tr.id} — ${tr.gaps.length} gap(uri)` : "Niciun review"}
                   </div>
                 </div>
-                <button onClick={() => onNew(c.id)} style={btnPrimary}>
+                <button onClick={() => onNew(c.id)} className="cr-btn cr-btn--primary cr-btn--sm">
                   {tr ? (
                     <>
                       <Eye size={12} /> Editează
@@ -1186,7 +1116,7 @@ function ExportTab({
             <div style={{ fontSize: 12, color: "#94a3b8" }}>Tracking reviews</div>
           </div>
         </div>
-        <button onClick={onExport} disabled={loading} style={btnPrimary}>
+        <button onClick={onExport} disabled={loading} className="cr-btn cr-btn--primary cr-btn--sm">
           {loading ? (
             <Loader2 size={14} className="animate-spin" />
           ) : (
@@ -1278,21 +1208,21 @@ function CampaignFormModal({
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
         <FormField label="Brand *">
           <input
             value={brandName}
             onChange={(e) => setBrandName(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
         <FormField label="Platformă">
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value as AIAdsCampaignPlatform)}
-            style={inputStyle}
+            className="cr-input"
           >
             {(Object.keys(PLATFORM_LABELS) as AIAdsCampaignPlatform[]).map((p) => (
               <option key={p} value={p}>
@@ -1305,7 +1235,7 @@ function CampaignFormModal({
           <select
             value={campaignType}
             onChange={(e) => setCampaignType(e.target.value as AIAdsCampaignType)}
-            style={inputStyle}
+            className="cr-input"
           >
             {(Object.keys(CAMPAIGN_TYPE_LABELS) as AIAdsCampaignType[]).map((p) => (
               <option key={p} value={p}>
@@ -1318,7 +1248,7 @@ function CampaignFormModal({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as AIAdsCampaignStatus)}
-            style={inputStyle}
+            className="cr-input"
           >
             {(Object.keys(STATUS_LABELS) as AIAdsCampaignStatus[]).map((p) => (
               <option key={p} value={p}>
@@ -1334,7 +1264,7 @@ function CampaignFormModal({
             value={linkedVendorId}
             onChange={(e) => setLinkedVendorId(e.target.value)}
             placeholder="ex: vnd-abc123"
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
         <FormField label="Asset IDs (Sprint 023.7 Content Register, comma-separated)">
@@ -1342,7 +1272,7 @@ function CampaignFormModal({
             value={linkedAssetIds}
             onChange={(e) => setLinkedAssetIds(e.target.value)}
             placeholder="ex: cnt-abc, cnt-def"
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
       </Section>
@@ -1351,7 +1281,7 @@ function CampaignFormModal({
           <input
             value={targetAudienceDescription}
             onChange={(e) => setTargetAudienceDescription(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
         <FormField label="">
@@ -1382,7 +1312,7 @@ function CampaignFormModal({
             <input
               value={platformTermsReviewedByEmail}
               onChange={(e) => setPlatformTermsReviewedByEmail(e.target.value)}
-              style={inputStyle}
+              className="cr-input"
             />
           </FormField>
         )}
@@ -1393,7 +1323,7 @@ function CampaignFormModal({
             type="date"
             value={startDateISO ? startDateISO.slice(0, 10) : ""}
             onChange={(e) => setStartDateISO(e.target.value ? `${e.target.value}T00:00:00.000Z` : "")}
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
         <FormField label="End (ISO)">
@@ -1401,7 +1331,7 @@ function CampaignFormModal({
             type="date"
             value={endDateISO ? endDateISO.slice(0, 10) : ""}
             onChange={(e) => setEndDateISO(e.target.value ? `${e.target.value}T23:59:59.000Z` : "")}
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
         <FormField label="Buget (EUR)">
@@ -1409,11 +1339,12 @@ function CampaignFormModal({
             type="number"
             value={budgetEUR}
             onChange={(e) => setBudgetEUR(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
         <FormField label="Note">
           <textarea
+            className="cr-input cr-textarea"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
@@ -1432,11 +1363,11 @@ function CampaignFormModal({
           justifyContent: "flex-end",
         }}
       >
-        <button style={btnGhost} onClick={onClose}>
+        <button className="cr-btn cr-btn--secondary cr-btn--sm" onClick={onClose}>
           Anulează
         </button>
         <button
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
           onClick={submit}
           disabled={submitting || !title || !brandName}
         >
@@ -1511,7 +1442,7 @@ function ClaimFormModal({
         <select
           value={campaignId}
           onChange={(e) => setCampaignId(e.target.value)}
-          style={inputStyle}
+          className="cr-input"
         >
           <option value="">— fără campanie —</option>
           {campaigns.map((c) => (
@@ -1525,7 +1456,7 @@ function ClaimFormModal({
         <select
           value={claimType}
           onChange={(e) => setClaimType(e.target.value as AIClaimType)}
-          style={inputStyle}
+          className="cr-input"
         >
           {(Object.keys(CLAIM_TYPE_LABELS) as AIClaimType[]).map((p) => (
             <option key={p} value={p}>
@@ -1536,6 +1467,7 @@ function ClaimFormModal({
       </FormField>
       <FormField label="Afirmația *">
         <textarea
+            className="cr-input cr-textarea"
           value={claimText}
           onChange={(e) => setClaimText(e.target.value)}
           rows={2}
@@ -1548,14 +1480,14 @@ function ClaimFormModal({
           value={contextDescription}
           onChange={(e) => setContextDescription(e.target.value)}
           placeholder="ex: Landing page hero, banner Meta"
-          style={inputStyle}
+          className="cr-input"
         />
       </FormField>
       <FormField label="Status dovadă">
         <select
           value={evidenceStatus}
           onChange={(e) => setEvidenceStatus(e.target.value as AIClaimEvidenceStatus)}
-          style={inputStyle}
+          className="cr-input"
         >
           {(Object.keys(EVIDENCE_LABELS) as AIClaimEvidenceStatus[]).map((p) => (
             <option key={p} value={p}>
@@ -1569,11 +1501,12 @@ function ClaimFormModal({
           value={evidenceSource}
           onChange={(e) => setEvidenceSource(e.target.value)}
           placeholder="https://audit.example.com/report.pdf"
-          style={inputStyle}
+          className="cr-input"
         />
       </FormField>
       <FormField label="Note">
         <textarea
+            className="cr-input cr-textarea"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
@@ -1605,10 +1538,10 @@ function ClaimFormModal({
           justifyContent: "flex-end",
         }}
       >
-        <button style={btnGhost} onClick={onClose}>
+        <button className="cr-btn cr-btn--secondary cr-btn--sm" onClick={onClose}>
           Anulează
         </button>
-        <button style={btnPrimary} onClick={submit} disabled={submitting || !claimText}>
+        <button className="cr-btn cr-btn--primary cr-btn--sm" onClick={submit} disabled={submitting || !claimText}>
           {submitting && <Loader2 size={14} className="animate-spin" />} Salvează
         </button>
       </div>
@@ -1678,6 +1611,7 @@ function ApprovalFormModal({
     >
       <FormField label="Descriere creative *">
         <textarea
+            className="cr-input cr-textarea"
           value={creativeDescription}
           onChange={(e) => setCreativeDescription(e.target.value)}
           rows={2}
@@ -1690,7 +1624,7 @@ function ApprovalFormModal({
           value={approvedByEmail}
           onChange={(e) => setApprovedByEmail(e.target.value)}
           placeholder="ceo@example.com"
-          style={inputStyle}
+          className="cr-input"
         />
       </FormField>
       <Section title="Gate-uri compliance (3/3 necesare)">
@@ -1738,6 +1672,7 @@ function ApprovalFormModal({
       </Section>
       <FormField label="Comentariu">
         <textarea
+            className="cr-input cr-textarea"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={2}
@@ -1755,11 +1690,11 @@ function ApprovalFormModal({
           justifyContent: "flex-end",
         }}
       >
-        <button style={btnGhost} onClick={onClose}>
+        <button className="cr-btn cr-btn--secondary cr-btn--sm" onClick={onClose}>
           Anulează
         </button>
         <button
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
           onClick={submit}
           disabled={submitting || !creativeDescription || !approvedByEmail}
         >
@@ -1902,7 +1837,7 @@ function TrackingFormModal({
             value={consentRecordedHow}
             onChange={(e) => setConsentRecordedHow(e.target.value)}
             placeholder="ex: CMP banner Cookiebot, granular per category"
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
       </Section>
@@ -1911,7 +1846,7 @@ function TrackingFormModal({
           <input
             value={cookieList}
             onChange={(e) => setCookieList(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
             placeholder="_ga, _fbp"
           />
         </FormField>
@@ -1919,7 +1854,7 @@ function TrackingFormModal({
           <input
             value={pixelList}
             onChange={(e) => setPixelList(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
             placeholder="fbq, gtag, _linkedin_partner_id"
           />
         </FormField>
@@ -1941,7 +1876,7 @@ function TrackingFormModal({
               value={crmDataCategoriesUploaded}
               onChange={(e) => setCrmDataCategoriesUploaded(e.target.value)}
               placeholder="email hashed, phone hashed"
-              style={inputStyle}
+              className="cr-input"
             />
           </FormField>
         )}
@@ -1964,7 +1899,7 @@ function TrackingFormModal({
               onChange={(e) =>
                 setTransferMechanism(e.target.value as typeof transferMechanism)
               }
-              style={inputStyle}
+              className="cr-input"
             >
               <option value="none">none</option>
               <option value="scc">SCC</option>
@@ -1980,11 +1915,12 @@ function TrackingFormModal({
           <input
             value={reviewedByEmail}
             onChange={(e) => setReviewedByEmail(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
         <FormField label="Note review">
           <textarea
+            className="cr-input cr-textarea"
             value={reviewNotes}
             onChange={(e) => setReviewNotes(e.target.value)}
             rows={2}
@@ -2003,11 +1939,11 @@ function TrackingFormModal({
           justifyContent: "flex-end",
         }}
       >
-        <button style={btnGhost} onClick={onClose}>
+        <button className="cr-btn cr-btn--secondary cr-btn--sm" onClick={onClose}>
           Anulează
         </button>
         <button
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
           onClick={submit}
           disabled={submitting || methods.length === 0}
         >
@@ -2066,7 +2002,7 @@ function Modal({
           }}
         >
           <h3 style={{ margin: 0, color: "#e2e8f0", fontSize: 18 }}>{title}</h3>
-          <button style={btnGhost} onClick={onClose}>
+          <button className="cr-btn cr-btn--secondary cr-btn--sm" onClick={onClose}>
             <X size={14} />
           </button>
         </div>
@@ -2195,44 +2131,5 @@ const checkboxLabel: React.CSSProperties = {
   gap: 6,
   fontSize: 13,
   color: "#cbd5e1",
-  cursor: "pointer",
-}
-
-const btnPrimary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  padding: "8px 14px",
-  background: "#60a5fa",
-  color: "#0f172a",
-  border: "none",
-  borderRadius: 6,
-  fontWeight: 600,
-  fontSize: 13,
-  cursor: "pointer",
-}
-
-const btnGhost: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 4,
-  padding: "6px 10px",
-  background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid rgba(148,163,184,0.2)",
-  borderRadius: 6,
-  fontSize: 12,
-  cursor: "pointer",
-}
-
-const btnDanger: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  padding: "6px 10px",
-  background: "transparent",
-  color: "#f87171",
-  border: "1px solid rgba(248,113,113,0.3)",
-  borderRadius: 6,
-  fontSize: 12,
   cursor: "pointer",
 }

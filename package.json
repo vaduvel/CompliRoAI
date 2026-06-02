@@ -6,8 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:e2e": "AIACT_FORCE_INSECURE_COOKIES=1 next start -p 3101",
     "lint": "next lint",
-    "test": "vitest"
+    "test": "vitest",
+    "e2e:live:chatbot": "node scripts/run-live-e2e-chatbot.mjs",
+    "e2e:live:fixture": "node scripts/run-live-e2e-chatbot.mjs",
+    "e2e:live:fixtures": "node scripts/run-live-e2e-fixture-matrix.mjs",
+    "test:e2e:fixtures": "npm run e2e:live:fixtures",
+    "test:e2e:fixtures:ui": "playwright test -c playwright.config.ts tests/e2e/compliroai-fixture-matrix.ui.spec.ts",
+    "test:e2e:fixtures:ui:headed": "playwright test -c playwright.config.ts tests/e2e/compliroai-fixture-matrix.ui.spec.ts --headed",
+    "test:e2e:fixtures:ui:dev": "COMPLIROAI_SERVER_MODE=dev COMPLIROAI_PORT=3001 COMPLIROAI_BASE_URL=http://127.0.0.1:3001 playwright test -c playwright.config.ts tests/e2e/compliroai-fixture-matrix.ui.spec.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -28,6 +36,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.41",
     "@types/react": "^19",

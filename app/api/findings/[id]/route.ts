@@ -30,6 +30,21 @@ function actorFromContext(ctx: {
   }
 }
 
+async function parseJsonBodySafe(request: Request): Promise<Record<string, unknown>> {
+  const raw = await request.text().catch(() => "")
+  if (!raw.trim()) return {}
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    return parsed && typeof parsed === "object" ? parsed : {}
+  } catch (error) {
+    console.warn("PATCH /api/findings/[id] invalid JSON body", {
+      error: error instanceof Error ? error.message : String(error),
+      snippet: raw.slice(0, 300),
+    })
+    return {}
+  }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -37,7 +52,7 @@ export async function PATCH(
   try {
     const ctx = await getOrgContext()
     const { id } = await params
-    const body = await request.json().catch(() => ({}))
+    const body = await parseJsonBodySafe(request)
 
     if (body.findingStatus !== undefined && !isFindingStatus(body.findingStatus)) {
       return NextResponse.json({ error: "Status invalid." }, { status: 400 })
@@ -75,7 +90,8 @@ export async function PATCH(
     }
 
     return NextResponse.json({ finding: updated })
-  } catch {
+  } catch (error) {
+    console.error("PATCH /api/findings/[id] failed", error)
     return NextResponse.json(
       { error: "Nu am putut actualiza risc-ul." },
       { status: 500 },
@@ -98,7 +114,8 @@ export async function DELETE(
       )
     }
     return NextResponse.json({ ok: true })
-  } catch {
+  } catch (error) {
+    console.error("DELETE /api/findings/[id] failed", error)
     return NextResponse.json(
       { error: "Nu am putut sterge risc-ul." },
       { status: 500 },

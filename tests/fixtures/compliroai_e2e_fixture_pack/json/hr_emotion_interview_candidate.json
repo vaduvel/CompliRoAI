@@ -1,0 +1,14 @@
+{
+  "client_cui": "RO33214567",
+  "department": "hr_recruitment",
+  "use_case": "Emotion scoring in video interviews",
+  "output_type": "emotion_recognition",
+  "affected_persons": [
+    "candidates"
+  ],
+  "expected_risk": "prohibited_candidate",
+  "expected_findings": [
+    "workplace_education_emotion_recognition_prohibited_candidate",
+    "stop_legal_review"
+  ]
+}

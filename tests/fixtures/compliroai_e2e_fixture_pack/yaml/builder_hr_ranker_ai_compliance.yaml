@@ -1,0 +1,34 @@
+project:
+  id: PRJ-HR-RANKER
+  name: "HR Candidate Ranking Assistant"
+  client: "NordHire Recrutare SRL"
+  intended_purpose: "Rank and recommend candidates for recruiter review."
+  lifecycle_stage: "pilot"
+
+system:
+  system_name: "HR Ranker v0.9"
+  model_provider: "VendorX HR AI"
+  model_name: "vendor_model_v3"
+  deployment: "SaaS"
+  human_review_required: true
+  logs_retention_days: 365
+
+data:
+  personal_data: true
+  confidential_data: true
+  data_categories:
+    - cv
+    - candidate_email
+    - education
+    - work_experience
+
+risk:
+  affects_people: true
+  automated_decision: "unknown"
+  public_output: false
+  annex_iii_candidate: "employment_worker_management"
+
+evidence:
+  architecture_doc: ""
+  eval_report: ""
+  incident_plan: ""

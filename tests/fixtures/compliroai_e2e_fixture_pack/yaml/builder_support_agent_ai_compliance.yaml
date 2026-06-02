@@ -1,0 +1,33 @@
+project:
+  id: PRJ-SUPPORT-AGENT
+  name: "Customer Support AI Agent"
+  client: "Apex Logistic SRL"
+  intended_purpose: "Assist support agents with draft replies. Does not send replies automatically."
+  out_of_scope_use: "No automated refusal, approval, pricing, or legally binding decision."
+  lifecycle_stage: "pre_go_live"
+
+system:
+  system_name: "Support Agent v1"
+  model_provider: "OpenAI"
+  model_name: "gpt-4.1"
+  deployment: "Vercel"
+  human_review_required: true
+  logs_retention_days: 180
+
+data:
+  personal_data: true
+  confidential_data: true
+  data_categories:
+    - name
+    - email
+    - support_messages
+
+risk:
+  affects_people: true
+  automated_decision: false
+  public_output: false
+
+evidence:
+  architecture_doc: "evidence/EV-ARCH-SUPPORT-AGENT.md"
+  eval_report: "evidence/EV-EVAL-REPORT-SUPPORT-AGENT.json"
+  incident_plan: "evidence/EV-INCIDENT-SOP-SUPPORT-AGENT.md"

@@ -262,7 +262,7 @@ export default function QmsPage() {
 
   if (loading) {
     return (
-      <div style={pageStyle}>
+      <div className="cr-page cr-stack">
         <Header />
         <p style={{ color: "var(--ink-dim)", fontSize: "13px" }}>Se încarcă...</p>
       </div>
@@ -270,7 +270,7 @@ export default function QmsPage() {
   }
   if (!workspace) {
     return (
-      <div style={pageStyle}>
+      <div className="cr-page cr-stack">
         <Header />
         <div
           style={{
@@ -292,7 +292,7 @@ export default function QmsPage() {
             module pentru providerii de sisteme AI high-risk. Reprezintă 13
             secțiuni documentate (a)-(m).
           </p>
-          <button type="button" onClick={initQms} disabled={busy} style={primaryButton}>
+          <button type="button" onClick={initQms} disabled={busy} className="cr-btn cr-btn--primary cr-btn--sm">
             {busy ? <Loader2 size={14} /> : <FileBadge size={14} />}
             Inițializează QMS Workspace
           </button>
@@ -302,7 +302,7 @@ export default function QmsPage() {
   }
 
   return (
-    <div style={pageStyle}>
+    <div className="cr-page cr-stack">
       <Header />
       {errorBanner && (
         <div style={errorBannerStyle}>
@@ -311,7 +311,7 @@ export default function QmsPage() {
           <button
             type="button"
             onClick={() => setErrorBanner(null)}
-            style={iconButton}
+            className="cr-btn cr-btn--icon cr-btn--sm"
             aria-label="Închide"
           >
             <X size={14} />
@@ -331,16 +331,16 @@ export default function QmsPage() {
       <StatsBar summary={summary} highRiskCount={highRiskSystems.length} />
 
       <div style={tabsContainer}>
-        <button type="button" onClick={() => setTab("sections")} style={tabButton(tab === "sections")}>
+        <button type="button" onClick={() => setTab("sections")} className={`cr-tab ${tab === "sections" ? "is-active" : ""}`}>
           <FolderCheck size={13} /> Secțiuni Art. 17(1)(a)-(m)
         </button>
-        <button type="button" onClick={() => setTab("lessons")} style={tabButton(tab === "lessons")}>
+        <button type="button" onClick={() => setTab("lessons")} className={`cr-tab ${tab === "lessons" ? "is-active" : ""}`}>
           <Lightbulb size={13} /> Lecții ({workspace.lessonsLearned.length})
         </button>
-        <button type="button" onClick={() => setTab("attestations")} style={tabButton(tab === "attestations")}>
+        <button type="button" onClick={() => setTab("attestations")} className={`cr-tab ${tab === "attestations" ? "is-active" : ""}`}>
           <Award size={13} /> Atestări sisteme ({workspace.systemAttestations.length})
         </button>
-        <button type="button" onClick={() => setTab("health")} style={tabButton(tab === "health")}>
+        <button type="button" onClick={() => setTab("health")} className={`cr-tab ${tab === "health" ? "is-active" : ""}`}>
           <Link2 size={13} /> Cross-module health
         </button>
         <div style={{ flex: 1 }} />
@@ -431,12 +431,15 @@ export default function QmsPage() {
 
 function Header() {
   return (
-    <div>
-      <h1 style={pageTitleStyle}>QMS — Sistem Management Calitate</h1>
-      <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
+    <div className="cr-hero">
+      <div className="cr-hero__copy">
+        <span className="cr-eyebrow">Conformitate</span>
+        <h1 className="cr-title">Sistem de management al calității · Art. 17</h1>
+        <p className="cr-subtitle">
         Art. 17 EU AI Act · umbrella module pentru providers of high-risk AI systems · 13 secțiuni
         documentate (a)-(m) + lessons learned + per-system attestations
-      </p>
+        </p>
+      </div>
     </div>
   )
 }
@@ -484,7 +487,7 @@ function TopCard({
             disabled={busy}
             value={workspace.organizationSize}
             onChange={(e) => onChangeOrgSize(e.target.value as QmsOrganizationSize)}
-            style={selectStyle}
+            className="cr-select"
           >
             {ORG_SIZE_OPTIONS.map((o) => (
               <option key={o} value={o}>
@@ -751,7 +754,7 @@ function SectionEditor({
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            style={textareaStyle}
+            className="cr-input cr-textarea"
             rows={4}
             disabled={busy}
             placeholder="Cum este îndeplinită această secțiune..."
@@ -761,7 +764,7 @@ function SectionEditor({
           <textarea
             value={procedureSummary}
             onChange={(e) => setProcedureSummary(e.target.value)}
-            style={textareaStyle}
+            className="cr-input cr-textarea"
             rows={4}
             disabled={busy}
             placeholder="Pașii procedurali aplicați..."
@@ -775,7 +778,7 @@ function SectionEditor({
             type="text"
             value={responsibleRole}
             onChange={(e) => setResponsibleRole(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
             disabled={busy}
           />
         </Field>
@@ -784,7 +787,7 @@ function SectionEditor({
             type="email"
             value={responsibleEmail}
             onChange={(e) => setResponsibleEmail(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
             disabled={busy}
           />
         </Field>
@@ -794,7 +797,7 @@ function SectionEditor({
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          style={textareaStyle}
+          className="cr-input cr-textarea"
           rows={2}
           disabled={busy}
         />
@@ -856,7 +859,7 @@ function SectionEditor({
           }}
         >
           <div style={smallLabel}>Documente atașate ({section.documentReferences.length})</div>
-          <button type="button" onClick={onAttachDoc} style={secondaryButton} disabled={busy}>
+          <button type="button" onClick={onAttachDoc} className="cr-btn cr-btn--secondary cr-btn--sm" disabled={busy}>
             <Plus size={12} /> Atașează document
           </button>
         </div>
@@ -895,7 +898,7 @@ function SectionEditor({
                 <button
                   type="button"
                   onClick={() => onRemoveDoc(d.id)}
-                  style={iconButton}
+                  className="cr-btn cr-btn--icon cr-btn--sm"
                   aria-label="Șterge document"
                   disabled={busy}
                 >
@@ -921,7 +924,7 @@ function SectionEditor({
           </button>
         ))}
         <div style={{ flex: 1 }} />
-        <button type="button" onClick={save} style={primaryButton} disabled={busy}>
+        <button type="button" onClick={save} className="cr-btn cr-btn--primary cr-btn--sm" disabled={busy}>
           {busy ? <Loader2 size={12} /> : <CheckCircle2 size={12} />}
           Salvează
         </button>
@@ -984,11 +987,11 @@ function LessonsTab({
           justifyContent: "flex-end",
         }}
       >
-        <button type="button" onClick={onRefreshAuto} style={secondaryButton} disabled={busy}>
+        <button type="button" onClick={onRefreshAuto} className="cr-btn cr-btn--secondary cr-btn--sm" disabled={busy}>
           {busy ? <Loader2 size={12} /> : <BookOpen size={12} />}
           Sincronizează auto (din incidente + PMM + findings)
         </button>
-        <button type="button" onClick={onOpenAddLesson} style={primaryButton} disabled={busy}>
+        <button type="button" onClick={onOpenAddLesson} className="cr-btn cr-btn--primary cr-btn--sm" disabled={busy}>
           <Plus size={12} /> Adaugă lecție manuală
         </button>
       </div>
@@ -1168,7 +1171,7 @@ function AttestationsTab({
                   <button
                     type="button"
                     onClick={() => onRevoke(s.id)}
-                    style={iconButton}
+                    className="cr-btn cr-btn--icon cr-btn--sm"
                     aria-label="Revocă atestarea"
                     disabled={busy}
                   >
@@ -1354,7 +1357,7 @@ function ApproveModal({
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={inputStyle}
+          className="cr-input"
           placeholder="ceo@organizatie.ro"
         />
       </Field>
@@ -1363,17 +1366,17 @@ function ApproveModal({
           type="number"
           value={months}
           onChange={(e) => setMonths(Number(e.target.value))}
-          style={inputStyle}
+          className="cr-input"
           min={1}
           max={36}
         />
       </Field>
       {error && <div style={{ color: "#f87171", fontSize: "12px" }}>{error}</div>}
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button type="button" onClick={onClose} style={secondaryButton}>
+        <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
           Anulează
         </button>
-        <button type="button" onClick={submit} style={primaryButton} disabled={busy || !email}>
+        <button type="button" onClick={submit} className="cr-btn cr-btn--primary cr-btn--sm" disabled={busy || !email}>
           {busy ? <Loader2 size={12} /> : <ShieldCheck size={12} />}
           Aprobă
         </button>
@@ -1424,7 +1427,7 @@ function AttachDocModal({
         <select
           value={type}
           onChange={(e) => setType(e.target.value as QmsDocumentReferenceType)}
-          style={selectStyle}
+          className="cr-select"
         >
           {DOC_TYPE_OPTIONS.map((o) => (
             <option key={o} value={o}>
@@ -1438,7 +1441,7 @@ function AttachDocModal({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          style={inputStyle}
+          className="cr-input"
           placeholder="Politica QMS v1.0"
         />
       </Field>
@@ -1447,7 +1450,7 @@ function AttachDocModal({
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          style={inputStyle}
+          className="cr-input"
           placeholder="https://drive.example/qms-policy"
         />
       </Field>
@@ -1456,23 +1459,23 @@ function AttachDocModal({
           type="text"
           value={versionLabel}
           onChange={(e) => setVersionLabel(e.target.value)}
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
       <Field label="Note">
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          style={textareaStyle}
+          className="cr-input cr-textarea"
           rows={2}
         />
       </Field>
       {error && <div style={{ color: "#f87171", fontSize: "12px" }}>{error}</div>}
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button type="button" onClick={onClose} style={secondaryButton}>
+        <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
           Anulează
         </button>
-        <button type="button" onClick={submit} style={primaryButton} disabled={busy || !title}>
+        <button type="button" onClick={submit} className="cr-btn cr-btn--primary cr-btn--sm" disabled={busy || !title}>
           {busy ? <Loader2 size={12} /> : <Plus size={12} />}
           Atașează
         </button>
@@ -1538,14 +1541,14 @@ function AddLessonModal({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
       <Field label="Cauză rădăcină (sumar)">
         <textarea
           value={rootCauseSummary}
           onChange={(e) => setRootCauseSummary(e.target.value)}
-          style={textareaStyle}
+          className="cr-input cr-textarea"
           rows={3}
         />
       </Field>
@@ -1553,7 +1556,7 @@ function AddLessonModal({
         <textarea
           value={preventiveActionsRaw}
           onChange={(e) => setPreventiveActionsRaw(e.target.value)}
-          style={textareaStyle}
+          className="cr-input cr-textarea"
           rows={3}
         />
       </Field>
@@ -1562,7 +1565,7 @@ function AddLessonModal({
           type="text"
           value={resultingPolicyChange}
           onChange={(e) => setResultingPolicyChange(e.target.value)}
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
       <Field label="Schimbare proces (opțional)">
@@ -1570,11 +1573,12 @@ function AddLessonModal({
           type="text"
           value={resultingProcessChange}
           onChange={(e) => setResultingProcessChange(e.target.value)}
-          style={inputStyle}
+          className="cr-input"
         />
       </Field>
       <Field label="Sisteme aplicabile (Ctrl/Cmd-click pentru multi)">
         <select
+          className="cr-select"
           multiple
           value={applicableSysIds}
           onChange={(e) =>
@@ -1593,19 +1597,19 @@ function AddLessonModal({
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          style={textareaStyle}
+          className="cr-input cr-textarea"
           rows={2}
         />
       </Field>
       {error && <div style={{ color: "#f87171", fontSize: "12px" }}>{error}</div>}
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button type="button" onClick={onClose} style={secondaryButton}>
+        <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
           Anulează
         </button>
         <button
           type="button"
           onClick={submit}
-          style={primaryButton}
+          className="cr-btn cr-btn--primary cr-btn--sm"
           disabled={busy || !title || !rootCauseSummary}
         >
           {busy ? <Loader2 size={12} /> : <Plus size={12} />}
@@ -1684,10 +1688,10 @@ function AttestModal({
         cunoscute.
       </p>
       <div style={{ display: "flex", gap: "8px" }}>
-        <button type="button" onClick={selectAll} style={secondaryButton}>
+        <button type="button" onClick={selectAll} className="cr-btn cr-btn--secondary cr-btn--sm">
           Bifează toate
         </button>
-        <button type="button" onClick={selectNone} style={secondaryButton}>
+        <button type="button" onClick={selectNone} className="cr-btn cr-btn--secondary cr-btn--sm">
           Debifează
         </button>
         <div style={{ flex: 1 }} />
@@ -1734,7 +1738,7 @@ function AttestModal({
         <textarea
           value={gapsRaw}
           onChange={(e) => setGapsRaw(e.target.value)}
-          style={textareaStyle}
+          className="cr-input cr-textarea"
           rows={3}
           placeholder="Ex: FRIA în lucru; lipsește documentație SOC2 pentru data center."
         />
@@ -1743,16 +1747,16 @@ function AttestModal({
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          style={textareaStyle}
+          className="cr-input cr-textarea"
           rows={2}
         />
       </Field>
       {error && <div style={{ color: "#f87171", fontSize: "12px" }}>{error}</div>}
       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-        <button type="button" onClick={onClose} style={secondaryButton}>
+        <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
           Anulează
         </button>
-        <button type="button" onClick={submit} style={primaryButton} disabled={busy}>
+        <button type="button" onClick={submit} className="cr-btn cr-btn--primary cr-btn--sm" disabled={busy}>
           {busy ? <Loader2 size={12} /> : <Award size={12} />}
           Salvează atestarea
         </button>
@@ -1804,7 +1808,7 @@ function Modal({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <h2 style={{ ...sectionTitle, margin: 0, flex: 1 }}>{title}</h2>
-          <button type="button" onClick={onClose} style={iconButton} aria-label="Închide">
+          <button type="button" onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" aria-label="Închide">
             <X size={14} />
           </button>
         </div>

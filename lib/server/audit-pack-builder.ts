@@ -73,6 +73,7 @@ import { buildPmmMarkdown } from "@/lib/server/pmm-store"
 import { PMM_REVIEW_CYCLE_LABELS } from "@/lib/compliance/pmm-schema"
 import { buildIncidentMarkdown } from "@/lib/server/ai-incident-store"
 import { buildAuthorityCooperationMarkdown } from "@/lib/server/authority-cooperation-store"
+import { buildGuidancePlanMarkdown } from "@/lib/server/guidance-plan-store"
 import {
   AI_INCIDENT_CATEGORY_LABELS,
   AI_INCIDENT_STATUS_LABELS,
@@ -166,6 +167,16 @@ export type AuditPackManifest = {
     aiAdsClaimsCount?: number
     aiAdsApprovalsCount?: number
     conversionTrackingReviewsCount?: number
+    authorityCooperationRequestsCount?: number
+    euDocArt47Count?: number
+    ceMarkingChecklistArt48Count?: number
+    aiGuidancePlansCount?: number
+  }
+  /** Export gate captured at generation time, so the ZIP proves its delivery state. */
+  readiness?: {
+    status: AuditPackExportReadinessStatus
+    packKind: AuditPackKind
+    exportBlockersCount: number
   }
   hashAlgorithm: "sha256"
   hashChainRoot: string
@@ -201,7 +212,18 @@ export type BuildAuditPackOptions = {
   currentOrgId: string
   /** When true, the bundle is re-signed with a fresh cabinet signature (POST /sign). */
   reSign?: boolean
+  /** Canonical dashboard readiness at generation time. Persisted into manifest + registry. */
+  exportReadinessStatus?: AuditPackExportReadinessStatus
+  exportBlockersCount?: number
 }
+
+export type AuditPackExportReadinessStatus =
+  | "blocked"
+  | "draft_only"
+  | "ready_for_review"
+  | "approved"
+
+export type AuditPackKind = "blocked_draft" | "draft" | "review" | "final"
 
 // ────────────────────────────────────────────────────────────────────────────
 //   Secrets / signing
@@ -280,6 +302,14 @@ export async function buildAuditPack(
   const dateLabel = generatedAt.slice(0, 10)
   const orgSlug = slugify(orgName)
   const fileName = `compliroai-audit-pack-${orgSlug}-${dateLabel}.zip`
+  const packKind = auditPackKindFor(options.exportReadinessStatus)
+  const readinessSnapshot = options.exportReadinessStatus
+    ? {
+        status: options.exportReadinessStatus,
+        packKind,
+        exportBlockersCount: options.exportBlockersCount ?? 0,
+      }
+    : undefined
 
   // ─── 2. Build the file contents (deterministic order) ────────────────────
   const files = buildFileContents({
@@ -363,7 +393,10 @@ export async function buildAuditPack(
       ceMarkingChecklistArt48Count: state.generatedDocuments.filter(
         (d) => d.documentType === "ce-marking-art-48-checklist",
       ).length,
+      // Sprint 027 — AI Guidance Orchestrator plans.
+      aiGuidancePlansCount: (state.aiGuidancePlans ?? []).length,
     },
+    readiness: readinessSnapshot,
     hashAlgorithm: "sha256" as const,
   }
 
@@ -429,6 +462,9 @@ export async function buildAuditPack(
       createdByUserId: options.issuedByUserId,
       createdAtISO: generatedAt,
       reSigned: options.reSign === true,
+      exportReadinessStatus: options.exportReadinessStatus,
+      exportBlockersCount: options.exportReadinessStatus ? options.exportBlockersCount ?? 0 : undefined,
+      packKind: readinessSnapshot?.packKind,
     },
   })
 
@@ -577,6 +613,9 @@ export type AuditPackRegistryEntry = {
   createdByUserId: string
   createdAtISO: string
   reSigned?: boolean
+  exportReadinessStatus?: AuditPackExportReadinessStatus
+  exportBlockersCount?: number
+  packKind?: AuditPackKind
 }
 
 const PACK_REGISTRY_KEY = "auditPacks"
@@ -629,6 +668,13 @@ async function recordAuditPackInState(input: {
   } catch {
     // Registry persistence is best-effort; the ZIP is already built.
   }
+}
+
+function auditPackKindFor(status?: AuditPackExportReadinessStatus): AuditPackKind {
+  if (status === "approved") return "final"
+  if (status === "ready_for_review") return "review"
+  if (status === "blocked") return "blocked_draft"
+  return "draft"
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -878,7 +924,55 @@ function buildFileContents(input: {
   // ── Sprint 026: Art. 21 + Art. 26(11) Authority Cooperation Log ──────
   pushAuthorityCooperationFiles(files, input.state)
 
+  // ── Sprint 027: AI Guidance Orchestrator history + latest plan ───────
+  pushGuidancePlanFiles(files, input.state)
+
   return files
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 027 — AI Guidance Orchestrator audit evidence
+//
+//   ai-guidance/current-plan.md — ultimul plan explicat, cu surse/omisiuni/diff.
+//   ai-guidance/history.md      — istoricul deciziilor umane asupra planurilor.
+// ────────────────────────────────────────────────────────────────────────────
+
+function pushGuidancePlanFiles(files: FileBytes[], state: AIActState): void {
+  const plans = state.aiGuidancePlans ?? []
+  const historyLines = [
+    "# AI Guidance Orchestrator — istoric planuri",
+    "",
+    "AI-ul nu execută și nu închide findings. Planurile sunt recomandări prioritizate, aprobate/respise de operator și păstrate pentru audit.",
+    "",
+    `Total planuri: ${plans.length}`,
+    "",
+  ]
+
+  if (plans.length === 0) {
+    historyLines.push("_Niciun plan AI Guidance generat._")
+  } else {
+    historyLines.push("| ID | Status | Generat | Motiv | Acțiuni top | Omise | Decizie |")
+    historyLines.push("|---|---|---|---|---:|---:|---|")
+    for (const record of plans) {
+      historyLines.push(
+        `| ${record.id} | ${record.status} | ${record.generatedAtISO} | ${escapeMarkdownCell(record.reason ?? "initial")} | ${record.plan.actions.length} | ${record.plan.omittedActions.length} | ${
+          record.acceptedAtISO ? `acceptat ${record.acceptedAtISO}` : record.rejectedAtISO ? `respins ${record.rejectedAtISO}` : "—"
+        } |`,
+      )
+    }
+  }
+
+  files.push({
+    path: "ai-guidance/history.md",
+    bytes: utf8(historyLines.join("\n") + "\n"),
+  })
+
+  if (plans[0]) {
+    files.push({
+      path: "ai-guidance/current-plan.md",
+      bytes: utf8(buildGuidancePlanMarkdown(plans[0])),
+    })
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -2676,6 +2770,7 @@ function buildSignatureTxt(input: {
     `AI Ads claims:        ${input.manifest.summary.aiAdsClaimsCount ?? 0}`,
     `AI Ads approvals:     ${input.manifest.summary.aiAdsApprovalsCount ?? 0}`,
     `Tracking reviews:     ${input.manifest.summary.conversionTrackingReviewsCount ?? 0}`,
+    `AI guidance plans:    ${input.manifest.summary.aiGuidancePlansCount ?? 0}`,
     `Overall compliance:   ${input.manifest.summary.overallCompliancePct}%`,
     "",
     "──────────────────────  HASH CHAIN  ──────────────────────────────",
@@ -2733,6 +2828,10 @@ function slugify(value: string): string {
       .replace(/^-+|-+$/g, "")
       .slice(0, 60) || "org"
   )
+}
+
+function escapeMarkdownCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/\n/g, " ")
 }
 
 function escapeHtml(value: string): string {

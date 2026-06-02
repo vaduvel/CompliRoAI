@@ -39,11 +39,13 @@ export const initialComplianceState: ComplianceState = {
   events: [],
   generatedDocuments: [],
   aiSystems: [],
+  aiUseCases: [],
   detectedAISystems: [],
   driftRecords: [],
   driftSettings: { severityOverrides: {} },
   discoveryTriggers: [],
   literacyRecords: [],
+  aiGuidancePlans: [],
   onboarding: { completed: false, currentStep: 1 },
 }
 
@@ -68,6 +70,7 @@ export function normalizeComplianceState(state: ComplianceState): ComplianceStat
   const alerts = (state.alerts ?? []).map(normalizeAlert)
   const events = normalizeEvents(state.events)
   const aiSystems = Array.isArray(state.aiSystems) ? state.aiSystems : []
+  const aiUseCases = Array.isArray(state.aiUseCases) ? state.aiUseCases : []
   const detectedAISystems = Array.isArray(state.detectedAISystems) ? state.detectedAISystems : []
   const driftRecords = normalizeDriftRecords(state.driftRecords)
   const driftSettings = normalizeDriftSettings(state.driftSettings)
@@ -102,6 +105,7 @@ export function normalizeComplianceState(state: ComplianceState): ComplianceStat
     events,
     generatedDocuments,
     aiSystems,
+    aiUseCases,
     detectedAISystems,
     driftRecords,
     driftSettings,

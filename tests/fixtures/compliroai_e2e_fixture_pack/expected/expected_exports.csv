@@ -1,0 +1,43 @@
+﻿test_case_id,pack_type,expected_contents,should_block_final_if_open_findings,required_reviews,must_include_data_certainty,must_include_audit_log
+E2E-CAB-001,audit_pack,Draft AI Discovery Snapshot; export final blocat până la intake/review.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CAB-002,audit_pack,"Nu există export final, doar checklist și intake link.",no,dpo/legal/it/management depending findings,yes,yes
+E2E-CAB-003,audit_pack,Portfolio updated; audit log arată merge/update.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-CAB-004,audit_pack,Draft report include contradicție și caveat.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CAB-005,audit_pack,Management Summary draft cu coverage 25%.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-CAB-006,audit_pack,AI Literacy Evidence Pack draft.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-CHAT-001,transparency_pack,Transparency section draft; export final blocked până la notice evidence.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHAT-002,audit_pack,AI Register + RoPA/GDPR bridge + evidence appendix.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHAT-003,audit_pack,Open finding în Audit Pack.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-CHAT-004,audit_pack,Health AI risk memo draft; export final blocked.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHAT-005,transparency_pack,Transparency export ready.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-HR-001,hr_ai_risk_memo,HR AI Risk Memo draft; export blocked until legal/DPO review.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-HR-002,audit_pack,Open risk report; no final high-risk until legal review.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-HR-003,hr_ai_risk_memo,Simple HR AI safe-use note.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-HR-004,audit_pack,Export final blocked; legal memo required.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-HR-005,audit_pack,Employee AI monitoring risk memo.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-IMM-001,ai_safe_use_pack,AI Discovery Snapshot + AI Safe Use Pack draft.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-IMM-002,audit_pack,Risk Snapshot with critical shadow AI warning.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-IMM-003,audit_pack,Draft report says declared no AI conflicts with billing evidence.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-IMM-004,audit_pack,Open Action Plan.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-IMM-005,ai_safe_use_pack,AI Safe Use Pack partial.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-QUES-001,enterprise_response_pack,Enterprise AI Response Pack with evidence appendix.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-QUES-002,audit_pack,HQ Local AI Pack.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-QUES-003,audit_pack,"Response says not certified, shares AI governance evidence.",yes,dpo/legal/it/management depending findings,yes,yes
+E2E-QUES-004,audit_pack,Draft-only response pack with caveats.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-QUES-005,audit_pack,Enterprise response pack uses prior evidence.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-BLD-001,ai_builder_handover_pack,Project Handover Pack v1.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-BLD-002,ai_builder_handover_pack,Handover Pack blocked until legal review.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-BLD-003,ai_builder_handover_pack,Legal AI Project Handover Pack.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-BLD-004,ai_builder_handover_pack,Handover Pack includes operational controls.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-BLD-005,ai_builder_handover_pack,Draft Handover Pack only.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-BLD-006,audit_pack,Health AI risk memo; no final until review.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHG-001,ai_builder_handover_pack,Change Impact Report v2; Handover Pack v1 unchanged.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHG-002,audit_pack,Change log entry; no full pack reissue unless user chooses.,no,dpo/legal/it/management depending findings,yes,yes
+E2E-CHG-003,audit_pack,No approved change until logging restored or exception approved.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHG-004,change_impact_report,Change Impact Report with GDPR appendix.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHG-005,ai_builder_handover_pack,Material Change Report; Handover Pack v2 blocked.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHG-006,audit_pack,No export final; go-live blocked.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-CHG-007,audit_pack,Emergency Change Report.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-X-001,audit_pack,No export contamination.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-X-002,audit_pack,Audit log records second import.,yes,dpo/legal/it/management depending findings,yes,yes
+E2E-X-003,audit_pack,Draft export with caveats allowed; final blocked.,yes,dpo/legal/it/management depending findings,yes,yes

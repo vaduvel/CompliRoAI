@@ -20,16 +20,26 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AI Act Compliance — Conformitate EU AI Act pentru IMM-uri din România",
-    template: "%s · AI Act Compliance",
+    default: "CompliRoAI — AI Act + GDPR workspace pentru conformare AI",
+    template: "%s · CompliRoAI",
   },
   description:
-    "Singura platformă în limba română pentru AI Inventory, Annex IV, EU Database registration și AI Literacy (Art. 4 EU AI Act). Construită pentru IMM-uri.",
-  keywords: ["EU AI Act", "conformitate AI", "AI Inventory", "Annex IV", "AI Literacy", "IMM România"],
+    "Workspace operațional pentru DPO-uri, cabinete, firme și AI builders care trebuie să transforme AI Act + GDPR în inventar, dovezi, acțiuni și dosare auditabile.",
+  keywords: [
+    "CompliRoAI",
+    "EU AI Act",
+    "conformitate AI",
+    "DPO AI Act",
+    "AI Inventory",
+    "Annex IV",
+    "FRIA",
+    "AI Literacy",
+    "audit pack AI",
+  ],
   openGraph: {
-    title: "AI Act Compliance — Conformitate EU AI Act pentru IMM-uri",
+    title: "CompliRoAI — AI Act + GDPR workspace pentru conformare AI",
     description:
-      "Inventory AI, Annex IV, EU Database registration și AI Literacy pentru firmele din România.",
+      "Inventar AI, clasificare de rol și risc, FRIA, DPIA, Annex IV, monitorizare și audit pack pentru conformare AI.",
     locale: "ro_RO",
     type: "website",
   },

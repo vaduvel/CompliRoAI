@@ -84,38 +84,19 @@ export function ReportsList() {
   const filtered = combined.filter((r) => filter === "all" || r.kind === filter)
 
   return (
-    <div style={{ padding: "32px 32px", maxWidth: "1100px", margin: "0 auto" }}>
-      <header style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "14px" }}>
-        <div
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "10px",
-            background: "var(--cobalt-soft)",
-            color: "var(--cobalt-400)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <FileBarChart size={20} />
-        </div>
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "22px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Rapoarte
-          </h1>
-          <div style={{ fontSize: "13px", color: "var(--ink-dim)", marginTop: "2px" }}>
+    <div className="cr-page cr-stack">
+      <header className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <FileBarChart size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">Rapoarte & dosar</div>
+            <h1 className="cr-title">Rapoarte</h1>
+            <p className="cr-subtitle">
             Istoric Readiness Pack + Audit Pack pentru toți clienții. Click pe un raport
             pentru a-l regenera sau verifica.
+            </p>
           </div>
         </div>
       </header>
@@ -178,7 +159,7 @@ export function ReportsList() {
       </div>
 
       {/* Filter pills */}
-      <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
+      <div className="cr-segment-bar" style={{ marginBottom: "16px" }}>
         {(["all", "readiness", "audit"] as Filter[]).map((f) => {
           const active = filter === f
           const label = f === "all" ? "Toate" : f === "readiness" ? "Readiness Pack" : "Audit Pack"
@@ -187,18 +168,7 @@ export function ReportsList() {
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              style={{
-                padding: "8px 14px",
-                borderRadius: "8px",
-                border: active
-                  ? "1px solid var(--cobalt-500)"
-                  : "1px solid var(--border-strong)",
-                background: active ? "var(--cobalt-soft)" : "transparent",
-                color: active ? "var(--ink)" : "var(--ink-muted)",
-                fontSize: "12.5px",
-                fontWeight: active ? 500 : 400,
-                cursor: "pointer",
-              }}
+              className={`cr-tab ${active ? "is-active" : ""}`}
             >
               {label}
             </button>

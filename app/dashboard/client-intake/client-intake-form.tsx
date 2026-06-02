@@ -115,38 +115,19 @@ export function ClientIntakeForm() {
   }
 
   return (
-    <div style={{ padding: "32px 32px", maxWidth: "780px", margin: "0 auto" }}>
-      <header style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "14px" }}>
-        <div
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "10px",
-            background: "var(--cobalt-soft)",
-            color: "var(--cobalt-400)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <UserPlus size={20} />
-        </div>
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "22px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Client Intake
-          </h1>
-          <div style={{ fontSize: "13px", color: "var(--ink-dim)", marginTop: "2px" }}>
+    <div className="cr-page cr-stack">
+      <header className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <UserPlus size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">Colaborare</div>
+            <h1 className="cr-title">Client Intake</h1>
+            <p className="cr-subtitle">
             Trimite clientului un link securizat (HMAC, expirare configurabilă) pentru
             colectare date AI + GDPR. Nu îi cere parolă.
+            </p>
           </div>
         </div>
       </header>
@@ -168,7 +149,7 @@ export function ClientIntakeForm() {
           <select
             value={form.clientOrgId}
             onChange={(e) => setForm({ ...form, clientOrgId: e.target.value })}
-            style={inputBase}
+            className="cr-select"
             disabled={loading || clients.length === 0}
           >
             <option value="">
@@ -194,7 +175,7 @@ export function ClientIntakeForm() {
               value={form.recipientEmail}
               onChange={(e) => setForm({ ...form, recipientEmail: e.target.value })}
               placeholder="contact@clientulmeu.ro"
-              style={inputBase}
+              className="cr-input"
             />
           </div>
           <div>
@@ -204,7 +185,7 @@ export function ClientIntakeForm() {
               value={form.recipientName}
               onChange={(e) => setForm({ ...form, recipientName: e.target.value })}
               placeholder="Maria Popescu"
-              style={inputBase}
+              className="cr-input"
             />
           </div>
         </div>
@@ -226,7 +207,7 @@ export function ClientIntakeForm() {
             <select
               value={form.expiresInDays}
               onChange={(e) => setForm({ ...form, expiresInDays: Number(e.target.value) })}
-              style={inputBase}
+              className="cr-select"
             >
               <option value={3}>3 zile</option>
               <option value={7}>7 zile</option>
@@ -273,21 +254,7 @@ export function ClientIntakeForm() {
         <button
           type="submit"
           disabled={submitting || loading || clients.length === 0}
-          style={{
-            padding: "11px 20px",
-            borderRadius: "8px",
-            border: "none",
-            background: "var(--cobalt-600)",
-            color: "#fff",
-            fontSize: "13.5px",
-            fontWeight: 500,
-            cursor: submitting ? "wait" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            justifyContent: "center",
-            opacity: submitting || clients.length === 0 ? 0.7 : 1,
-          }}
+          className="cr-btn cr-btn--primary"
         >
           <Send size={14} />
           {submitting ? "Se generează…" : "Generează link intake"}
@@ -332,19 +299,7 @@ export function ClientIntakeForm() {
             <button
               type="button"
               onClick={copyLink}
-              style={{
-                padding: "6px 10px",
-                borderRadius: "6px",
-                border: "1px solid var(--border-strong)",
-                background: "transparent",
-                color: "var(--ink-muted)",
-                fontSize: "12px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                flexShrink: 0,
-              }}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
             >
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? "Copiat" : "Copy"}

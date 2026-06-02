@@ -257,6 +257,87 @@ None. Pure cleanup + verification sprint.
 ## Tests
 
 | Metric                      | Before (af9f692) | After (c8f428e) |
+
+---
+
+## 2026-05-26 — Radu consultant E2E re-verification
+
+Context: după maturizarea importului Cabinet și a flow-ului de execuție pe client,
+am rulat un test real de consultant: cont nou Cabinet, import client prin CSV,
+intrare în execuția clientului, rezolvare finding, atașare dovadă și export Audit
+Pack.
+
+### Flow verificat
+
+1. Register Cabinet user pe `/login?mode=register`.
+2. Onboarding Cabinet / DPO / Consultant până în dashboard.
+3. `/dashboard/clienti` → import CSV cu client nou și semnale:
+   - `uses_ai=yes`
+   - `personal_data_ai=yes`
+   - `service_scope=ai_act;gdpr;ai_literacy`
+   - `high_risk_suspected=yes`
+4. Preview import:
+   - 1 client valid
+   - 4 acțiuni inițiale generate.
+5. Import confirmat → redirect în `/dashboard/portofoliu`.
+6. Clientul apare în Portofoliu cu `4 acțiuni inițiale`.
+7. `Intră în execuție` → workspace-ul clientului, `/dashboard/resolve`.
+8. Finding `Completează inventarul AI...` deschis.
+9. Dovadă atașată cu notă + URL.
+10. Finding marcat `rezolvat`.
+11. `Ieși din execuție` revine în workspace-ul Cabinet.
+12. `/dashboard/audit-pack` → select client importat → export ZIP.
+
+### Rezultate
+
+```
+COMPLIROAI_BASE_URL=http://localhost:3001 npx playwright test \
+  --config .qa-screenshots/playwright.config.js \
+  .qa-screenshots/compliroai-radu-client-e2e.pw.ts --reporter=list
+
+1 passed
+```
+
+```
+COMPLIROAI_BASE_URL=http://localhost:3001 npx playwright test \
+  --config .qa-screenshots/playwright.config.js --reporter=list
+
+7 passed
+```
+
+```
+npm test -- --run lib/client-import.test.ts components/shell/nav-config.test.ts
+
+2 files passed / 31 tests passed
+```
+
+```
+npm run build
+
+Compiled successfully
+142 static pages generated
+```
+
+### Observație QA
+
+Prima rulare E2E a prins un fals simptom pe `Marchează rezolvat`: serverul local
+rula cu artefacte Next stale și chunk-uri `_next/static` 404, deci UI-ul era
+vizibil dar hidratarea era inconsistentă. După restart curat al serverului local,
+același flow a trecut cap-coadă. Nu s-a identificat bug în store-ul `resolve`;
+API-ul `PATCH /api/findings/[id]` mapează corect `resolve → resolved`, iar lista
+se reîncarcă.
+
+### Verdict
+
+Pentru flow-ul Radu Cabinet → Client importat → Execuție → Dovadă → Rezolvare →
+Audit Pack, produsul este funcțional cap-coadă în testele locale.
+
+Nu este încă acoperit ca E2E automat complet:
+
+- import nested de sisteme AI pe client;
+- import furnizori/models/RoPA/angajați AI Literacy;
+- runtime MLOps monitoring real;
+- landing page pixel-perfect.
 |-----------------------------|------------------|------------------|
 | `npx tsc --noEmit`          | clean            | clean            |
 | `npm run build`             | success          | success          |
@@ -398,3 +479,215 @@ None.
 - All dead code from placeholder era removed
 
 **STOP. No Sprint 026 without new mandate.**
+
+---
+
+## Addendum — 2026-05-25 Post-QA Hardening
+
+După portarea DS și reluarea verificărilor end-to-end, au apărut două regresii
+reale pe flow-ul `ai-builder -> sisteme -> logging evidence`:
+
+1. **Race de refresh în `/dashboard/sisteme`**  
+   Dacă utilizatorul salva un sistem AI înainte să termine primul `load()`,
+   răspunsul vechi putea suprascrie refresh-ul nou și sistemul tocmai creat nu
+   mai apărea imediat în listă.
+
+2. **Prefill fragil în `/dashboard/logging-evidence`**  
+   Wizard-ul deriva titlul doar din `systemId` și depindea de încărcarea
+   asincronă a listei de sisteme. În practică, heading-ul modalului devenea
+   vizibil înainte ca `title` să fie populat predictibil.
+
+### Fixuri aplicate
+
+- `components/ai-act/ai-inventory-panel.tsx`
+  - `onAdded()` este acum așteptat (`await`) înainte să se închidă formularul,
+    astfel încât refresh-ul de părinte să nu rămână în urmă.
+- `app/dashboard/sisteme/page.tsx`
+  - `load()` folosește acum `latestLoadId` + guard de commit pentru a preveni
+    ca un fetch mai vechi să suprascrie starea mai nouă.
+- `components/ai-act/ai-systems-list.tsx`
+  - link-ul spre logging transmite acum și `systemName`, nu doar `systemId`.
+- `app/dashboard/logging-evidence/page.tsx`
+  - pagina citește `systemName` din query params;
+  - wizard-ul pornește cu titlul pre-populat din numele sistemului;
+  - `systemId` și `systemName` sunt resetate coerent la `close` / `done`.
+
+### Verificare rulată
+
+Local, pe `http://127.0.0.1:3001`:
+
+```bash
+npx tsc --noEmit
+COMPLIROAI_BASE_URL='http://127.0.0.1:3001' \
+  npx playwright test .qa-screenshots/compliroai-module-ui-deep.pw.ts \
+  -g "ai-builder: high-risk system can create Logging Evidence from UI banner" \
+  --config .qa-screenshots/playwright.config.js --workers=1
+
+COMPLIROAI_BASE_URL='http://127.0.0.1:3001' \
+  npx playwright test --config .qa-screenshots/playwright.config.js --workers=1
+```
+
+### Rezultat
+
+- `npx tsc --noEmit` → clean
+- Playwright targeted test → **PASS**
+- Playwright full suite → **6/6 PASS**
+
+Concluzie: flow-ul critic de creare sistem AI + generare Logging Evidence din
+banner este din nou stabil și verificat cap-coadă.
+
+---
+
+## Addendum — 2026-05-26 Cabinet Import + Radu Consultant E2E
+
+După testarea manuală a workspace-ului Cabinet, a apărut o problemă de
+produs: `Clienți` și `Portofoliu` erau prea ușor de confundat, iar importul
+manual nu pornea execuția reală. Pentru un consultant extern, importul trebuie
+să fie onboarding operațional, nu doar adăugare de nume firmă.
+
+### Fixuri aplicate
+
+- `app/dashboard/clienti/clients-list.tsx`
+  - pagina explică explicit diferența:
+    - `Clienți` = registru de onboarding/import;
+    - `Portofoliu` = triaj cross-client și intrare în execuție;
+  - importul CSV/TSV redirecționează în `Portofoliu` după import reușit;
+  - butonul de client este redenumit în `Intră în execuție`;
+  - preview-ul importului afișează clienți validați și acțiuni generate.
+- `lib/client-import.ts`
+  - importul acceptă coloane RO/EN pentru date mature de client:
+    firmă, CUI, contact, scope servicii, rol AI estimat, tool-uri AI,
+    date personale, risc high-risk, status, intake, note, tag-uri, external ID;
+  - importul generează semnale inițiale pentru:
+    inventar AI, intake, DPIA/GDPR review, AI Literacy și rol/risc.
+- `app/api/portfolio/clients/route.ts`
+  - la creare/import client se creează findings inițiale în `De rezolvat`;
+  - fiecare finding creat din import intră și în audit trail;
+  - lista de portofoliu expune `importSignalsCount`.
+- `app/dashboard/portofoliu/portfolio-client.tsx`
+  - cardul clientului afișează `X acțiuni inițiale`;
+  - statistica de portofoliu include totalul acțiunilor inițiale;
+  - cardul nu mai este click-wide; intrarea în execuție este un buton explicit.
+- `components/shell/dashboard-shell.tsx`
+  - când cabinetul lucrează în execuție pe client, apare `Ieși din execuție`;
+  - butonul revine în workspace-ul principal al cabinetului.
+- `app/api/workspaces/exit-execution/route.ts`
+  - endpoint nou pentru revenirea din client workspace în cabinet workspace.
+- `app/dashboard/audit-pack/page.tsx` și `app/dashboard/readiness-pack/page.tsx`
+  - stările goale trimit utilizatorul la `Clienți`, nu la un Portofoliu fără
+    formular de import.
+- `app/dashboard/audit-pack/page.tsx`
+  - `Audit Pack` folosește acum și `/api/auth/me` ca fallback pentru lista de
+    clienți ai cabinetului, ca să nu afișeze fals “nu ai clienți” după ce
+    consultantul iese din execuția unui client importat.
+- `app/dashboard/resolve/page.tsx`
+  - acțiunile lifecycle au stare `pending`, `type="button"` explicit și update
+    imediat din răspunsul API;
+  - după `Marchează rezolvat`, finding-ul dispare stabil din filtrul activ
+    `open`, fără să lase utilizatorul într-un cockpit static.
+
+### Verificare rulată
+
+Local, pe `http://localhost:3001`:
+
+```bash
+npm test -- --run lib/client-import.test.ts
+
+npx playwright test -c .qa-screenshots/playwright.config.js \
+  .qa-screenshots/compliroai-radu-client-e2e.pw.ts
+
+node <<'NODE'
+// Smoke UI Import Center v2: taburi, date importate / declarații / de colectat,
+// import CSV și redirect în Portofoliu.
+NODE
+
+npm run build
+```
+
+### Rezultat
+
+- Vitest focused import → **7/7 PASS**
+- Playwright Radu consultant E2E critic → **1/1 PASS**
+- Import Center v2 smoke UI → **PASS**
+- `npm run build` → **PASS**
+
+Flow Radu verificat cap-coadă:
+
+1. Creează cont Cabinet.
+2. Importă client prin CSV în `Clienți`.
+3. Verifică acțiuni inițiale în `Portofoliu`.
+4. Intră în execuție pe client.
+5. Deschide finding de inventar AI.
+6. Atașează dovadă.
+7. Marchează finding-ul rezolvat.
+8. Iese din execuția clientului în Cabinet.
+9. Generează `Audit Pack` ZIP pentru client.
+
+Concluzie: flow-ul critic `Cabinet -> Import client -> Execuție -> Evidence ->
+Resolve -> Audit Pack` este stabil și verificat în UI real.
+
+## 2026-05-27 — Supabase CompliRoAI separat + AIUseCase production layer
+
+### Decizie
+
+Proiectul Supabase separat `CompliRoAI` nu pornește doar cu tabela
+`ai_use_cases`. Baseline-ul live trebuie să includă fundația aplicației:
+`profiles`, `organizations`, `memberships`, `org_state`, `share_tokens`, apoi
+`ai_use_cases`. `AIUseCase` este separat de `AISystem`: același tool poate avea
+riscuri diferite pe departament, scop, date și owner.
+
+### Implementat
+
+- Supabase live, proiect nou `hfadctfteymtvcmybleu`
+  - migrare `baseline_compliroai_core`;
+  - migrare `harden_compliroai_rls`;
+  - toate tabelele publice au RLS activ;
+  - security advisors: 0 lints.
+- `lib/compliance/types.ts`
+  - `AIUseCaseRecord` + enum-uri production-grade pentru departament, proces,
+    lifecycle, date, output, autonomy, Annex III, practici interzise,
+    certitudine și review.
+- `lib/compliance/ai-use-case-trigger-engine.ts`
+  - trigger engine determinist pentru:
+    GDPR/RoPA/DPIA, Art. 50, vendor review, human oversight, logging,
+    AI Literacy, high-risk candidate și prohibited candidate;
+  - nu setează verdict legal final.
+- `lib/client-import.ts` și `lib/server/portfolio-import.ts`
+  - importul AI Systems poate crea `AIUseCase + AISystem + Vendor draft`;
+  - importul dedupează sistemul tehnic și creează use case-uri separate;
+  - findings generate din import includ review uman și audit trail.
+- `app/api/ai-use-cases/route.ts`
+  - API pentru creare/listare use cases;
+  - salvează în `org_state`, generează findings/events și upsert în
+    `ai_use_cases` când env-ul Supabase service-role este configurat.
+- `app/dashboard/sisteme/page.tsx`
+  - Cabinet/IMM: pagina devine `Registru AI`;
+  - AI Builder: `AI Project Use Cases`;
+  - formular `Adaugă utilizare AI`;
+  - navigare reală: `Utilizări AI`, `Sisteme / tooluri`, `Furnizori`,
+    `Date / GDPR`, `Dovezi`.
+- `.env.local`
+  - mutat URL/key public pe noul proiect Supabase;
+  - service-role vechi scos ca să nu mai scriem accidental în proiectul vechi.
+
+### Verificare rulată
+
+```bash
+npm test -- --run lib/compliance/ai-use-case-trigger-engine.test.ts \
+  lib/server/portfolio-import.test.ts lib/client-import.test.ts \
+  lib/compliance/engine.test.ts
+
+npm test -- --run
+
+npm run build
+```
+
+### Rezultat
+
+- Focus AIUseCase/import/engine: **41/41 PASS**
+- Suita completă: **102 files / 1381 tests PASS**
+- `npm run build`: **PASS**
+- Supabase security advisors: **0 lints**
+- Browser local `http://localhost:3001/dashboard/sisteme`: confirmat
+  `Registru AI`, `Adaugă utilizare AI`, `Import CSV/XLSX`, `Trimite intake`,
+  `Utilizări AI`, `Sisteme / tooluri`, `Furnizori`, `Date / GDPR`, `Dovezi`.

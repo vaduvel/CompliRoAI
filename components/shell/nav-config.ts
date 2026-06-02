@@ -95,14 +95,14 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   },
   {
     href: "/dashboard/role-assessment",
-    label: "Role Assessment",
+    label: "Evaluare rol",
     iconName: "Compass",
     section: "discovery",
     workspaceModes: ["ai-builder", "cabinet"],
   },
   {
     href: "/dashboard/conformitate",
-    label: "Conformity Assessment",
+    label: "Evaluare conformitate",
     iconName: "FileCheck",
     section: "discovery",
     workspaceModes: ["ai-builder"],
@@ -110,7 +110,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   },
   {
     href: "/dashboard/transparency",
-    label: "Transparency",
+    label: "Notificări transparență",
     iconName: "MessageSquare",
     section: "discovery",
     workspaceModes: ["imm-classic"],
@@ -126,7 +126,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   },
   {
     href: "/dashboard/vendor-review",
-    label: "Vendor AI",
+    label: "Furnizori AI",
     iconName: "Package",
     section: "discovery",
     workspaceModes: ["imm-classic", "cabinet"],
@@ -134,7 +134,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   },
   {
     href: "/dashboard/ai-discovery",
-    label: "AI Discovery",
+    label: "Descoperire AI",
     iconName: "Search",
     section: "discovery",
     workspaceModes: ["cabinet"],
@@ -175,7 +175,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     // protocoale Art. 14 pentru clienții deployer (similar cu FRIA). Plasat
     // în "compliance" pentru cabinet alignment cu DPIA / FRIA.
     href: "/dashboard/human-oversight",
-    label: "Oversight uman",
+    label: "Supraveghere umană",
     iconName: "Eye",
     section: "compliance",
     workspaceModes: ["ai-builder", "cabinet"],
@@ -186,7 +186,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     // configurări de logging pentru clienții deployer (similar cu FRIA +
     // Oversight). Plasat în "compliance" pentru cabinet alignment.
     href: "/dashboard/logging-evidence",
-    label: "Logging",
+    label: "Jurnalizare",
     iconName: "Database",
     section: "compliance",
     workspaceModes: ["ai-builder", "cabinet"],
@@ -194,7 +194,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   },
   {
     href: "/dashboard/post-market-monitoring",
-    label: "PMM",
+    label: "Monitorizare post-market",
     iconName: "Activity",
     section: "compliance",
     workspaceModes: ["ai-builder", "cabinet"],
@@ -252,7 +252,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   },
   {
     href: "/dashboard/ropa",
-    label: "RoPA / Data Map",
+    label: "Hartă date (RoPA)",
     iconName: "Database",
     section: "compliance",
     workspaceModes: ["cabinet", "ai-builder"],
@@ -286,7 +286,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   // ── EXPORTS ─────────────────────────────────────────────────────────────────
   {
     href: "/dashboard/readiness-pack",
-    label: "Readiness Pack",
+    label: "Dosar readiness",
     iconName: "Sparkles",
     section: "exports",
     workspaceModes: ["imm-classic"],
@@ -317,7 +317,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
   },
   {
     href: "/dashboard/audit-log",
-    label: "Audit Log",
+    label: "Jurnal audit",
     iconName: "FileSearch",
     section: "exports",
     workspaceModes: ["cabinet"],
@@ -327,7 +327,7 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     // changes + email preferences). Visible pentru all workspace modes
     // (toate orgs au beneficiu din scanare preventivă).
     href: "/dashboard/preventive",
-    label: "Engine preventiv",
+    label: "Monitor preventiv",
     iconName: "Radar",
     section: "exports",
     workspaceModes: ["imm-classic", "ai-builder", "cabinet"],

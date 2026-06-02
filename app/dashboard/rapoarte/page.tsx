@@ -9,7 +9,7 @@ export default async function RapoartePage() {
   const h = await headers()
   const workspaceMode = h.get("x-aiact-workspace-mode")
   if (workspaceMode !== "cabinet") {
-    redirect("/dashboard")
+    redirect("/dashboard/module-unavailable?module=rapoarte")
   }
   return <ReportsList />
 }

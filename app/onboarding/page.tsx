@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
 
 import {
   classifyAISystem,
@@ -84,6 +83,7 @@ const PURPOSES: { value: AISystemPurpose; label: string }[] = [
   { value: "fraud-detection", label: "Detecție fraudă" },
   { value: "marketing-personalization", label: "Personalizare marketing" },
   { value: "support-chatbot", label: "Chatbot client / suport" },
+  { value: "decision-support", label: "Suport decizional / recomandări" },
   { value: "document-assistant", label: "Asistent documente" },
   { value: "other", label: "Altele" },
 ]
@@ -105,8 +105,6 @@ function validCui(cui: string): boolean {
 //   ai-builder : 0 (role) → 1 (company) → 2 (builder info) → 3 (recap) = 4 steps
 //   cabinet    : 0 (role) → 1 (cabinet name + scale) → 2 (first client) → 3 (recap) = 4 steps
 export default function OnboardingPage() {
-  const router = useRouter()
-
   const [role, setRole] = useState<OnboardingRole | "">("")
   const [step, setStep] = useState<number>(0)
   const [submitting, setSubmitting] = useState(false)
@@ -229,7 +227,7 @@ export default function OnboardingPage() {
         }
       }
 
-      const res = await fetch("/api/onboarding", {
+      const res = await fetchWithTimeout("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -249,8 +247,7 @@ export default function OnboardingPage() {
             : isAiBuilder
               ? "/dashboard"
               : "/dashboard/sisteme"
-      router.push(destination)
-      router.refresh()
+      window.location.assign(destination)
     } catch {
       setError("Eroare de rețea. Încearcă din nou.")
       setSubmitting(false)
@@ -288,46 +285,22 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "40px 16px",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "720px",
-          background: "var(--bg-raised)",
-          border: "1px solid var(--border)",
-          borderRadius: "14px",
-          padding: "36px 40px",
-        }}
-      >
+    <main className="cr-onboarding-page">
+      <section className="cr-onboarding-card cr-card">
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <div
-            style={{
-              fontFamily: "var(--font-display-v3)",
-              fontSize: "22px",
-              fontWeight: 600,
-              color: "var(--ink)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            CompliRoAI · AI Act Compliance
+        <div className="cr-onboarding-header">
+          <div className="cr-auth-logo" aria-hidden="true">
+            C
           </div>
-          <div style={{ fontSize: "13px", color: "var(--ink-dim)", marginTop: "4px" }}>
+          <div className="cr-auth-title">CompliRoAI</div>
+          <div className="cr-auth-subtitle">
             Setup în {totalSteps} pași — durează ~2 minute
           </div>
         </div>
 
         <ProgressDots step={step} total={totalSteps} />
 
-        <div style={{ marginTop: "28px", minHeight: "340px" }}>
+        <div className="cr-onboarding-step">
           {step === 0 && <StepRole role={role} setRole={setRole} />}
 
           {/* IMM-classic flow */}
@@ -367,48 +340,22 @@ export default function OnboardingPage() {
         </div>
 
         {error && (
-          <div
-            style={{
-              marginTop: "16px",
-              fontSize: "13px",
-              color: "var(--red-400)",
-              background: "var(--red-soft)",
-              padding: "10px 12px",
-              borderRadius: "6px",
-            }}
-          >
+          <div className="cr-alert cr-alert--danger cr-onboarding-error">
             {error}
           </div>
         )}
 
-        <div
-          style={{
-            marginTop: "28px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
+        <div className="cr-onboarding-actions">
           <button
             type="button"
             onClick={handleBack}
             disabled={step === 0 || submitting}
-            style={{
-              padding: "10px 16px",
-              borderRadius: "8px",
-              border: "1px solid var(--border-strong)",
-              background: "transparent",
-              color: step === 0 ? "var(--ink-subtle)" : "var(--ink-muted)",
-              fontSize: "13px",
-              cursor: step === 0 ? "not-allowed" : "pointer",
-              opacity: step === 0 ? 0.5 : 1,
-            }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
           >
             Înapoi
           </button>
 
-          <div style={{ fontSize: "12px", color: "var(--ink-subtle)" }}>
+          <div className="cr-onboarding-progress-text">
             Pas {step + 1} din {totalSteps}
           </div>
 
@@ -417,17 +364,7 @@ export default function OnboardingPage() {
               type="button"
               onClick={handleNext}
               disabled={!canProceedFor(step)}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "8px",
-                border: "none",
-                background: "var(--cobalt-600)",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: canProceedFor(step) ? "pointer" : "not-allowed",
-                opacity: canProceedFor(step) ? 1 : 0.5,
-              }}
+              className="cr-btn cr-btn--primary cr-btn--sm"
             >
               Continuă
             </button>
@@ -436,25 +373,28 @@ export default function OnboardingPage() {
               type="button"
               onClick={handleFinish}
               disabled={submitting}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "8px",
-                border: "none",
-                background: "var(--cobalt-600)",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: submitting ? "not-allowed" : "pointer",
-                opacity: submitting ? 0.7 : 1,
-              }}
+              className="cr-btn cr-btn--primary cr-btn--sm"
             >
               {submitting ? "Se salvează..." : "Intră în dashboard"}
             </button>
           )}
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   )
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs = 15000) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: init.signal ?? controller.signal,
+    })
+  } finally {
+    window.clearTimeout(timer)
+  }
 }
 
 function ProgressDots({ step, total }: { step: number; total: number }) {

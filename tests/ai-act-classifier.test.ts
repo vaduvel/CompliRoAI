@@ -21,4 +21,12 @@ describe("classifyAISystem", () => {
     const result = classifyAISystem("document-assistant")
     expect(result.riskLevel).toBe("minimal_risk")
   })
+
+  it("maps free-text HR screening descriptions to the high-risk classifier", () => {
+    const result = classifyAISystem("HR candidate screening and ranking for customer support hiring")
+    expect(result.riskLevel).toBe("high_risk")
+    expect(result.article).toContain("Annex III")
+    expect(result.autoDetected).toBe(true)
+    expect(result.reason).toContain("confirmă manual")
+  })
 })

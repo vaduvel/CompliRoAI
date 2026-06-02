@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type CSSProperties } from "react"
 import {
   Download,
   ShieldCheck,
@@ -20,6 +20,19 @@ type ClientRow = {
   cui?: string
 }
 
+type AuthMeResponse = {
+  user?: {
+    workspaceMode?: string
+    orgName?: string
+  } | null
+  workspaces?: Array<{
+    orgId: string
+    orgName: string
+    role: string
+    status: string
+  }>
+}
+
 type PackEntry = {
   id: string
   orgId: string
@@ -29,13 +42,43 @@ type PackEntry = {
   sizeBytes: number
   createdAtISO: string
   reSigned?: boolean
+  exportReadinessStatus?: ExportReadinessStatus
+  exportBlockersCount?: number
+  packKind?: AuditPackKind
 }
+
+type ExportReadinessStatus = "blocked" | "draft_only" | "ready_for_review" | "approved"
+
+type AuditPackKind = "blocked_draft" | "draft" | "review" | "final"
 
 type VerifyResult = {
   valid: boolean
   errors: string[]
   computedHash: string | null
   expectedHash: string | null
+}
+
+type ReadinessResponse = {
+  snapshot: {
+    aiUseCasesCandidateCount: number
+    aiUseCasesConfirmedCount: number
+    aiSystems: number
+    evidenceMissingCount: number
+    reviewPendingCount: number
+    exportReadinessStatus: ExportReadinessStatus
+    exportBlockersCount: number
+  }
+  exportReadinessLabel: string
+  exportBlockers: Array<{
+    id: string
+    code: string
+    title: string
+    statusLabel: string
+    ownerRole: string
+    requiredEvidence: string[]
+    reviewGate: string
+    href: string
+  }>
 }
 
 export default function AuditPackPage() {
@@ -51,11 +94,14 @@ export default function AuditPackPage() {
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null)
   const [verifying, setVerifying] = useState(false)
   const [copiedHash, setCopiedHash] = useState<string | null>(null)
+  const [readiness, setReadiness] = useState<ReadinessResponse | null>(null)
+  const [readinessLoading, setReadinessLoading] = useState(true)
+  const [currentOrgName, setCurrentOrgName] = useState("")
 
   const loadRegistry = useCallback(async () => {
     setRegistryLoading(true)
     try {
-      const res = await fetch("/api/audit-pack/registry")
+      const res = await fetchWithTimeout("/api/audit-pack/registry")
       if (res.ok) {
         const data = await res.json()
         setRegistry(data.packs ?? [])
@@ -68,11 +114,26 @@ export default function AuditPackPage() {
   }, [])
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    fetchWithTimeout("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+      .then((d: AuthMeResponse | null) => {
+        if (d?.user?.orgName) {
+          setCurrentOrgName(d.user.orgName)
+        }
         if (d?.user?.workspaceMode === "cabinet") {
           setWorkspaceMode("cabinet")
+          const workspaceClients =
+            d.workspaces
+              ?.filter((workspace) => workspace.role === "partner_manager" && workspace.status === "active")
+              .map((workspace) => ({
+                orgId: workspace.orgId,
+                orgName: workspace.orgName,
+              })) ?? []
+          if (workspaceClients.length > 0) {
+            // Fallback imediat: audit pack-ul are nevoie doar de orgId/orgName.
+            // /api/portfolio/clients poate îmbogăți ulterior cu CUI și metadata.
+            setClients(workspaceClients)
+          }
         }
       })
       .catch(() => {})
@@ -80,16 +141,17 @@ export default function AuditPackPage() {
 
   useEffect(() => {
     if (workspaceMode !== "cabinet") return
-    fetch("/api/portfolio/clients")
+    fetchWithTimeout("/api/portfolio/clients")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (Array.isArray(data?.clients)) {
-          setClients(
-            data.clients.map((c: { orgId: string; orgName: string; cui?: string }) => ({
+          const portfolioClients = data.clients.map((c: { orgId: string; orgName: string; cui?: string }) => ({
               orgId: c.orgId,
               orgName: c.orgName,
               cui: c.cui,
             }))
+          setClients((current) =>
+            portfolioClients.length > 0 || current.length === 0 ? portfolioClients : current
           )
         }
       })
@@ -100,15 +162,42 @@ export default function AuditPackPage() {
     loadRegistry()
   }, [loadRegistry])
 
+  useEffect(() => {
+    let cancelled = false
+    const clientOrgId = selectedClient === "__self__" ? null : selectedClient
+    const url = clientOrgId
+      ? `/api/audit-pack/readiness?clientOrgId=${encodeURIComponent(clientOrgId)}`
+      : "/api/audit-pack/readiness"
+
+    setReadinessLoading(true)
+    fetchWithTimeout(url)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: ReadinessResponse | null) => {
+        if (!cancelled) setReadiness(data)
+      })
+      .catch(() => {
+        if (!cancelled) setReadiness(null)
+      })
+      .finally(() => {
+        if (!cancelled) setReadinessLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedClient])
+
   async function handleGenerate() {
     setError(null)
     setGenerating(true)
     try {
       const clientOrgId = selectedClient === "__self__" ? null : selectedClient
-      const url = clientOrgId
-        ? `/api/exports/audit-pack?clientOrgId=${encodeURIComponent(clientOrgId)}`
-        : "/api/exports/audit-pack"
-      const res = await fetch(url)
+      const params = new URLSearchParams()
+      if (clientOrgId) params.set("clientOrgId", clientOrgId)
+      if (readiness?.snapshot.exportReadinessStatus === "approved") params.set("final", "true")
+      const query = params.toString()
+      const url = query ? `/api/exports/audit-pack?${query}` : "/api/exports/audit-pack"
+      const res = await fetchWithTimeout(url, {}, 30000)
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         setError(data.error ?? `Eroare ${res.status}`)
@@ -132,14 +221,14 @@ export default function AuditPackPage() {
     setError(null)
     setReSigning(orgId)
     try {
-      const res = await fetch("/api/exports/audit-pack", {
+      const res = await fetchWithTimeout("/api/exports/audit-pack", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientOrgId: orgId === "__self__" ? undefined : orgId,
           reSign: true,
         }),
-      })
+      }, 30000)
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         setError(data.error ?? `Eroare ${res.status}`)
@@ -186,45 +275,41 @@ export default function AuditPackPage() {
   }
 
   function copyToClipboard(value: string) {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopiedHash(value)
-      setTimeout(() => setCopiedHash(null), 1500)
-    })
+    setVerifyHash(value)
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        setCopiedHash(value)
+        setTimeout(() => setCopiedHash(null), 1500)
+      })
+      .catch(() => {
+        setCopiedHash(value)
+        setTimeout(() => setCopiedHash(null), 1500)
+      })
   }
 
   const targetLabel =
     selectedClient === "__self__"
-      ? "organizația ta"
+      ? currentOrgName || "workspace-ul curent"
       : clients.find((c) => c.orgId === selectedClient)?.orgName ?? "client necunoscut"
+  const generationLabel = auditPackGenerationLabel({
+    generating,
+    readiness,
+    targetLabel,
+  })
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "920px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-stack cr-audit-pack-page">
       {/* Header */}
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Audit Pack
-        </h1>
-        <p style={{ fontSize: "13px", color: "var(--ink-muted)", marginTop: "6px" }}>
-          Dovadă criptografică a conformității — un ZIP semnat cu hash chain SHA-256,
-          imposibil de modificat post-fact fără a rupe lanțul.
-        </p>
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Rapoarte & dosar</span>
+          <h1 className="cr-title">Audit Pack</h1>
+          <p className="cr-subtitle">
+            Dovadă criptografică a conformității — un ZIP semnat cu hash chain SHA-256,
+            imposibil de modificat post-fact fără a rupe lanțul.
+          </p>
+        </div>
       </div>
 
       {/* Explainer card */}
@@ -312,6 +397,104 @@ export default function AuditPackPage() {
         </div>
       </div>
 
+      {/* Readiness panel */}
+      <div
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "10px",
+          padding: "20px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "16px",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: "12px", color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Stare export
+            </div>
+            <div style={{ fontSize: "18px", fontWeight: 700, color: "var(--ink)", marginTop: "4px" }}>
+              {readinessLoading ? "Se verifică dosarul…" : readiness?.exportReadinessLabel ?? "Stare indisponibilă"}
+            </div>
+            <p style={{ margin: "8px 0 0", fontSize: "13px", color: "var(--ink-muted)", maxWidth: "760px" }}>
+              Audit Pack-ul se bazează pe datele, findings-urile, dovezile și review-urile din dosarul curent.
+              AI-ul poate explica pașii, dar nu aprobă exportul final.
+            </p>
+          </div>
+          {readiness && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(90px, 1fr))",
+                gap: "8px",
+                minWidth: "320px",
+              }}
+            >
+              <MiniReadinessStat label="AI candidate" value={readiness.snapshot.aiUseCasesCandidateCount} />
+              <MiniReadinessStat label="AI confirmate" value={readiness.snapshot.aiUseCasesConfirmedCount} />
+              <MiniReadinessStat label="Dovezi lipsă" value={readiness.snapshot.evidenceMissingCount} />
+              <MiniReadinessStat label="Review-uri" value={readiness.snapshot.reviewPendingCount} />
+              <MiniReadinessStat label="Blocker-e" value={readiness.snapshot.exportBlockersCount} />
+              <MiniReadinessStat label="Sisteme AI" value={readiness.snapshot.aiSystems} />
+            </div>
+          )}
+        </div>
+
+        {readiness?.exportBlockers.length ? (
+          <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            {readiness.exportBlockers.slice(0, 5).map((blocker) => (
+              <div
+                key={blocker.id}
+                style={{
+                  border: "1px solid rgba(245,158,11,0.28)",
+                  background: "rgba(245,158,11,0.08)",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  alignItems: "flex-start",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "11px", color: "var(--amber-400)", fontWeight: 700 }}>
+                    {blocker.code} · {blocker.statusLabel}
+                  </div>
+                  <div style={{ fontSize: "13px", color: "var(--ink)", fontWeight: 600, marginTop: "3px" }}>
+                    {blocker.title}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--ink-muted)", marginTop: "3px" }}>
+                    {blocker.ownerRole} · {blocker.reviewGate}
+                  </div>
+                  {blocker.requiredEvidence.length > 0 && (
+                    <div style={{ fontSize: "12px", color: "var(--ink-muted)", marginTop: "3px" }}>
+                      Dovadă cerută: {blocker.requiredEvidence.slice(0, 2).join("; ")}
+                    </div>
+                  )}
+                </div>
+                <a href={blocker.href} className="cr-btn cr-btn--secondary cr-btn--sm">
+                  Deschide
+                </a>
+              </div>
+            ))}
+          </div>
+        ) : (
+          !readinessLoading && (
+            <div style={{ marginTop: "14px", fontSize: "13px", color: "var(--ink-muted)" }}>
+              {readiness?.snapshot.exportReadinessStatus === "approved"
+                ? "Nu există blocker deschis pentru export. Dosarul este gata pentru Audit Pack final."
+                : "Nu există blocker deschis pentru export. Dacă există review-uri care blochează livrarea, ele trebuie să apară ca finding sau cerere de aprobare."}
+            </div>
+          )
+        )}
+      </div>
+
       {/* Generate panel */}
       <div
         style={{
@@ -341,19 +524,15 @@ export default function AuditPackPage() {
               <select
                 value={selectedClient}
                 onChange={(e) => setSelectedClient(e.target.value)}
+                className="cr-select"
                 style={{
                   width: "100%",
-                  padding: "8px 32px 8px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid var(--border-strong)",
-                  background: "var(--bg)",
-                  color: "var(--ink)",
-                  fontSize: "13px",
                   appearance: "none",
-                  cursor: "pointer",
                 }}
               >
-                <option value="__self__">Organizația ta (cabinetul)</option>
+                <option value="__self__">
+                  {currentOrgName ? `${currentOrgName} (workspace curent)` : "Workspace curent"}
+                </option>
                 {clients.map((c) => (
                   <option key={c.orgId} value={c.orgId}>
                     {c.orgName}
@@ -388,30 +567,18 @@ export default function AuditPackPage() {
             }}
           >
             <Users size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: "6px" }} />
-            Nu ai încă clienți în portofoliu. Adaugă din{" "}
-            <a href="/dashboard/portofoliu" style={{ color: "var(--cobalt-400)" }}>Portofoliu</a>.
+            Nu ai încă clienți în portofoliu. Importă sau adaugă primul client din{" "}
+            <a href="/dashboard/clienti" style={{ color: "var(--cobalt-400)" }}>Clienți</a>.
           </div>
         )}
 
         <button
           onClick={handleGenerate}
-          disabled={generating}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 16px",
-            background: generating ? "var(--bg-hover)" : "var(--cobalt-400)",
-            color: generating ? "var(--ink-dim)" : "#fff",
-            border: "none",
-            borderRadius: "6px",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: generating ? "wait" : "pointer",
-          }}
+          disabled={generating || readinessLoading}
+          className="cr-btn cr-btn--primary cr-audit-pack-generate"
         >
           {generating ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-          {generating ? "Generăm ZIP-ul…" : `Generează pentru ${targetLabel}`}
+          {generationLabel}
         </button>
 
         {error && (
@@ -452,36 +619,22 @@ export default function AuditPackPage() {
           </a>
           .
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="cr-audit-pack-verify-form" style={{ display: "flex", gap: "8px" }}>
           <input
             type="text"
             value={verifyHash}
             onChange={(e) => setVerifyHash(e.target.value)}
             placeholder="ex: 5c8f3a…"
+            className="cr-input"
             style={{
               flex: 1,
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border-strong)",
-              background: "var(--bg)",
-              color: "var(--ink)",
-              fontSize: "12px",
               fontFamily: "ui-monospace, SFMono-Regular, monospace",
             }}
           />
           <button
             onClick={handleVerifyHash}
             disabled={verifying || !verifyHash.trim()}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "6px",
-              border: "1px solid var(--border-strong)",
-              background: "var(--bg)",
-              color: "var(--ink)",
-              fontSize: "12px",
-              fontWeight: 500,
-              cursor: verifying ? "wait" : "pointer",
-            }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
           >
             Verifică
           </button>
@@ -551,10 +704,11 @@ export default function AuditPackPage() {
         )}
 
         {registry.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="cr-audit-pack-registry-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {registry.map((pack) => (
               <div
                 key={pack.id}
+                className="cr-audit-pack-registry-card"
                 style={{
                   border: "1px solid var(--border-soft)",
                   borderRadius: "8px",
@@ -566,7 +720,7 @@ export default function AuditPackPage() {
                   flexWrap: "wrap",
                 }}
               >
-                <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="cr-audit-pack-registry-main" style={{ minWidth: 0, flex: 1 }}>
                   <div
                     style={{
                       fontSize: "13px",
@@ -576,6 +730,21 @@ export default function AuditPackPage() {
                     }}
                   >
                     {pack.orgName}
+                    <span
+                      title={auditPackKindDescription(pack)}
+                      style={{
+                        marginLeft: "8px",
+                        fontSize: "10px",
+                        padding: "1px 6px",
+                        borderRadius: "10px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                        fontWeight: 700,
+                        ...auditPackKindBadgeStyle(pack),
+                      }}
+                    >
+                      {auditPackKindLabel(pack)}
+                    </span>
                     {pack.reSigned && (
                       <span
                         style={{
@@ -595,6 +764,7 @@ export default function AuditPackPage() {
                     )}
                   </div>
                   <div
+                    className="cr-audit-pack-hash"
                     style={{
                       fontSize: "11px",
                       color: "var(--ink-dim)",
@@ -605,6 +775,7 @@ export default function AuditPackPage() {
                     {pack.hashRoot}
                   </div>
                   <div
+                    className="cr-audit-pack-registry-meta"
                     style={{
                       fontSize: "11px",
                       color: "var(--ink-muted)",
@@ -613,24 +784,14 @@ export default function AuditPackPage() {
                   >
                     {new Date(pack.createdAtISO).toLocaleString("ro-RO")} ·{" "}
                     {pack.fileCount} fișiere · {Math.round((pack.sizeBytes / 1024) * 10) / 10} KB
+                    {pack.exportReadinessStatus && <> · {auditPackKindDescription(pack)}</>}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div className="cr-audit-pack-registry-actions" style={{ display: "flex", gap: "6px" }}>
                   <button
                     onClick={() => copyToClipboard(pack.hashRoot)}
-                    title="Copiază hash root"
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border-strong)",
-                      background: "var(--bg)",
-                      color: "var(--ink-dim)",
-                      fontSize: "11px",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
+                    title="Copiază și pune hash root în verificator"
+                    className="cr-btn cr-btn--secondary cr-btn--sm"
                   >
                     <Copy size={11} />
                     {copiedHash === pack.hashRoot ? "Copiat!" : "Hash"}
@@ -640,18 +801,7 @@ export default function AuditPackPage() {
                       onClick={() => handleReSign(pack.orgId)}
                       disabled={reSigning === pack.orgId}
                       title="Re-semnează cu brand-ul curent"
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: "6px",
-                        border: "1px solid var(--border-strong)",
-                        background: "var(--bg)",
-                        color: "var(--ink-dim)",
-                        fontSize: "11px",
-                        cursor: reSigning === pack.orgId ? "wait" : "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
+                      className="cr-btn cr-btn--secondary cr-btn--sm"
                     >
                       {reSigning === pack.orgId ? (
                         <Loader2 size={11} className="spin" />
@@ -705,6 +855,133 @@ export default function AuditPackPage() {
       `}</style>
     </div>
   )
+}
+
+function MiniReadinessStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div
+      style={{
+        border: "1px solid var(--border-soft)",
+        borderRadius: "8px",
+        padding: "9px 10px",
+        background: "var(--bg-hover)",
+      }}
+    >
+      <div style={{ fontSize: "10px", color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        {label}
+      </div>
+      <div style={{ fontSize: "17px", fontWeight: 700, color: "var(--ink)", marginTop: "2px" }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function auditPackGenerationLabel({
+  generating,
+  readiness,
+  targetLabel,
+}: {
+  generating: boolean
+  readiness: ReadinessResponse | null
+  targetLabel: string
+}) {
+  if (generating) return "Generăm ZIP-ul…"
+  if (!readiness) return `Generează pentru ${targetLabel}`
+  if (readiness.snapshot.exportReadinessStatus === "blocked") {
+    return `Generează draft cu blocker-e pentru ${targetLabel}`
+  }
+  if (readiness.snapshot.exportReadinessStatus === "draft_only") {
+    return `Generează draft pentru ${targetLabel}`
+  }
+  if (readiness.snapshot.exportReadinessStatus === "approved") {
+    return `Generează Audit Pack final pentru ${targetLabel}`
+  }
+  return `Generează Audit Pack pentru review pentru ${targetLabel}`
+}
+
+function auditPackKindFor(pack: PackEntry): AuditPackKind | "legacy" {
+  if (pack.packKind) return pack.packKind
+  if (pack.exportReadinessStatus === "approved") return "final"
+  if (pack.exportReadinessStatus === "ready_for_review") return "review"
+  if (pack.exportReadinessStatus === "blocked") return "blocked_draft"
+  if (pack.exportReadinessStatus === "draft_only") return "draft"
+  return "legacy"
+}
+
+function auditPackKindLabel(pack: PackEntry) {
+  const kind = auditPackKindFor(pack)
+  if (kind === "final") return "final"
+  if (kind === "review") return "review"
+  if (kind === "blocked_draft") return "blocked"
+  if (kind === "draft") return "draft"
+  return "legacy"
+}
+
+function auditPackKindDescription(pack: PackEntry) {
+  const kind = auditPackKindFor(pack)
+  if (kind === "final") return "Audit Pack final: fără blocker-e deschise la momentul exportului."
+  if (kind === "review") return "Pack pentru review: gata de verificare, dar nu marcat final."
+  if (kind === "blocked_draft") {
+    const blockers = pack.exportBlockersCount ?? 0
+    return `Draft blocat: ${blockers} blocker-e deschise la momentul exportului.`
+  }
+  if (kind === "draft") return "Draft: dosarul nu avea încă suficiente date pentru livrare finală."
+  return "Pack generat înainte de etichetarea readiness/final."
+}
+
+function auditPackKindBadgeStyle(pack: PackEntry): CSSProperties {
+  const kind = auditPackKindFor(pack)
+  if (kind === "final") {
+    return {
+      background: "rgba(22, 163, 74, 0.12)",
+      color: "#15803d",
+      border: "1px solid rgba(22, 163, 74, 0.2)",
+    }
+  }
+  if (kind === "review") {
+    return {
+      background: "var(--cobalt-soft)",
+      color: "var(--cobalt-400)",
+      border: "1px solid rgba(59, 91, 219, 0.18)",
+    }
+  }
+  if (kind === "blocked_draft") {
+    return {
+      background: "rgba(220, 38, 38, 0.1)",
+      color: "#b91c1c",
+      border: "1px solid rgba(220, 38, 38, 0.2)",
+    }
+  }
+  if (kind === "draft") {
+    return {
+      background: "rgba(245, 158, 11, 0.12)",
+      color: "#b45309",
+      border: "1px solid rgba(245, 158, 11, 0.22)",
+    }
+  }
+  return {
+    background: "rgba(100, 116, 139, 0.1)",
+    color: "var(--ink-muted)",
+    border: "1px solid var(--border-soft)",
+  }
+}
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = 15000
+) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: init.signal ?? controller.signal,
+    })
+  } finally {
+    window.clearTimeout(timer)
+  }
 }
 
 function triggerDownload(blob: Blob, fileName: string) {

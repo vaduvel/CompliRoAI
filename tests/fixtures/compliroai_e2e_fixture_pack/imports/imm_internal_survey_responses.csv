@@ -1,0 +1,4 @@
+﻿respondent_email,department,tool_name,use_case,personal_data,confidential_data,public_output,human_review,owner_email
+marketing@contabil-plus.example,marketing,ChatGPT Personal,emailuri client si rezumate documente,unknown,yes,no,unknown,marketing@contabil-plus.example
+hr@contabil-plus.example,hr_recruitment,ChatGPT Personal,sumarizare CV-uri ocazional,yes,yes,no,unknown,hr@contabil-plus.example
+it@contabil-plus.example,it_development,GitHub Copilot,asistenta cod intern,unknown,yes,no,required_before_action,it@contabil-plus.example

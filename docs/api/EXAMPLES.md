@@ -111,7 +111,7 @@ import urllib.error
 def gate(system_name: str, purpose: str, **extra) -> dict:
     body = {"systemName": system_name, "purpose": purpose, **extra}
     req = urllib.request.Request(
-        "https://compliscanag.vercel.app/api/v1/gate",
+        "https://eu-ai-act-beige.vercel.app/api/v1/gate",
         method="POST",
         headers={
             "Authorization": f"Bearer {os.environ['COMPLIROAI_KEY']}",
@@ -145,7 +145,7 @@ jobs:
         env:
           COMPLIROAI_KEY: ${{ secrets.COMPLIROAI_KEY }}
         run: |
-          response=$(curl -s -X POST "https://compliscanag.vercel.app/api/v1/gate" \
+          response=$(curl -s -X POST "https://eu-ai-act-beige.vercel.app/api/v1/gate" \
             -H "Authorization: Bearer $COMPLIROAI_KEY" \
             -H "Content-Type: application/json" \
             -d '{

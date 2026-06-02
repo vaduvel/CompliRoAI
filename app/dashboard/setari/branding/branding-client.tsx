@@ -137,26 +137,16 @@ export function BrandingSettingsClient({
   }
 
   return (
-    <div style={{ padding: "32px 28px", maxWidth: 1080, margin: "0 auto" }}>
-      <header style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: "var(--accent-soft, rgba(59,91,219,0.12))",
-            display: "grid",
-            placeItems: "center",
-            color: "var(--accent, #3b5bdb)",
-          }}
-        >
-          <Palette size={20} />
-        </div>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: "var(--ink)" }}>
-            Branding cabinet
-          </h1>
-          <p style={{ margin: "4px 0 0", color: "var(--ink-dim)", fontSize: 13 }}>
+    <div className="cr-page cr-stack">
+      <header className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <span className="cr-action-card__icon">
+            <Palette size={20} />
+          </span>
+          <div>
+            <div className="cr-eyebrow">Setări</div>
+            <h1 className="cr-title">Branding cabinet</h1>
+            <p className="cr-subtitle">
             Personalizează documentele și emailurile trimise către clienții tăi.
             {hasOverride ? (
               <span style={{ marginLeft: 8, color: "var(--accent, #3b5bdb)", fontWeight: 500 }}>
@@ -167,7 +157,8 @@ export function BrandingSettingsClient({
                 · Folosești brandingul implicit CompliRoAI
               </span>
             )}
-          </p>
+            </p>
+          </div>
         </div>
       </header>
 
@@ -178,7 +169,7 @@ export function BrandingSettingsClient({
 
           <Field label="Nume brand" required hint="Apare în emailuri, share pages, header documente.">
             <input
-              style={inputStyle}
+              className="cr-input"
               value={form.brandName}
               onChange={(e) => update("brandName", e.target.value)}
               placeholder={suggestedBrandName}
@@ -191,7 +182,7 @@ export function BrandingSettingsClient({
             hint="Recomandat: PNG transparent, sub 200KB. Pe Vercel, găzduiește pe imgur / Cloudinary / S3."
           >
             <input
-              style={inputStyle}
+              className="cr-input"
               value={form.logoUrl}
               onChange={(e) => update("logoUrl", e.target.value)}
               placeholder="https://exemplu.ro/logo.png"
@@ -218,7 +209,7 @@ export function BrandingSettingsClient({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <Field label="Nume semnatar" hint="Ex: Diana Popescu">
               <input
-                style={inputStyle}
+                className="cr-input"
                 value={form.signerName}
                 onChange={(e) => update("signerName", e.target.value)}
                 maxLength={120}
@@ -226,7 +217,7 @@ export function BrandingSettingsClient({
             </Field>
             <Field label="Funcție semnatar" hint="Ex: DPO Manager">
               <input
-                style={inputStyle}
+                className="cr-input"
                 value={form.signerTitle}
                 onChange={(e) => update("signerTitle", e.target.value)}
                 maxLength={120}
@@ -237,7 +228,7 @@ export function BrandingSettingsClient({
           <h2 style={{ ...sectionTitleStyle, marginTop: 22 }}>Date de contact</h2>
           <Field label="Email contact">
             <input
-              style={inputStyle}
+              className="cr-input"
               value={form.contactEmail}
               onChange={(e) => update("contactEmail", e.target.value)}
               placeholder="contact@cabinet.ro"
@@ -246,7 +237,7 @@ export function BrandingSettingsClient({
           </Field>
           <Field label="Website cabinet">
             <input
-              style={inputStyle}
+              className="cr-input"
               value={form.website}
               onChange={(e) => update("website", e.target.value)}
               placeholder="https://cabinet.ro"
@@ -255,6 +246,7 @@ export function BrandingSettingsClient({
           </Field>
           <Field label="Adresă birou">
             <textarea
+            className="cr-input cr-textarea"
               style={{ ...inputStyle, minHeight: 60, resize: "vertical" }}
               value={form.address}
               onChange={(e) => update("address", e.target.value)}
@@ -284,8 +276,8 @@ export function BrandingSettingsClient({
               type="button"
               onClick={handleSave}
               disabled={saving || Boolean(validationError)}
+              className="cr-btn cr-btn--primary"
               style={{
-                ...primaryBtnStyle,
                 background: form.primaryColor,
                 opacity: saving || validationError ? 0.7 : 1,
                 cursor: saving || validationError ? "not-allowed" : "pointer",
@@ -299,7 +291,7 @@ export function BrandingSettingsClient({
                 type="button"
                 onClick={handleReset}
                 disabled={resetting}
-                style={secondaryBtnStyle}
+                className="cr-btn cr-btn--secondary"
               >
                 {resetting ? (
                   <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
@@ -384,16 +376,8 @@ export function BrandingSettingsClient({
               </p>
               <button
                 type="button"
-                style={{
-                  display: "inline-block",
-                  background: form.primaryColor,
-                  color: "#fff",
-                  border: "none",
-                  padding: "8px 14px",
-                  borderRadius: 5,
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
+                className="cr-btn cr-btn--primary cr-btn--sm"
+                style={{ background: form.primaryColor }}
               >
                 Deschide linkul
               </button>
@@ -507,6 +491,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
       <input
+            className="cr-input"
         type="color"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -521,6 +506,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
         }}
       />
       <input
+        className="cr-input"
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -560,32 +546,4 @@ const inputStyle: React.CSSProperties = {
   background: "var(--bg-input, #fff)",
   boxSizing: "border-box",
   fontFamily: "inherit",
-}
-
-const primaryBtnStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 8,
-  padding: "9px 16px",
-  borderRadius: 6,
-  border: "none",
-  background: "#3b5bdb",
-  color: "#fff",
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: "pointer",
-}
-
-const secondaryBtnStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 8,
-  padding: "9px 14px",
-  borderRadius: 6,
-  border: "1px solid var(--border, #cbd5e1)",
-  background: "transparent",
-  color: "var(--ink-dim, #475569)",
-  fontSize: 13,
-  fontWeight: 500,
-  cursor: "pointer",
 }

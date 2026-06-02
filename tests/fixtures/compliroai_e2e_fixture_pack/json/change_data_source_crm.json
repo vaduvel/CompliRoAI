@@ -1,0 +1,12 @@
+{
+  "change_id": "CHG-004",
+  "test_case_id": "E2E-CHG-004",
+  "project_id": "PRJ-CRM-AGENT",
+  "change_type": "data_source_change",
+  "previous_version": "no_crm_access",
+  "new_version": "crm_contact_history_access",
+  "changed_by": "product@bluedesk.example",
+  "go_live_at": "2026-06-01",
+  "rollback_available": "unknown",
+  "expected_findings": "gdpr_after_data_change;data_flow_update;rerun_role_risk"
+}

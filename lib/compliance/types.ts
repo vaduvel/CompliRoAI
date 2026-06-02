@@ -15,6 +15,7 @@ export type AISystemPurpose =
   | "fraud-detection"
   | "marketing-personalization"
   | "support-chatbot"
+  | "decision-support"
   | "document-assistant"
   | "image-manipulation-intimate"
   | "other"
@@ -33,6 +34,9 @@ export type AISystemAttestationStatus = "not-attested" | "attested"
 
 export type AISystemRecord = {
   id: string
+  sourceImportId?: string
+  certaintyStatus?: ImportRecordCertaintyStatus
+  reviewStatus?: ImportRecordReviewStatus
   name: string
   purpose: AISystemPurpose
   vendor: string
@@ -57,6 +61,368 @@ export type AISystemRecord = {
    * `evaluateNis2AISystem` din `nis2-ai-rules.ts`.
    */
   nis2EntityScope?: AISystemNis2Scope
+}
+
+export type AIUseCaseWorkspaceMode = "cabinet" | "imm-classic" | "ai-builder" | "imm_classic" | "ai_builder"
+export type AIUseCaseTriState = "yes" | "no" | "unknown"
+export type AIUseCaseCertaintyStatus =
+  | "unknown"
+  | "self_reported"
+  | "imported"
+  | "evidence_attached"
+  | "dpo_reviewed"
+  | "lawyer_reviewed"
+  | "management_approved"
+  | "client_approved"
+  | "consultant_reviewed"
+  | "expired"
+
+export type AIUseCaseReviewStatus =
+  | "draft"
+  | "needs_review"
+  | "needs_dpo_review"
+  | "needs_lawyer_review"
+  | "needs_it_security_review"
+  | "needs_management_approval"
+  | "reviewed"
+  | "approved"
+  | "rejected"
+
+export type AIUseCaseDraftRiskLevel =
+  | "minimal"
+  | "limited_transparency"
+  | "high_risk_candidate"
+  | "prohibited_candidate"
+  | "unknown"
+
+export type AIUseCaseDraftRole =
+  | "deployer"
+  | "provider"
+  | "downstream_provider"
+  | "importer"
+  | "distributor"
+  | "product_manufacturer"
+  | "unknown"
+
+export type AIUseCaseDepartment =
+  | "management"
+  | "legal_compliance"
+  | "dpo_privacy"
+  | "hr_recruitment"
+  | "marketing"
+  | "sales"
+  | "customer_support"
+  | "it_development"
+  | "security"
+  | "finance_accounting"
+  | "procurement"
+  | "operations_logistics"
+  | "product"
+  | "medical_healthcare"
+  | "education_training"
+  | "credit_finance"
+  | "insurance"
+  | "public_services"
+  | "other"
+  | "unknown"
+
+export type AIUseCaseBusinessProcess =
+  | "content_creation"
+  | "customer_interaction"
+  | "support_ticketing"
+  | "recruitment_selection"
+  | "employee_management"
+  | "document_review"
+  | "contract_review"
+  | "software_development"
+  | "analytics_reporting"
+  | "risk_scoring"
+  | "credit_assessment"
+  | "insurance_pricing"
+  | "medical_triage"
+  | "education_assessment"
+  | "biometric_access"
+  | "fraud_detection"
+  | "advertising_targeting"
+  | "internal_productivity"
+  | "other"
+  | "unknown"
+
+export type AIUseCaseLifecycleStatus =
+  | "idea"
+  | "planned"
+  | "pilot"
+  | "internal_test"
+  | "active"
+  | "paused"
+  | "retired"
+  | "unknown"
+
+export type AIUseCaseDeploymentMode =
+  | "personal_account"
+  | "enterprise_saas"
+  | "api_integration"
+  | "self_hosted"
+  | "browser_extension"
+  | "plugin"
+  | "embedded_in_product"
+  | "custom_internal_system"
+  | "unknown"
+
+export type AIUseCaseDataCategory =
+  | "no_personal_data"
+  | "employee_data"
+  | "candidate_data"
+  | "customer_data"
+  | "prospect_data"
+  | "patient_health_data"
+  | "student_data"
+  | "child_data"
+  | "biometric_data"
+  | "special_category_data"
+  | "financial_data"
+  | "credit_data"
+  | "insurance_data"
+  | "location_data"
+  | "communication_content"
+  | "support_messages"
+  | "contracts_legal_docs"
+  | "confidential_business_data"
+  | "trade_secrets"
+  | "source_code"
+  | "authentication_data"
+  | "usage_analytics"
+  | "public_data"
+  | "synthetic_data"
+  | "unknown"
+
+export type AIUseCaseAffectedPerson =
+  | "employees"
+  | "candidates"
+  | "customers"
+  | "prospects"
+  | "patients"
+  | "students"
+  | "children"
+  | "website_visitors"
+  | "end_users"
+  | "suppliers"
+  | "contractors"
+  | "citizens_public"
+  | "vulnerable_persons"
+  | "no_natural_persons"
+  | "unknown"
+
+export type AIUseCaseVulnerableGroup =
+  | "children"
+  | "elderly"
+  | "disabled_persons"
+  | "patients"
+  | "employees_in_dependency"
+  | "financially_vulnerable"
+  | "migrants_asylum_seekers"
+  | "none_known"
+  | "unknown"
+
+export type AIUseCaseOutputType =
+  | "generated_text"
+  | "generated_image"
+  | "generated_audio"
+  | "generated_video"
+  | "chatbot_interaction"
+  | "recommendation"
+  | "classification"
+  | "ranking"
+  | "scoring"
+  | "prediction"
+  | "decision_support"
+  | "automated_decision"
+  | "content_moderation"
+  | "fraud_detection"
+  | "anomaly_detection"
+  | "summarization"
+  | "translation"
+  | "transcription"
+  | "code_generation"
+  | "biometric_identification"
+  | "biometric_categorization"
+  | "emotion_recognition"
+  | "monitoring_evaluation"
+  | "dispatch_triage"
+  | "other"
+  | "unknown"
+
+export type AIUseCaseAutonomyLevel =
+  | "assistive_only"
+  | "recommends_human_decides"
+  | "ranks_or_scores"
+  | "semi_automated_action"
+  | "fully_automated_action"
+  | "unknown"
+
+export type AIUseCaseHumanReview =
+  | "none"
+  | "optional"
+  | "required_before_action"
+  | "required_after_output"
+  | "sample_review"
+  | "escalation_only"
+  | "two_person_verification"
+  | "provider_defined"
+  | "unknown"
+
+export type AIUseCaseInputDataSource =
+  | "manual_user_input"
+  | "uploaded_documents"
+  | "crm"
+  | "hr_system"
+  | "ats"
+  | "erp"
+  | "ticketing_system"
+  | "email"
+  | "call_transcripts"
+  | "website_chat"
+  | "database"
+  | "public_web"
+  | "code_repository"
+  | "analytics_tool"
+  | "unknown"
+
+export type AIUseCaseDataRegion =
+  | "eea"
+  | "romania"
+  | "eu_us"
+  | "us"
+  | "uk"
+  | "global"
+  | "vendor_unknown"
+  | "not_applicable"
+  | "unknown"
+
+export type AIUseCaseAnnexIIIDomain =
+  | "none"
+  | "biometrics"
+  | "critical_infrastructure"
+  | "education_vocational_training"
+  | "employment_worker_management"
+  | "essential_services_public_benefits"
+  | "creditworthiness"
+  | "life_health_insurance"
+  | "emergency_dispatch_triage"
+  | "law_enforcement"
+  | "migration_asylum_border"
+  | "justice_democratic_processes"
+  | "unknown"
+
+export type AIUseCaseProhibitedPracticeFlag =
+  | "manipulative_or_deceptive"
+  | "exploits_vulnerabilities"
+  | "social_scoring"
+  | "criminal_risk_profile_only"
+  | "untargeted_face_scraping"
+  | "workplace_education_emotion_recognition"
+  | "sensitive_biometric_categorisation"
+  | "real_time_remote_biometric_law_enforcement"
+  | "none"
+  | "unknown"
+
+export type AIUseCaseSource =
+  | "manual"
+  | "csv_import"
+  | "xlsx_import"
+  | "magic_link_intake"
+  | "department_survey"
+  | "api"
+  | "ai_compliance_yaml"
+  | "github_scan"
+  | "vercel_scan"
+  | "vendor_import"
+  | "unknown"
+
+export type AIUseCaseRecord = {
+  id: string
+  orgId: string
+  workspaceMode: AIUseCaseWorkspaceMode
+  clientId?: string | null
+  aiProjectId?: string | null
+  linkedAiSystemId?: string | null
+  linkedVendorId?: string | null
+  linkedModelId?: string | null
+  linkedDataProcessId?: string | null
+  useCaseName: string
+  shortDescription?: string | null
+  department: AIUseCaseDepartment
+  businessProcess: AIUseCaseBusinessProcess
+  lifecycleStatus: AIUseCaseLifecycleStatus
+  ownerName?: string | null
+  ownerEmail?: string | null
+  ownerRole?: string | null
+  intendedPurpose: string
+  actualUseDescription?: string | null
+  outOfScopeUse?: string | null
+  toolName?: string | null
+  vendorName?: string | null
+  modelName?: string | null
+  deploymentMode: AIUseCaseDeploymentMode
+  internalUsers: string[]
+  affectedPersons: AIUseCaseAffectedPerson[]
+  vulnerableGroups: AIUseCaseVulnerableGroup[]
+  usesPersonalData: AIUseCaseTriState
+  usesSpecialCategoryData: AIUseCaseTriState
+  usesConfidentialData: AIUseCaseTriState
+  usesTradeSecrets: AIUseCaseTriState
+  usesChildrenData: AIUseCaseTriState
+  dataCategories: AIUseCaseDataCategory[]
+  inputDataSource: AIUseCaseInputDataSource[]
+  dataRegion?: AIUseCaseDataRegion | null
+  transferOutsideEea: AIUseCaseTriState
+  outputTypes: AIUseCaseOutputType[]
+  autonomyLevel: AIUseCaseAutonomyLevel
+  humanReview: AIUseCaseHumanReview
+  publicOutput: AIUseCaseTriState
+  directInteractionWithPersons: AIUseCaseTriState
+  automatedDecision: AIUseCaseTriState
+  scoringOrRanking: AIUseCaseTriState
+  impactsPeopleRights: AIUseCaseTriState
+  annexIIIDomain: AIUseCaseAnnexIIIDomain
+  prohibitedPracticeFlags: AIUseCaseProhibitedPracticeFlag[]
+  draftRole: AIUseCaseDraftRole
+  draftRiskLevel: AIUseCaseDraftRiskLevel
+  highRiskCandidate: boolean
+  prohibitedCandidate: boolean
+  art50TransparencyTrigger: boolean
+  gdprReviewNeeded: boolean
+  dpiNeedsReview: boolean
+  friaCandidate: boolean
+  vendorReviewNeeded: boolean
+  humanOversightNeeded: boolean
+  loggingReviewNeeded: boolean
+  qmsReviewNeeded: boolean
+  pmmReviewNeeded: boolean
+  incidentProcessNeeded: boolean
+  certaintyStatus: AIUseCaseCertaintyStatus
+  reviewStatus: AIUseCaseReviewStatus
+  evidenceCompletenessPct: number
+  openFindingsCount: number
+  lastReviewedAtISO?: string | null
+  lastReviewedBy?: string | null
+  approvedAtISO?: string | null
+  approvedBy?: string | null
+  source: AIUseCaseSource
+  sourceImportId?: string | null
+  sourceRowNumber?: number | null
+  sourceMagicLinkToken?: string | null
+  sourceConfidencePct?: number | null
+  createdAtISO: string
+  createdBy: string
+  updatedAtISO: string
+  updatedBy?: string | null
+  archivedAtISO?: string | null
+  archivedBy?: string | null
+  auditVersion: number
+  dedupeKey: string
+  consultantNotes?: string | null
+  internalNotes?: string | null
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -271,6 +637,9 @@ export type AIContentLabeledAsset = {
 
 export type LiteracyRecord = {
   id: string
+  sourceImportId?: string
+  certaintyStatus?: ImportRecordCertaintyStatus
+  reviewStatus?: ImportRecordReviewStatus
   employeeName: string
   role: string
   trainingDate: string          // ISO date YYYY-MM-DD
@@ -432,7 +801,9 @@ export type ComplianceEventEntityType =
   | "task"
   | "integration"
   | "system"
+  | "ai_use_case"
   | "drift"
+  | "ai_guidance"
 
 export type ComplianceEventActorRole =
   | "owner"
@@ -461,6 +832,170 @@ export type ComplianceEvent = {
   // Câmpurile lipsesc pe evenimente vechi (pre-S2B.3) — backward compatible.
   prevHash?: string
   selfHash?: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Cabinet Import Center — client metadata + proactive onboarding signals.
+//   Importul nu este doar "tabel firme": creează contextul inițial pentru
+//   execuție AI Act + GDPR pe fiecare client.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type ClientImportYesNoUnknown = "yes" | "no" | "unknown"
+
+export type ClientServiceScope =
+  | "ai_act"
+  | "gdpr"
+  | "ai_literacy"
+  | "audit_pack"
+
+export type ClientExpectedAIRole =
+  | "deployer"
+  | "provider"
+  | "builder"
+  | "unknown"
+
+export type ClientStatus = "lead" | "active" | "paused" | "archived"
+
+export type ClientImportSignalType =
+  | "send_intake"
+  | "complete_ai_inventory"
+  | "gdpr_dpia_review"
+  | "ai_literacy_task"
+  | "role_risk_review"
+
+export type ClientImportSignal = {
+  id: string
+  type: ClientImportSignalType
+  label: string
+  severity: "info" | "medium" | "high"
+  createdAtISO: string
+  status: "open" | "done"
+  source: "client_import"
+}
+
+export type ClientImportCertaintyClass =
+  | "hard_import"
+  | "soft_import"
+  | "triage_claim"
+  | "needs_discovery"
+  | "technical_evidence"
+
+export type ClientImportDiscoveryNeedType =
+  | "ai_inventory_intake"
+  | "ai_inventory_details"
+  | "role_risk_confirmation"
+  | "gdpr_data_confirmation"
+  | "vendor_model_confirmation"
+  | "ai_literacy_people"
+
+export type ClientImportFieldAssessment = {
+  field: string
+  label: string
+  value?: string
+  certainty: ClientImportCertaintyClass
+  source: "csv" | "default" | "missing"
+  reviewRequired: boolean
+  reason: string
+}
+
+export type ClientImportDiscoveryNeed = {
+  type: ClientImportDiscoveryNeedType
+  label: string
+  reason: string
+  recommendedAction: string
+  source: "client_import"
+  severity: "info" | "medium" | "high"
+}
+
+export type ClientImportDataCertainty = {
+  counts: {
+    hardImport: number
+    softImport: number
+    triageClaims: number
+    needsDiscovery: number
+    technicalEvidence: number
+  }
+  fieldAssessments: ClientImportFieldAssessment[]
+  discoveryNeeds: ClientImportDiscoveryNeed[]
+}
+
+export type ClientMeta = {
+  orgName?: string
+  cui?: string
+  contactName?: string
+  contactEmail?: string
+  phone?: string
+  sector?: string
+  employees?: string
+  city?: string
+  country?: string
+  serviceScope?: ClientServiceScope[]
+  expectedAiRole?: ClientExpectedAIRole
+  usesAi?: ClientImportYesNoUnknown
+  knownAiTools?: string[]
+  personalDataAi?: ClientImportYesNoUnknown
+  highRiskSuspected?: ClientImportYesNoUnknown
+  assignedTo?: string
+  clientStatus?: ClientStatus
+  intakeEmail?: string
+  sendIntake?: boolean
+  notes?: string
+  tags?: string[]
+  externalId?: string
+  createdByCabinet?: string
+  createdAtISO?: string
+  importedAtISO?: string
+  importSource?: "manual" | "csv" | "api"
+  importSignals?: ClientImportSignal[]
+  importDataCertainty?: ClientImportDataCertainty
+  intakeLinkUrl?: string
+  intakeLinkCreatedAtISO?: string
+}
+
+export type ImportRecordCertaintyStatus =
+  | "unknown"
+  | "self_reported"
+  | "imported"
+  | "evidence_attached"
+  | "consultant_reviewed"
+  | "client_approved"
+  | "expired"
+
+export type ImportRecordReviewStatus =
+  | "draft"
+  | "needs_review"
+  | "reviewed"
+  | "approved"
+  | "rejected"
+
+// ────────────────────────────────────────────────────────────────────────────
+//   Sprint 027 — AI Guidance Orchestrator
+//   Persistă planurile AI de lucru ca recomandări auditabile. AI-ul NU execută
+//   acțiuni: omul acceptă/respinge planul, iar findings/evidence rămân sursa
+//   de adevăr operațională.
+// ────────────────────────────────────────────────────────────────────────────
+
+export type AIGuidancePlanRecordStatus =
+  | "generated"
+  | "accepted"
+  | "rejected"
+  | "superseded"
+
+export type AIGuidancePlanRecord = {
+  id: string
+  planId: string
+  orgId: string
+  status: AIGuidancePlanRecordStatus
+  plan: import("@/lib/compliance/guidance-orchestrator").GuidancePlan
+  diffFromPrevious?: import("@/lib/compliance/guidance-orchestrator").GuidancePlanDiff
+  generatedAtISO: string
+  generatedByEmail?: string
+  reason?: string
+  acceptedAtISO?: string
+  acceptedByEmail?: string
+  rejectedAtISO?: string
+  rejectedByEmail?: string
+  rejectionNote?: string
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -874,6 +1409,9 @@ export type RopaThirdCountryTransfer = {
 export type RopaActivityRecord = {
   id: string
   orgId?: string
+  sourceImportId?: string
+  certaintyStatus?: ImportRecordCertaintyStatus
+  reviewStatus?: ImportRecordReviewStatus
   department?: string
   activityName: string
   ownerName?: string
@@ -1123,6 +1661,9 @@ export type VendorSecurityEvidence = {
 export type VendorRecord = {
   id: string
   orgId: string
+  sourceImportId?: string
+  certaintyStatus?: ImportRecordCertaintyStatus
+  importReviewStatus?: ImportRecordReviewStatus
   // ── Identification ────────────────────────────────────────────────────────
   name: string                                   // "OpenAI", "Microsoft Azure OpenAI"
   legalEntity?: string                           // "OpenAI Ireland Limited"
@@ -1348,7 +1889,7 @@ export type ClientPortalComment = {
 //   - efactura* (Bundle D fiscal — separat product)
 //   - scannedDocuments, scans (document scanner — diferit product)
 //   - chat, taskState (UX layers — Sprint 011)
-//   - aiComplianceFieldOverrides, traceabilityReviews (specific compliscan)
+//   - aiComplianceFieldOverrides, traceabilityReviews (legacy donor-specific)
 //   - fiscalProtocols, snapshotHistory, validatedBaselineSnapshotId
 //   - intakeAnswers, intakeCompletedAtISO, d406EvidenceSubmitted
 //   - siteScan, siteScanJobs (separate site-scanner module)
@@ -1372,6 +1913,7 @@ export type ComplianceState = {
 
   // ── AI Inventory (manual + auto-detected) ──────────────────────────────────
   aiSystems: AISystemRecord[]
+  aiUseCases?: AIUseCaseRecord[]
   detectedAISystems?: DetectedAISystemRecord[]
 
   // ── Drift detection ────────────────────────────────────────────────────────
@@ -1415,6 +1957,12 @@ export type ComplianceState = {
    * generat din state-ul AI Data Map curent.
    */
   aiExposureReports?: AIExposureReport[]
+
+  /**
+   * Cabinet Import Center. Metadata inițială a clientului importat de cabinet
+   * și semnalele proactive create din CSV/manual intake.
+   */
+  clientMeta?: ClientMeta
 
   /**
    * GDPR breach records (Sprint 008D — Art. 33 ANSPDCP 72h + Art. 34 data
@@ -1650,6 +2198,16 @@ export type ComplianceState = {
    *  - status (received → in-progress → responded → closed).
    */
   authorityCooperationRequests?: AuthorityCooperationRequest[]
+
+  /**
+   * Sprint 027 — AI Guidance Orchestrator plans.
+   *
+   * Planurile sunt snapshots auditabile generate din state-ul determinist
+   * (findings, preventive engine, coverage matrix, AI inventory). Ele pot fi
+   * acceptate/respine de om, dar nu închid automat findings și nu modifică
+   * evidence-ul. Regenerarea after-action produce diff față de planul anterior.
+   */
+  aiGuidancePlans?: AIGuidancePlanRecord[]
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -3876,4 +4434,3 @@ export type AuthorityCooperationRequest = {
   createdAtISO: string
   updatedAtISO: string
 }
-

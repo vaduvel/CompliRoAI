@@ -37,6 +37,11 @@ yarn-error.log*
 # data directory (user state files)
 .data/
 
+# local design handoff / qa artifacts
+_design-claude/
+.qa-screenshots/
+test-results/
+
 # vercel
 .vercel
 

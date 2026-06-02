@@ -129,55 +129,24 @@ export default function PreventivePage() {
   )
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Engine preventiv
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+    <div className="cr-page cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <div className="cr-eyebrow">Rapoarte & dosar</div>
+          <h1 className="cr-title">Engine preventiv</h1>
+          <p className="cr-subtitle">
           Scanare automată a deadline-urilor + reminder-uri email + change log
           legislativ · Apelat zilnic 06:00 UTC via cron, plus rulare manuală.
-        </p>
+          </p>
+        </div>
       </div>
 
       <button
         onClick={handleRunScan}
         disabled={running || loading}
+        className="cr-btn cr-btn--primary"
         style={{
           alignSelf: "flex-start",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "10px 16px",
-          fontSize: "13px",
-          fontWeight: 600,
-          color: "white",
-          background: "var(--cobalt-600)",
-          border: "none",
-          borderRadius: "8px",
           cursor: running ? "default" : "pointer",
           opacity: running ? 0.6 : 1,
         }}
@@ -268,7 +237,7 @@ export default function PreventivePage() {
                 value={recipients}
                 onChange={(e) => setRecipients(e.target.value)}
                 placeholder="dpo@firma.ro, manager@firma.ro"
-                style={inputStyle}
+                className="cr-input"
               />
             </label>
             <button

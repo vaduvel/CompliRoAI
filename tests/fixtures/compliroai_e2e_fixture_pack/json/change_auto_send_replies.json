@@ -1,0 +1,12 @@
+{
+  "change_id": "CHG-005",
+  "test_case_id": "E2E-CHG-005",
+  "project_id": "PRJ-SUPPORT-AGENT",
+  "change_type": "intended_purpose_change;autonomy_change",
+  "previous_version": "draft_replies_only",
+  "new_version": "auto_send_replies_low_confidence_blocked",
+  "changed_by": "product@devidevs.example",
+  "go_live_at": "2026-06-05",
+  "rollback_available": "yes",
+  "expected_findings": "substantial_modification_review;human_oversight_after_change;client_approval"
+}

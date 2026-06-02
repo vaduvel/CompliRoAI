@@ -22,7 +22,7 @@ export type CompliRoAIClientOptions = {
   apiKey: string
   /** Base URL of the CompliRoAI deployment. Defaults to production. */
   baseUrl?: string
-  /** Custom fetch (e.g. test mock, node-fetch shim). Defaults to global fetch. */
+  /** Custom fetch implementation. Defaults to global fetch. */
   fetchImpl?: typeof fetch
   /** Request timeout in ms. Defaults to 15s. */
   timeoutMs?: number
@@ -64,7 +64,7 @@ export class CompliRoAIError extends Error {
   }
 }
 
-const DEFAULT_BASE_URL = "https://compliscanag.vercel.app"
+const DEFAULT_BASE_URL = "https://eu-ai-act-beige.vercel.app"
 const DEFAULT_TIMEOUT = 15_000
 
 export class CompliRoAIClient {

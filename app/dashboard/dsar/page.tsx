@@ -168,38 +168,16 @@ export default function DsarPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <div className="cr-page cr-stack">
       {/* Header */}
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          DSAR — Cereri persoane vizate
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate GDPR</span>
+          <h1 className="cr-title">Cereri persoane vizate · DSAR</h1>
+          <p className="cr-subtitle">
           GDPR Art. 15-22 · Termen legal 30 zile (extensibil 60) · Registru audit-ready
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* Stats */}
@@ -207,19 +185,8 @@ export default function DsarPage() {
 
       {/* Error */}
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
@@ -233,7 +200,7 @@ export default function DsarPage() {
         />
         <button
           onClick={() => setShowCreate(true)}
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
         >
           <Plus size={14} /> Cerere nouă
         </button>
@@ -396,18 +363,7 @@ function FilterTabs({
           <button
             key={t.key}
             onClick={() => onChange(t.key)}
-            style={{
-              padding: "6px 12px",
-              fontSize: "12px",
-              fontWeight: active ? 600 : 500,
-              color: active ? "var(--cobalt-400)" : "var(--ink-muted)",
-              background: active ? "rgba(96,165,250,0.10)" : "transparent",
-              border: "1px solid",
-              borderColor: active ? "rgba(96,165,250,0.3)" : "var(--border-soft)",
-              borderRadius: "999px",
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
+            className={`cr-filter-chip ${active ? "is-active" : ""}`}
           >
             {t.label}
           </button>
@@ -463,7 +419,7 @@ function EmptyState({
           : "Înregistrează prima cerere primită prin email, formular sau telefon. Aplicația calculează deadline-ul legal (30 zile) și generează draft."}
       </div>
       {!hasAny && (
-        <button onClick={onCreate} style={btnPrimary}>
+        <button onClick={onCreate} className="cr-btn cr-btn--primary cr-btn--sm">
           <Plus size={14} /> Înregistrează prima cerere
         </button>
       )}
@@ -866,7 +822,7 @@ function ExpandedDetail({
             <button
               onClick={loadDraft}
               disabled={draftLoading}
-              style={btnSecondary}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
             >
               {draftLoading ? (
                 <>
@@ -900,10 +856,8 @@ function ExpandedDetail({
               <span style={{ fontWeight: 500, color: "var(--ink)" }}>{draft.subject}</span>
               <button
                 onClick={copyDraft}
-                style={{
-                  ...btnGhost,
-                  marginLeft: "auto",
-                }}
+                className="cr-btn cr-btn--secondary cr-btn--sm"
+                style={{ marginLeft: "auto" }}
               >
                 <Copy size={11} />
                 {copied ? "Copiat" : "Copiază"}
@@ -1008,11 +962,8 @@ function ExpandedDetail({
         <span>ID: {request.id}</span>
         <button
           onClick={onDelete}
-          style={{
-            ...btnGhost,
-            marginLeft: "auto",
-            color: "#f87171",
-          }}
+          className="cr-btn cr-btn--danger cr-btn--sm"
+          style={{ marginLeft: "auto" }}
         >
           <Trash2 size={11} /> Șterge
         </button>
@@ -1219,7 +1170,7 @@ function CreateModal({
           >
             Cerere nouă DSAR
           </h2>
-          <button onClick={onClose} style={{ ...btnGhost, padding: "4px" }}>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm">
             <X size={16} />
           </button>
         </div>
@@ -1229,7 +1180,7 @@ function CreateModal({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex: Ion Popescu"
-            style={inputStyle}
+            className="cr-input"
           />
         </Field>
 
@@ -1239,7 +1190,7 @@ function CreateModal({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ion.popescu@example.com"
-            style={inputStyle}
+            className="cr-input"
           />
         </Field>
 
@@ -1247,7 +1198,7 @@ function CreateModal({
           <select
             value={type}
             onChange={(e) => setType(e.target.value as DsarRequestType)}
-            style={inputStyle}
+            className="cr-input"
           >
             {ALL_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -1262,7 +1213,7 @@ function CreateModal({
             type="date"
             value={receivedAt}
             onChange={(e) => setReceivedAt(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
           />
           <div style={{ fontSize: "11px", color: "var(--ink-dim)", marginTop: "4px" }}>
             Deadline legal: {new Date(
@@ -1273,6 +1224,7 @@ function CreateModal({
 
         <Field label="Note interne (opțional)">
           <textarea
+            className="cr-input cr-textarea"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
@@ -1297,13 +1249,13 @@ function CreateModal({
         )}
 
         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={btnSecondary} disabled={submitting}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm" disabled={submitting}>
             Anulează
           </button>
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            style={btnPrimary}
+            className="cr-btn cr-btn--primary cr-btn--sm"
           >
             {submitting ? (
               <>
@@ -1483,7 +1435,7 @@ function ProcessAssetRow({ asset }: { asset: DsarProcessPack["assets"][number] }
           {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           {asset.title}
         </button>
-        <button onClick={copy} style={btnGhost}>
+        <button onClick={copy} className="cr-btn cr-btn--secondary cr-btn--sm">
           <Copy size={11} />
           {copied ? "Copiat" : "Copiază"}
         </button>
@@ -1515,51 +1467,6 @@ function ProcessAssetRow({ asset }: { asset: DsarProcessPack["assets"][number] }
 // ────────────────────────────────────────────────────────────────────────────
 //   Shared style tokens (inline)
 // ────────────────────────────────────────────────────────────────────────────
-
-const btnPrimary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  fontSize: "12px",
-  fontWeight: 600,
-  color: "white",
-  background: "var(--cobalt-600)",
-  border: "1px solid var(--cobalt-600)",
-  borderRadius: "8px",
-  cursor: "pointer",
-  transition: "all 0.15s",
-}
-
-const btnSecondary: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-  padding: "8px 14px",
-  fontSize: "12px",
-  fontWeight: 500,
-  color: "var(--ink)",
-  background: "var(--surface-2)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "8px",
-  cursor: "pointer",
-  transition: "all 0.15s",
-}
-
-const btnGhost: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "4px",
-  padding: "3px 8px",
-  fontSize: "10px",
-  fontWeight: 500,
-  color: "var(--ink-muted)",
-  background: "transparent",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "4px",
-  cursor: "pointer",
-  transition: "all 0.15s",
-}
 
 const inputStyle: React.CSSProperties = {
   width: "100%",

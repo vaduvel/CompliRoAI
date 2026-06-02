@@ -1,0 +1,132 @@
+﻿test_case_id,finding_code,title,severity,legal_basis,required_evidence,recommended_owner,expected_initial_status,final_legal_verdict
+E2E-CAB-001,send_ai_intake,Trimite intake AI către client,high,AI Act/GDPR discovery,completed_intake,cabinet_consultant,open,false
+E2E-CAB-001,create_ai_inventory,Creează registru AI inițial,high,AI Act Art.4/6 triage,ai_register_draft,cabinet_consultant,open,false
+E2E-CAB-001,confirm_ai_usage,Confirmă dacă există utilizări AI,medium,Internal governance,client_declaration,client_admin,open,false
+E2E-CAB-001,confirm_personal_data_ai,Confirmă dacă AI procesează date personale,medium,GDPR Art.30/35,data_questionnaire,dpo,open,false
+E2E-CAB-002,launch_department_survey,Launch Department Survey,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-002,create_ai_inventory,Creează registru AI inițial,high,AI Act Art.4/6 triage,ai_register_draft,cabinet_consultant,open,false
+E2E-CAB-002,assign_client_owner,Assign Client Owner,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-003,No duplicate workspace,No Duplicate Workspace,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-003,update notes/deadline,Update Notes/Deadline,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-003,no duplicate findings unresolved.,No Duplicate Findings Unresolved.,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-004,suspected_ai_due_vendor,Suspected Ai Due Vendor,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-004,confirm_ai_usage,Confirmă dacă există utilizări AI,medium,Internal governance,client_declaration,client_admin,open,false
+E2E-CAB-004,vendor_review,Vendor Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-005,department_non_response,Department Non Response,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-005,inventory_partial,Inventory Partial,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-005,export_draft_only,Export Draft Only,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-006,start_ai_literacy,Start Ai Literacy,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CAB-006,collect_training_roster,Collect Training Roster,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-001,art50_chatbot_notice,Adaugă informare utilizator pentru chatbot AI,high,AI Act Art.50(1),notice_text;screenshot,customer_support,open,false
+E2E-CHAT-001,chatbot_screenshot_evidence,Chatbot Screenshot Evidence,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-001,gdpr_chatbot_review,Verifică RoPA/DPIA pentru conversații chatbot,high,GDPR Art.30/35,ropa_record;dpia_screening,dpo,open,false
+E2E-CHAT-002,gdpr_chatbot_review,Verifică RoPA/DPIA pentru conversații chatbot,high,GDPR Art.30/35,ropa_record;dpia_screening,dpo,open,false
+E2E-CHAT-002,vendor_dpa_chatbot,Atașează DPA/contract vendor chatbot,high,GDPR Art.28,vendor_dpa,procurement,open,false
+E2E-CHAT-002,data_region_chatbot,Data Region Chatbot,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-002,retention_review,Retention Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-003,human_escalation_sop,Documentează escaladarea către om,medium,AI Act Art.14/26 principle,human_oversight_sop,customer_support,open,false
+E2E-CHAT-003,confirm_human_review,Confirm Human Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-004,special_category_health_data,Special Category Health Data,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-004,medical_triage_review,Medical Triage Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-004,gdpr_dpia_review,Gdpr Dpia Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-004,legal_review,Legal Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHAT-005,art50_chatbot_notice becomes reviewed not automatically closed until approval,Art50 Chatbot Notice Becomes Reviewed Not Automatically Closed Until Approval,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-001,hr_high_risk_candidate,Review high-risk candidate pentru HR AI,critical,AI Act Art.6 + Annex III employment,risk_memo,legal,open,false
+E2E-HR-001,dpia_hr_ai,DPIA/GDPR review pentru screening CV,high,GDPR Art.35/22,dpia_screening,dpo,open,false
+E2E-HR-001,human_oversight_hr,Definește human oversight pentru HR AI,high,AI Act Art.14/26,oversight_sop,hr,open,false
+E2E-HR-001,vendor_ifu_hr,Obține instrucțiuni și documentație vendor HR AI,high,AI Act Art.13/26,vendor_ifu,procurement,open,false
+E2E-HR-001,logging_hr,Verifică logging pentru HR AI,high,AI Act Art.12/26(6),sample_logs,it_security,open,false
+E2E-HR-002,shadow_ai_personal_account,Shadow Ai Personal Account,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-002,dpia_hr_ai,DPIA/GDPR review pentru screening CV,high,GDPR Art.35/22,dpia_screening,dpo,open,false
+E2E-HR-002,vendor_training_opt_out,Vendor Training Opt Out,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-002,high_risk_review_if_screening,High Risk Review If Screening,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-003,ai_literacy_hr,Ai Literacy Hr,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-003,confidential_data_policy,Confidential Data Policy,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-003,vendor_review,Vendor Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-004,workplace_education_emotion_recognition_prohibited_candidate,Workplace Education Emotion Recognition Prohibited Candidate,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-004,stop_legal_review,Stop Legal Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-005,employment_worker_management_review,Employment Worker Management Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-005,worker_notice,Worker Notice,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-005,dpia,Dpia,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-005,human_oversight,Human Oversight,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-HR-005,management_approval,Management Approval,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-001,launch_department_survey,Launch Department Survey,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-001,collect_tool_list,Collect Tool List,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-001,create_ai_policy_minimum,Create Ai Policy Minimum,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-002,personal_account_ai,AI folosit pe cont personal,critical,GDPR/Contract/Internal policy,employee_declaration;vendor_terms,it_security,open,false
+E2E-IMM-002,vendor_dpa_missing,Vendor Dpa Missing,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-002,training_opt_out_unknown,Training Opt Out Unknown,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-002,gdpr_review,Gdpr Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-003,suspected_ai_due_billing,Suspected Ai Due Billing,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-003,confirm_ai_usage,Confirmă dacă există utilizări AI,medium,Internal governance,client_declaration,client_admin,open,false
+E2E-IMM-003,create_ai_inventory,Creează registru AI inițial,high,AI Act Art.4/6 triage,ai_register_draft,cabinet_consultant,open,false
+E2E-IMM-004,check_website_chatbot,Check Website Chatbot,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-004,art50_if_ai_confirmed,Art50 If Ai Confirmed,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-005,management_approval,Management Approval,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-IMM-005,training_roster_missing,Training Roster Missing,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-001,missing_ai_inventory,Lipsește registru AI,high,AI Act governance,ai_register,management,open,false
+E2E-QUES-001,missing_ai_policy,Lipsește politica internă AI,high,AI Act Art.4/Internal,ai_policy,management,open,false
+E2E-QUES-001,missing_literacy_evidence,Lipsește dovada AI Literacy,high,AI Act Art.4,training_proof,hr,open,false
+E2E-QUES-001,management_signoff,Management Signoff,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-002,hq_local_register_missing,Hq Local Register Missing,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-002,gap_analysis_required,Gap Analysis Required,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-002,evidence_pack_required,Evidence Pack Required,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-003,no_false_certification,No False Certification,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-003,legal_review_required,Legal Review Required,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-004,deadline_owner,Deadline Owner,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-004,missing_evidence,Missing Evidence,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-004,management_signoff,Management Signoff,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-005,review_existing_pack,Review Existing Pack,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-QUES-005,expired_evidence_if_old,Expired Evidence If Old,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-001,role_matrix,Clarifică role matrix provider/deployer,critical,AI Act Art.3/25,role_matrix,legal,open,false
+E2E-BLD-001,vendor_model_chain,Documentează vendor/model chain,high,AI Act Art.13/Contract,model_vendor_card,engineering,open,false
+E2E-BLD-001,logging_evidence,Atașează logging evidence,high,AI Act Art.12/26,sample_logs;logging_config,engineering,open,false
+E2E-BLD-001,eval_metrics,Atașează eval report/metrici,high,AI Act Art.15,eval_report,engineering,open,false
+E2E-BLD-001,incident_process,Atașează incident process,medium,AI Act Art.73/GDPR,incident_sop,it_security,open,false
+E2E-BLD-002,high_risk_provider_pack,High Risk Provider Pack,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-002,human_oversight_design,Human Oversight Design,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-002,eval_metrics,Atașează eval report/metrici,high,AI Act Art.15,eval_report,engineering,open,false
+E2E-BLD-002,logging,Logging,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-002,dpia,Dpia,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-003,contract_confidentiality,Contract Confidentiality,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-003,vendor_dpa,Vendor Dpa,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-003,human_review_required,Human Review Required,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-003,gdpr_review,Gdpr Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-004,semi_automated_action_review,Semi Automated Action Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-004,human_gate,Human Gate,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-004,logging,Logging,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-004,rollback_plan,Rollback Plan,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-005,logging_evidence_missing,Logging Evidence Missing,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-005,monitoring_plan_missing,Monitoring Plan Missing,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-006,special_category_data,Special Category Data,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-006,medical_triage_review,Medical Triage Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-006,dpia,Dpia,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-006,human_oversight,Human Oversight,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-BLD-006,incident_process,Atașează incident process,medium,AI Act Art.73/GDPR,incident_sop,it_security,open,false
+E2E-CHG-001,change_impact_assessment,Rulează change impact assessment,high,AI lifecycle governance,change_report,product_owner,open,false
+E2E-CHG-001,rerun_role_risk,Rerun Role Risk,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-001,model_card_update,Model Card Update,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-001,eval_after_change,Eval After Change,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-001,client_approval,Client Approval,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-002,change_impact_assessment,Rulează change impact assessment,high,AI lifecycle governance,change_report,product_owner,open,false
+E2E-CHG-002,eval_after_change_low,Eval After Change Low,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-003,logging_after_change,Verifică logging după schimbare,high,AI Act Art.12/26,log_sample_after,it_security,open,false
+E2E-CHG-003,auditability_broken,Auditabilitatea a fost afectată,blocker,Evidence/Audit trail,logging_config_restored,it_security,open,false
+E2E-CHG-003,security_review,Security Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-004,gdpr_after_data_change,Gdpr After Data Change,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-004,data_flow_update,Data Flow Update,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-004,rerun_role_risk,Rerun Role Risk,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-005,substantial_modification_review,Review modificare substanțială,critical,AI Act Art.25/43 logic,legal_memo,legal,open,false
+E2E-CHG-005,human_oversight_after_change,Human Oversight After Change,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-005,incident_process,Atașează incident process,medium,AI Act Art.73/GDPR,incident_sop,it_security,open,false
+E2E-CHG-005,client_approval,Client Approval,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-006,human_review_removed,Human Review Removed,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-006,high_risk_controls_broken,High Risk Controls Broken,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-006,legal_review,Legal Review,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-007,emergency_review_due,Emergency Review Due,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-007,incident_review_if_failure,Incident Review If Failure,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-CHG-007,rollback_plan_missing,Rollback Plan Missing,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-X-001,No findings cross-client,No Findings Cross-Client,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-X-002,Existing findings updated,Existing Findings Updated,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-X-002,not duplicated,Not Duplicated,medium,Internal/Needs mapping,review_note,consultant,open,false
+E2E-X-003,no_false_full_compliance_claim,No False Full Compliance Claim,medium,Internal/Needs mapping,review_note,consultant,open,false

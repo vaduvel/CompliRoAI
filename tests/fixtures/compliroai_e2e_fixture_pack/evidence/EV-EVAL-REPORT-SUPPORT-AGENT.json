@@ -1,0 +1,12 @@
+{
+  "project_id": "PRJ-SUPPORT-AGENT",
+  "model": "gpt-4.1",
+  "eval_date": "2026-05-22",
+  "test_cases": 120,
+  "pass_rate": 0.91,
+  "known_failures": [
+    "ambiguous refund policy",
+    "unsupported shipment edge case"
+  ],
+  "human_review_required": true
+}

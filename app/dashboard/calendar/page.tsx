@@ -212,7 +212,7 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "60px 40px", textAlign: "center", color: "var(--ink-dim)" }}>
+      <div className="cr-page cr-empty">
         <Loader2 size={24} style={{ animation: "spin 1s linear infinite", marginBottom: 8 }} />
         <div>Se încarcă calendarul…</div>
       </div>
@@ -220,20 +220,21 @@ export default function CalendarPage() {
   }
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 1280, margin: "0 auto" }}>
+    <div className="cr-page cr-page--full cr-stack">
       {/* Header */}
-      <header style={{ marginBottom: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-          <CalendarDays size={22} color="var(--ink)" />
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--ink)", margin: 0, letterSpacing: "-0.01em" }}>
-            Calendar deadlines
-          </h1>
+      <header className="cr-hero">
+        <div className="cr-hero__copy cr-hero__copy--icon">
+          <CalendarDays size={28} color="var(--cobalt-700)" />
+          <div>
+            <span className="cr-eyebrow">Colaborare</span>
+            <h1 className="cr-title">Calendar deadlines</h1>
+            <p className="cr-subtitle">
+              Vedere agregată a tuturor deadline-urilor: DSAR (30 zile), DPIA, RoPA revalidare anuală, incidente date
+              personale 72h, vendor revalidare, plus datele oficiale ale Regulamentului (UE) 2024/1689 (Art. 50 – 2 dec
+              2026, Anexa III high-risk – 2 aug 2027). Aboneaza-te via iCal pentru a primi notificările în calendarul tău.
+            </p>
+          </div>
         </div>
-        <p style={{ fontSize: 13, color: "var(--ink-dim)", lineHeight: 1.55, maxWidth: 760, margin: 0 }}>
-          Vedere agregată a tuturor deadline-urilor: DSAR (30 zile), DPIA, RoPA revalidare anuală, incidente date
-          personale 72h, vendor revalidare, plus datele oficiale ale Regulamentului (UE) 2024/1689 (Art. 50 – 2 dec
-          2026, Anexa III high-risk – 2 aug 2027). Aboneaza-te via iCal pentru a primi notificările în calendarul tău.
-        </p>
       </header>
 
       {/* Top toolbar */}
@@ -242,34 +243,13 @@ export default function CalendarPage() {
         <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 6, overflow: "hidden" }}>
           <button
             onClick={() => setView("agenda")}
-            style={{
-              padding: "6px 12px",
-              fontSize: 12,
-              border: "none",
-              background: view === "agenda" ? "var(--accent-soft)" : "transparent",
-              color: view === "agenda" ? "var(--accent)" : "var(--ink-dim)",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
+            className={`cr-tab ${view === "agenda" ? "is-active" : ""}`}
           >
             <List size={12} /> Agenda
           </button>
           <button
             onClick={() => setView("month")}
-            style={{
-              padding: "6px 12px",
-              fontSize: 12,
-              border: "none",
-              borderLeft: "1px solid var(--border)",
-              background: view === "month" ? "var(--accent-soft)" : "transparent",
-              color: view === "month" ? "var(--accent)" : "var(--ink-dim)",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
+            className={`cr-tab ${view === "month" ? "is-active" : ""}`}
           >
             <CalIcon size={12} /> Lună
           </button>
@@ -278,18 +258,7 @@ export default function CalendarPage() {
         {/* Refresh */}
         <button
           onClick={() => void refresh()}
-          style={{
-            padding: "6px 12px",
-            borderRadius: 6,
-            border: "1px solid var(--border)",
-            background: "transparent",
-            color: "var(--ink-dim)",
-            fontSize: 12,
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
+          className="cr-btn cr-btn--secondary cr-btn--sm"
         >
           <RefreshCw size={12} /> Reîmprospătează
         </button>
@@ -298,36 +267,15 @@ export default function CalendarPage() {
         <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           <button
             onClick={copyICalUrl}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "1px solid var(--border)",
-              background: "transparent",
-              color: "var(--ink-dim)",
-              fontSize: 12,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
           >
             <Copy size={12} /> {iCalCopied ? "Copiat!" : "Copiază URL iCal"}
           </button>
           <a
             href="/api/calendar/ical"
             download
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "1px solid var(--accent)",
-              background: "var(--accent-soft)",
-              color: "var(--accent)",
-              fontSize: 12,
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
+            className="cr-btn cr-btn--primary cr-btn--sm"
+            style={{ textDecoration: "none" }}
           >
             <Download size={12} /> Descarcă .ics
           </a>
@@ -346,14 +294,11 @@ export default function CalendarPage() {
             <button
               key={m}
               onClick={() => toggleModule(m)}
+              className={`cr-filter-chip ${isOn ? "is-active" : ""}`}
               style={{
-                padding: "4px 10px",
-                borderRadius: 99,
                 border: `1px solid ${isOn ? MODULE_COLOR[m] : "var(--border)"}`,
                 background: isOn ? `${MODULE_COLOR[m]}22` : "transparent",
                 color: isOn ? MODULE_COLOR[m] : "var(--ink-dim)",
-                fontSize: 11,
-                cursor: "pointer",
               }}
             >
               {MODULE_LABEL[m]}
@@ -363,7 +308,8 @@ export default function CalendarPage() {
         {selectedModules.size > 0 && (
           <button
             onClick={() => setSelectedModules(new Set())}
-            style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-dim)", border: "none", background: "transparent", cursor: "pointer" }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
+            style={{ marginLeft: "auto" }}
           >
             Resetează filtrele
           </button>
@@ -435,7 +381,7 @@ export default function CalendarPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
             <button
               onClick={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))}
-              style={{ border: "1px solid var(--border)", background: "transparent", color: "var(--ink-dim)", padding: 6, borderRadius: 6, cursor: "pointer" }}
+              className="cr-btn cr-btn--icon cr-btn--sm"
             >
               <ChevronLeft size={14} />
             </button>
@@ -444,13 +390,13 @@ export default function CalendarPage() {
             </div>
             <button
               onClick={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))}
-              style={{ border: "1px solid var(--border)", background: "transparent", color: "var(--ink-dim)", padding: 6, borderRadius: 6, cursor: "pointer" }}
+              className="cr-btn cr-btn--icon cr-btn--sm"
             >
               <ChevronRight size={14} />
             </button>
             <button
               onClick={() => setMonthCursor(startOfMonth(new Date()))}
-              style={{ border: "1px solid var(--border)", background: "transparent", color: "var(--ink-dim)", padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12 }}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
             >
               Astăzi
             </button>
@@ -498,18 +444,10 @@ export default function CalendarPage() {
                       key={e.id}
                       onClick={() => setActiveEvent(e)}
                       title={e.title}
+                      className="cr-calendar-pill cr-action"
                       style={{
                         background: SEVERITY_BG[e.severity],
                         color: SEVERITY_FG[e.severity],
-                        border: "none",
-                        borderRadius: 4,
-                        padding: "2px 4px",
-                        fontSize: 10,
-                        textAlign: "left",
-                        cursor: "pointer",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
                       }}
                     >
                       {e.title}
@@ -622,15 +560,7 @@ export default function CalendarPage() {
               )}
               <button
                 onClick={() => setActiveEvent(null)}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 6,
-                  border: "1px solid var(--border)",
-                  background: "transparent",
-                  color: "var(--ink-dim)",
-                  fontSize: 12,
-                  cursor: "pointer",
-                }}
+                className="cr-btn cr-btn--secondary cr-btn--sm"
               >
                 Închide
               </button>
@@ -646,19 +576,7 @@ function EventRow({ event, onClick }: { event: CalendarEvent; onClick: () => voi
   return (
     <button
       onClick={onClick}
-      style={{
-        display: "grid",
-        gridTemplateColumns: "auto 1fr auto",
-        gap: 12,
-        alignItems: "center",
-        padding: "10px 14px",
-        background: "var(--bg-elev)",
-        border: "1px solid var(--border)",
-        borderRadius: 6,
-        textAlign: "left",
-        cursor: "pointer",
-        color: "var(--ink)",
-      }}
+      className="cr-calendar-event-row cr-action"
     >
       <span
         style={{

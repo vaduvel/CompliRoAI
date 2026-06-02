@@ -81,7 +81,16 @@ export default async function TrustCenterPublicPage({
       notFound()
     }
     return (
-      <main style={{ padding: 60, textAlign: "center", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <main
+        style={{
+          minHeight: "100dvh",
+          padding: 60,
+          textAlign: "center",
+          fontFamily: "var(--font-body-v3)",
+          background: "var(--bg)",
+          color: "var(--ink)",
+        }}
+      >
         <h1>Eroare</h1>
         <p>{result.error}</p>
       </main>
@@ -95,10 +104,10 @@ export default async function TrustCenterPublicPage({
   return (
     <main
       style={{
-        background: "#f8fafc",
-        minHeight: "100vh",
-        fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-        color: "#0f172a",
+        background: "var(--bg)",
+        minHeight: "100dvh",
+        fontFamily: "var(--font-body-v3)",
+        color: "var(--ink)",
       }}
     >
       {/* Header */}
@@ -123,6 +132,7 @@ export default async function TrustCenterPublicPage({
               fontSize: 11,
               textTransform: "uppercase",
               letterSpacing: "0.18em",
+              fontFamily: "var(--font-mono-v3)",
               opacity: 0.9,
               marginBottom: 6,
             }}
@@ -133,8 +143,9 @@ export default async function TrustCenterPublicPage({
             style={{
               fontSize: 38,
               margin: "0 0 12px",
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
+              fontFamily: "var(--font-display-v3)",
+              fontWeight: 750,
+              letterSpacing: "-0.035em",
             }}
           >
             {profile.orgName}
@@ -163,7 +174,7 @@ export default async function TrustCenterPublicPage({
         <section style={cardStyle}>
           <SectionTitle title="Frameworks în scop" color={primaryColor} />
           {profile.frameworksInScope.length === 0 ? (
-            <p style={{ color: "#64748b", fontSize: 14 }}>Nicio reglementare declarată încă.</p>
+            <p style={{ color: "var(--ink-muted)", fontSize: 14 }}>Nicio reglementare declarată încă.</p>
           ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               {profile.frameworksInScope.map((f) => (
@@ -185,7 +196,7 @@ export default async function TrustCenterPublicPage({
             </div>
           )}
           {(profile.doraEntityType || profile.nis2EntityClass) && (
-            <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 16, fontSize: 13, color: "#475569" }}>
+            <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 16, fontSize: 13, color: "var(--ink-muted)" }}>
               {profile.doraEntityType && (
                 <div>
                   <strong>DORA:</strong> {profile.doraEntityType}
@@ -218,7 +229,7 @@ export default async function TrustCenterPublicPage({
               {ROLE_LABEL_RO[profile.aiActRole ?? "unknown"] ?? profile.aiActRole}
             </div>
             {profile.roleDeterminedAtISO && (
-              <div style={{ fontSize: 12, color: "#64748b" }}>
+              <div style={{ fontSize: 12, color: "var(--ink-dim)" }}>
                 determinat {formatDate(profile.roleDeterminedAtISO)}
               </div>
             )}
@@ -258,7 +269,7 @@ export default async function TrustCenterPublicPage({
         {profile.latestAuditPack && (
           <section style={cardStyle}>
             <SectionTitle title="Ultimul Audit Pack" color={primaryColor} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, color: "#0f172a" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, color: "var(--ink)" }}>
               <div>
                 <strong>Generat:</strong> {formatDate(profile.latestAuditPack.generatedAtISO)}
               </div>
@@ -267,7 +278,7 @@ export default async function TrustCenterPublicPage({
               </div>
               <div style={{ wordBreak: "break-all" }}>
                 <strong>Hash root SHA-256:</strong>{" "}
-                <code style={{ fontSize: 12, background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 }}>
+                <code style={{ fontSize: 12, background: "var(--surface-2)", padding: "2px 6px", borderRadius: 4, fontFamily: "var(--font-mono-v3)" }}>
                   {profile.latestAuditPack.hashRoot}
                 </code>
               </div>
@@ -300,8 +311,8 @@ export default async function TrustCenterPublicPage({
                     borderLeft: `3px solid ${primaryColor}`,
                   }}
                 >
-                  <div style={{ fontSize: 14, color: "#0f172a", fontWeight: 500 }}>{a.label}</div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>
+                  <div style={{ fontSize: 14, color: "var(--ink)", fontWeight: 650 }}>{a.label}</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-dim)", marginTop: 3 }}>
                     {a.legalReference} · confirmat {formatDate(a.confirmedAtISO)}
                   </div>
                 </li>
@@ -315,23 +326,23 @@ export default async function TrustCenterPublicPage({
           style={{
             marginTop: 32,
             padding: "20px 0",
-            borderTop: "1px solid #e2e8f0",
+            borderTop: "1px solid var(--border)",
             fontSize: 12,
-            color: "#64748b",
+            color: "var(--ink-dim)",
             textAlign: "center",
           }}
         >
           Generat {formatDate(profile.generatedAtISO)} ·{" "}
           <strong>Verificat criptografic via CompliRoAI</strong>
           {profile.brandingFooter && (
-            <div style={{ marginTop: 6, fontSize: 11, color: "#94a3b8" }}>{profile.brandingFooter}</div>
+            <div style={{ marginTop: 6, fontSize: 11, color: "var(--ink-subtle)" }}>{profile.brandingFooter}</div>
           )}
           <div style={{ marginTop: 12 }}>
-            <Link href="/verify-pack" style={{ color: "#0ea5e9", textDecoration: "underline" }}>
+            <Link href="/verify-pack" style={{ color: "var(--cobalt-700)", textDecoration: "underline" }}>
               Verifică hash root audit pack
             </Link>
             <span style={{ margin: "0 8px" }}>·</span>
-            <a href="https://compliroai.com" style={{ color: "#0ea5e9", textDecoration: "underline" }}>
+            <a href="https://compliroai.com" style={{ color: "var(--cobalt-700)", textDecoration: "underline" }}>
               Despre CompliRoAI
             </a>
           </div>
@@ -348,9 +359,10 @@ function SectionTitle({ title, color }: { title: string; color: string }) {
         fontSize: 11,
         textTransform: "uppercase",
         letterSpacing: "0.12em",
+        fontFamily: "var(--font-mono-v3)",
         color,
         margin: "0 0 14px",
-        fontWeight: 700,
+        fontWeight: 760,
       }}
     >
       {title}
@@ -362,19 +374,19 @@ function StatBox({ label, value, accent }: { label: string; value: number; accen
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
-        borderRadius: 8,
+        background: "var(--surface-0)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--r-lg)",
         padding: "14px 16px",
         display: "flex",
         flexDirection: "column",
         gap: 4,
       }}
     >
-      <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+      <div style={{ fontSize: 11, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "var(--font-mono-v3)" }}>
         {label}
       </div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: accent, fontVariantNumeric: "tabular-nums" }}>
+      <div style={{ fontSize: 26, fontFamily: "var(--font-display-v3)", fontWeight: 750, color: accent, fontVariantNumeric: "tabular-nums" }}>
         {value}
       </div>
     </div>
@@ -382,10 +394,10 @@ function StatBox({ label, value, accent }: { label: string; value: number; accen
 }
 
 const cardStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e2e8f0",
-  borderRadius: 10,
+  background: "var(--surface-0)",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--r-xl)",
   padding: "22px 26px",
   marginTop: 16,
-  boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
+  boxShadow: "var(--shadow-sm)",
 }

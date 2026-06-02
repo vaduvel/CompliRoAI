@@ -65,12 +65,12 @@ const TEMPLATES: Record<TemplateName, EmailTemplateDef> = {
   welcome: {
     subject: "Bun venit la {{brandName}}!",
     requiredVars: ["userName", "dashboardUrl"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#0f172a">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#0f172a">
 <div style="background:{{brandColor}};padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Bun venit, {{userName}}!</h1>
 </div>
 <div style="border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 8px 8px">
-<p>Mulțumim că te-ai înscris la {{brandName}} — sistemul operaţional de conformitate AI Act, GDPR, DORA și NIS2 pentru IMM-urile și cabinetele din România.</p>
+<p>Mulțumim că te-ai înscris la {{brandName}} — workspace-ul operațional pentru AI Act + GDPR, construit pentru DPO, cabinete, IMM-uri și AI builders.</p>
 <p>În următoarele 14 zile ai acces gratuit complet la:</p>
 <ul>
 <li>Inventar AI Systems + clasificare risc</li>
@@ -91,7 +91,7 @@ const TEMPLATES: Record<TemplateName, EmailTemplateDef> = {
 </div></body></html>`,
     text: `Bun venit, {{userName}}!
 
-Mulțumim că te-ai înscris la {{brandName}} — sistemul operațional de conformitate AI Act, GDPR, DORA și NIS2 pentru IMM-urile și cabinetele din România.
+Mulțumim că te-ai înscris la {{brandName}} — workspace-ul operațional pentru AI Act + GDPR, construit pentru DPO, cabinete, IMM-uri și AI builders.
 
 În următoarele 14 zile ai acces gratuit complet la:
 - Inventar AI Systems + clasificare risc
@@ -115,7 +115,7 @@ Echipa {{brandName}}.
   "breach-72h-alert": {
     subject: "[URGENT] ANSPDCP 72h — {{breachTitle}}",
     requiredVars: ["breachTitle", "breachUrl", "deadlineDate", "severityLabel"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:#dc2626;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Alertă breach — notificare ANSPDCP în 72h</h1>
 </div>
@@ -147,7 +147,7 @@ Deschide dosarul: {{breachUrl}}
   "dsar-deadline-alert": {
     subject: "DSAR scadență {{deadlineDate}} — {{dsarType}}",
     requiredVars: ["dsarType", "dsarUrl", "deadlineDate", "daysLeft", "subjectIdentifier"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:#f59e0b;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">DSAR — {{daysLeft}} zile până la scadență</h1>
 </div>
@@ -172,7 +172,7 @@ Deschide cererea: {{dsarUrl}}
   "vendor-dpa-expiring": {
     subject: "DPA expiră în {{daysLeft}} zile — {{vendorName}}",
     requiredVars: ["vendorName", "vendorUrl", "expiryDate", "daysLeft"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:#f59e0b;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">DPA expiră în {{daysLeft}} zile — {{vendorName}}</h1>
 </div>
@@ -197,7 +197,7 @@ Deschide: {{vendorUrl}}
   "finding-critical-created": {
     subject: "Risc critic detectat — {{findingTitle}}",
     requiredVars: ["findingTitle", "findingUrl", "category", "createdAtDate"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:#dc2626;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Risc critic detectat</h1>
 </div>
@@ -224,7 +224,7 @@ Vezi detalii: {{findingUrl}}
   "monthly-digest": {
     subject: "Raport lunar {{brandName}} — {{monthLabel}}",
     requiredVars: ["monthLabel", "compliancePct", "openFindingsCount", "actionsCompletedCount", "upcomingDeadlinesCount", "dashboardUrl"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:{{brandColor}};padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Raport lunar — {{monthLabel}}</h1>
 </div>
@@ -256,7 +256,7 @@ Deschide cockpit: {{dashboardUrl}}
   "payment-succeeded": {
     subject: "Plată confirmată — {{tierName}} ({{amountEUR}}€)",
     requiredVars: ["tierName", "amountEUR", "invoiceUrl", "periodEndDate"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:#10b981;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Plată confirmată</h1>
 </div>
@@ -283,7 +283,7 @@ Descarcă factura: {{invoiceUrl}}
   "payment-failed": {
     subject: "Plată eșuată — {{tierName}}",
     requiredVars: ["tierName", "amountEUR", "billingPortalUrl", "retryDate"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:#dc2626;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Plată eșuată — acțiune necesară</h1>
 </div>
@@ -308,7 +308,7 @@ Stripe va reîncerca automat la {{retryDate}}. Pentru a evita suspendarea, actua
   "subscription-changed": {
     subject: "Abonament actualizat — {{newTierName}}",
     requiredVars: ["newTierName", "newPriceEUR", "effectiveDate", "billingPortalUrl"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:{{brandColor}};padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Abonament actualizat</h1>
 </div>
@@ -334,7 +334,7 @@ Gestionează abonament: {{billingPortalUrl}}
   "renewal-reminder": {
     subject: "Reminder: {{entityLabel}} — {{daysLeft}} zile până la deadline",
     requiredVars: ["entityLabel", "entityUrl", "deadlineDate", "daysLeft", "recommendedAction", "triggerType"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:#3b5bdb;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Reminder conformitate — {{entityLabel}}</h1>
 </div>
@@ -361,7 +361,7 @@ Deschide: {{entityUrl}}
   "trial-ending": {
     subject: "Trial-ul tău expiră în {{daysLeft}} zile",
     requiredVars: ["daysLeft", "trialEndDate", "checkoutUrl"],
-    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+    html: html`<!DOCTYPE html><html lang="ro"><body style="font-family:Aptos,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:24px">
 <div style="background:#f59e0b;padding:18px 24px;border-radius:8px 8px 0 0;color:#fff">
 <h1 style="margin:0;font-size:18px">Trial-ul tău se încheie în {{daysLeft}} zile</h1>
 </div>

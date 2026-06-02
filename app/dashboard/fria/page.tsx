@@ -320,56 +320,23 @@ export default function FriaPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1200px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          FRIA — Fundamental Rights Impact Assessment (Art. 27)
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+    <div className="cr-page cr-page--full cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate</span>
+          <h1 className="cr-title">FRIA · Art. 27</h1>
+          <p className="cr-subtitle">
           Evaluare obligatorie pentru deployeri de sisteme AI high-risk · 24
           drepturi fundamentale · Inclus în Audit Pack
-        </p>
+          </p>
+        </div>
       </div>
 
       <StatsBar summary={summary} />
 
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertCircle size={16} />
           {error}
         </div>
       )}
@@ -465,7 +432,7 @@ export default function FriaPage() {
             setWizardPrefilledSystemId(undefined)
             setShowWizard(true)
           }}
-          style={btnPrimary}
+          className="cr-btn cr-btn--primary cr-btn--sm"
         >
           <Plus size={14} /> FRIA nou
         </button>
@@ -637,35 +604,10 @@ function FilterTabs({
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "999px",
-            border:
-              value === tab.key
-                ? "1px solid var(--cobalt-600)"
-                : "1px solid var(--border-soft)",
-            background: value === tab.key ? "var(--cobalt-600)" : "transparent",
-            color: value === tab.key ? "white" : "var(--ink-muted)",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
+          className={`cr-tab ${value === tab.key ? "is-active" : ""}`}
         >
           {tab.label}
-          <span
-            style={{
-              fontSize: "10px",
-              opacity: 0.85,
-              padding: "1px 6px",
-              borderRadius: "999px",
-              background:
-                value === tab.key
-                  ? "rgba(255,255,255,0.18)"
-                  : "var(--surface-2)",
-            }}
-          >
+          <span className="cr-tab__count">
             {counts[tab.key] ?? 0}
           </span>
         </button>
@@ -1044,7 +986,7 @@ function FriaRow({
               {record.notifyAuthorityRequired && !record.notifiedAtISO && (
                 <button
                   onClick={() => setShowNotifyModal(true)}
-                  style={btnGhost}
+                  className="cr-btn cr-btn--secondary cr-btn--sm"
                 >
                   Marchează notificat
                 </button>
@@ -1109,24 +1051,24 @@ function FriaRow({
             }}
           >
             {record.status !== "approved" && (
-              <button onClick={onApprove} style={btnGhost}>
+              <button onClick={onApprove} className="cr-btn cr-btn--secondary cr-btn--sm">
                 <CheckCircle2 size={12} /> Aprobă
               </button>
             )}
             {record.status !== "rejected" && (
-              <button onClick={onReject} style={btnGhost}>
+              <button onClick={onReject} className="cr-btn cr-btn--secondary cr-btn--sm">
                 Respinge
               </button>
             )}
-            <button onClick={() => onExport("md")} style={btnGhost}>
+            <button onClick={() => onExport("md")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Download size={12} /> Markdown
             </button>
-            <button onClick={() => onExport("pdf")} style={btnGhost}>
+            <button onClick={() => onExport("pdf")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <FileText size={12} /> PDF
             </button>
             <button
               onClick={onDelete}
-              style={{ ...btnGhost, color: "#f87171" }}
+              className="cr-btn cr-btn--danger cr-btn--sm"
             >
               <Trash2 size={12} /> Șterge
             </button>
@@ -1282,7 +1224,7 @@ function EmptyState({
           : "Începe o evaluare Art. 27 pentru a documenta impactul sistemelor AI high-risk asupra drepturilor fundamentale."}
       </div>
       {!hasAny && (
-        <button onClick={onCreate} style={btnPrimary}>
+        <button onClick={onCreate} className="cr-btn cr-btn--primary cr-btn--sm">
           <Plus size={14} /> FRIA nou
         </button>
       )}
@@ -1330,7 +1272,7 @@ function NotifyAuthorityModal({
               Înregistrează autoritatea + referința/numărul de înregistrare.
             </div>
           </div>
-          <button onClick={onClose} style={iconBtn}>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm">
             <X size={16} />
           </button>
         </div>
@@ -1339,7 +1281,7 @@ function NotifyAuthorityModal({
           <select
             value={authority}
             onChange={(e) => setAuthority(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
           >
             {AUTHORITY_OPTIONS.map((a) => (
               <option key={a} value={a}>
@@ -1354,12 +1296,12 @@ function NotifyAuthorityModal({
             value={reference}
             onChange={(e) => setReference(e.target.value)}
             placeholder="Ex: ADR/2026/12345"
-            style={inputStyle}
+            className="cr-input"
           />
         </FormField>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button onClick={onClose} style={btnGhost}>
+          <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
           <button
@@ -1369,10 +1311,7 @@ function NotifyAuthorityModal({
               }
             }}
             disabled={!authority.trim() || !reference.trim()}
-            style={{
-              ...btnPrimary,
-              opacity: authority.trim() && reference.trim() ? 1 : 0.5,
-            }}
+            className="cr-btn cr-btn--primary cr-btn--sm"
           >
             Confirmă notificare
           </button>
@@ -1567,7 +1506,7 @@ function FriaWizard({
               EU AI Act Art. 27 · Carta drepturilor fundamentale a UE
             </div>
           </div>
-          <button onClick={onClose} style={iconBtn}>
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm">
             <X size={16} />
           </button>
         </div>
@@ -1613,7 +1552,7 @@ function FriaWizard({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ex: FRIA HR Screening AI 2026"
-                  style={inputStyle}
+                  className="cr-input"
                 />
               </FormField>
 
@@ -1621,7 +1560,7 @@ function FriaWizard({
                 <select
                   value={linkedAISystemId}
                   onChange={(e) => setLinkedAISystemId(e.target.value)}
-                  style={inputStyle}
+                  className="cr-input"
                 >
                   <option value="">— selectează —</option>
                   {eligibleSystems.map((s) => (
@@ -1638,7 +1577,7 @@ function FriaWizard({
                   onChange={(e) =>
                     setDeployerType(e.target.value as FriaDeployerType)
                   }
-                  style={inputStyle}
+                  className="cr-input"
                 >
                   {DEPLOYER_TYPE_OPTIONS.map((d) => (
                     <option key={d} value={d}>
@@ -1652,7 +1591,7 @@ function FriaWizard({
                 <select
                   value={linkedDpiaRecordId}
                   onChange={(e) => setLinkedDpiaRecordId(e.target.value)}
-                  style={inputStyle}
+                  className="cr-input"
                 >
                   <option value="">— niciuna —</option>
                   {dpiaRecords.map((d) => (
@@ -1675,6 +1614,7 @@ function FriaWizard({
 
               <FormField label="Descrierea procesului *">
                 <textarea
+            className="cr-input cr-textarea"
                   value={processDescription}
                   onChange={(e) => setProcessDescription(e.target.value)}
                   placeholder="Ex: Trierea automată a CV-urilor pentru posturile vacante prin scor de potrivire generat de model NLP."
@@ -1699,7 +1639,7 @@ function FriaWizard({
                     type="date"
                     value={periodOfUseStartISO}
                     onChange={(e) => setPeriodOfUseStartISO(e.target.value)}
-                    style={inputStyle}
+                    className="cr-input"
                   />
                 </FormField>
                 <FormField label="Sfârșit utilizare (opțional)">
@@ -1707,7 +1647,7 @@ function FriaWizard({
                     type="date"
                     value={periodOfUseEndISO}
                     onChange={(e) => setPeriodOfUseEndISO(e.target.value)}
-                    style={inputStyle}
+                    className="cr-input"
                   />
                 </FormField>
               </div>
@@ -1718,7 +1658,7 @@ function FriaWizard({
                   onChange={(e) =>
                     setFrequencyOfUse(e.target.value as FriaFrequencyOfUse)
                   }
-                  style={inputStyle}
+                  className="cr-input"
                 >
                   {FREQUENCY_OPTIONS.map((f) => (
                     <option key={f} value={f}>
@@ -1738,7 +1678,7 @@ function FriaWizard({
                     )
                   }
                   placeholder="Ex: 500"
-                  style={inputStyle}
+                  className="cr-input"
                 />
               </FormField>
             </>
@@ -1832,6 +1772,7 @@ function FriaWizard({
 
               <FormField label="Mecanism de plângere *">
                 <textarea
+            className="cr-input cr-textarea"
                   value={complaintMechanism}
                   onChange={(e) => setComplaintMechanism(e.target.value)}
                   placeholder="Ex: Persoanele afectate pot trimite plângere la dpo@firma.ro sau prin portalul /plangeri. Termen de răspuns: 15 zile. Autoritate competentă: ADR/ANSPDCP."
@@ -1846,6 +1787,7 @@ function FriaWizard({
 
               <FormField label="Măsuri organizatorice + tehnice (un item pe linie)">
                 <textarea
+            className="cr-input cr-textarea"
                   value={governanceMeasures}
                   onChange={(e) => setGovernanceMeasures(e.target.value)}
                   placeholder={
@@ -1894,7 +1836,7 @@ function FriaWizard({
                   <select
                     value={notifyAuthorityName}
                     onChange={(e) => setNotifyAuthorityName(e.target.value)}
-                    style={inputStyle}
+                    className="cr-input"
                   >
                     {AUTHORITY_OPTIONS.map((a) => (
                       <option key={a} value={a}>
@@ -1923,19 +1865,19 @@ function FriaWizard({
               if (step > 1) setStep((s) => (s - 1) as typeof step)
             }}
             disabled={step === 1}
-            style={{ ...btnGhost, opacity: step === 1 ? 0.4 : 1 }}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
           >
             ← Înapoi
           </button>
           {step < 6 ? (
             <button
               onClick={() => setStep((s) => (s + 1) as typeof step)}
-              style={btnPrimary}
+              className="cr-btn cr-btn--primary cr-btn--sm"
             >
               Mai departe →
             </button>
           ) : (
-            <button onClick={submit} disabled={submitting} style={btnPrimary}>
+            <button onClick={submit} disabled={submitting} className="cr-btn cr-btn--primary cr-btn--sm">
               {submitting ? (
                 <Loader2 size={12} className="spin" />
               ) : (
@@ -2114,7 +2056,7 @@ function AffectedGroupsEditor({
           value={newCategory}
           onChange={(e) => setNewCategory(e.target.value)}
           placeholder="Categorie (ex: candidați angajare)"
-          style={inputStyle}
+          className="cr-input"
         />
         <input
           type="number"
@@ -2123,22 +2065,19 @@ function AffectedGroupsEditor({
             setNewCount(e.target.value === "" ? "" : Number(e.target.value))
           }
           placeholder="Volum estimat (ex: 500)"
-          style={inputStyle}
+          className="cr-input"
         />
         <input
           value={newVuln}
           onChange={(e) => setNewVuln(e.target.value)}
           placeholder="Vulnerabilități (separate prin virgulă: copii, vârstnici, dizabilități)"
-          style={inputStyle}
+          className="cr-input"
         />
         <button
           onClick={add}
           disabled={!newCategory.trim()}
-          style={{
-            ...btnGhost,
-            alignSelf: "flex-end",
-            opacity: newCategory.trim() ? 1 : 0.5,
-          }}
+          className="cr-btn cr-btn--secondary cr-btn--sm"
+          style={{ alignSelf: "flex-end" }}
         >
           <Plus size={12} /> Adaugă
         </button>
@@ -2229,6 +2168,7 @@ function RiskAssessmentEditor({
       </div>
 
       <textarea
+            className="cr-input cr-textarea"
         value={assessment.description}
         onChange={(e) => onChange({ description: e.target.value })}
         placeholder="Descrierea riscului concret asupra acestui drept..."
@@ -2254,7 +2194,7 @@ function RiskAssessmentEditor({
             onChange={(e) =>
               onChange({ likelihood: e.target.value as FriaLikelihood })
             }
-            style={inputStyle}
+            className="cr-input"
           >
             {LIKELIHOOD_OPTIONS.map((l) => (
               <option key={l} value={l}>
@@ -2269,7 +2209,7 @@ function RiskAssessmentEditor({
             onChange={(e) =>
               onChange({ severity: e.target.value as FriaSeverity })
             }
-            style={inputStyle}
+            className="cr-input"
           >
             {SEVERITY_OPTIONS.map((s) => (
               <option key={s} value={s}>
@@ -2301,6 +2241,7 @@ function RiskAssessmentEditor({
 
       <FormField label="Măsuri de mitigare (un item pe linie)">
         <textarea
+            className="cr-input cr-textarea"
           value={assessment.mitigationMeasures.join("\n")}
           onChange={(e) =>
             onChange({
@@ -2327,7 +2268,7 @@ function RiskAssessmentEditor({
           onChange={(e) =>
             onChange({ residualRisk: e.target.value as FriaRiskLevel })
           }
-          style={inputStyle}
+          className="cr-input"
         >
           {(["low", "medium", "high", "critical"] as FriaRiskLevel[]).map(
             (r) => (
@@ -2454,7 +2395,7 @@ function OversightEditor({
           onChange={(e) =>
             setType(e.target.value as FriaHumanOversightMeasureType)
           }
-          style={inputStyle}
+          className="cr-input"
         >
           {OVERSIGHT_TYPE_OPTIONS.map((o) => (
             <option key={o} value={o}>
@@ -2466,28 +2407,25 @@ function OversightEditor({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Descriere măsură"
-          style={inputStyle}
+          className="cr-input"
         />
         <input
           value={role}
           onChange={(e) => setRole(e.target.value)}
           placeholder="Rol responsabil (ex: DPO, Recrutor HR senior)"
-          style={inputStyle}
+          className="cr-input"
         />
         <input
           value={trigger}
           onChange={(e) => setTrigger(e.target.value)}
           placeholder="Condiții declanșare (ex: scor sub 50, decizie negativă)"
-          style={inputStyle}
+          className="cr-input"
         />
         <button
           onClick={add}
           disabled={!description.trim() || !role.trim()}
-          style={{
-            ...btnGhost,
-            alignSelf: "flex-end",
-            opacity: description.trim() && role.trim() ? 1 : 0.5,
-          }}
+          className="cr-btn cr-btn--secondary cr-btn--sm"
+          style={{ alignSelf: "flex-end" }}
         >
           <Plus size={12} /> Adaugă
         </button>
@@ -2527,41 +2465,6 @@ function FormField({
 // ────────────────────────────────────────────────────────────────────────────
 //   Styles
 // ────────────────────────────────────────────────────────────────────────────
-
-const btnPrimary: React.CSSProperties = {
-  padding: "8px 14px",
-  background: "var(--cobalt-600)",
-  color: "white",
-  border: "none",
-  borderRadius: "6px",
-  fontSize: "13px",
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-}
-
-const btnGhost: React.CSSProperties = {
-  padding: "6px 12px",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: "6px",
-  fontSize: "12px",
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-}
-
-const iconBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--ink-dim)",
-  padding: "4px",
-}
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px",

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Briefcase, Building2, Check, ChevronsUpDown, Loader2 } from "lucide-react"
 
 type Workspace = {
@@ -34,6 +34,7 @@ const ROLE_LABELS: Record<Workspace["role"], string> = {
 
 export function WorkspaceSwitcher() {
   const router = useRouter()
+  const pathname = usePathname()
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [active, setActive] = useState<Workspace | null>(null)
   const [open, setOpen] = useState(false)
@@ -57,7 +58,7 @@ export function WorkspaceSwitcher() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [pathname])
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -99,85 +100,28 @@ export function WorkspaceSwitcher() {
   const isCabinet = active?.role === "partner_manager"
 
   return (
-    <div ref={containerRef} style={{ position: "relative" }}>
+    <div ref={containerRef} className="cr-workspace-switcher">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          padding: "10px 12px",
-          borderRadius: "8px",
-          border: "1px solid var(--border-strong)",
-          background: open ? "var(--bg-hover)" : "var(--bg-elev)",
-          color: "var(--ink)",
-          cursor: "pointer",
-          fontSize: "13px",
-          textAlign: "left",
-          transition: "background 120ms",
-        }}
+        className={open ? "cr-workspace-trigger is-open" : "cr-workspace-trigger"}
       >
-        <span
-          style={{
-            width: "24px",
-            height: "24px",
-            borderRadius: "6px",
-            background: isCabinet ? "var(--cobalt-soft)" : "var(--bg-hover)",
-            color: isCabinet ? "var(--cobalt-400)" : "var(--ink-dim)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
+        <span className={isCabinet ? "cr-workspace-icon is-cabinet" : "cr-workspace-icon"}>
           {isCabinet ? <Briefcase size={13} /> : <Building2 size={13} />}
         </span>
-        <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px", overflow: "hidden" }}>
-          <span
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-            }}
-          >
+        <span className="cr-workspace-copy">
+          <span className="cr-workspace-kicker">
             {isCabinet ? "Lucrând pentru" : "Workspace"}
           </span>
-          <span
-            style={{
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "var(--ink)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
+          <span className="cr-workspace-name">
             {active?.orgName ?? "—"}
           </span>
         </span>
-        <ChevronsUpDown size={14} color="var(--ink-dim)" />
+        <ChevronsUpDown size={14} />
       </button>
 
       {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            left: 0,
-            right: 0,
-            background: "var(--bg-raised)",
-            border: "1px solid var(--border-strong)",
-            borderRadius: "10px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-            padding: "6px",
-            zIndex: 50,
-            maxHeight: "360px",
-            overflowY: "auto",
-          }}
-        >
+        <div className="cr-workspace-menu">
           {workspaces.map((w) => {
             const isCurrent = w.orgId === active?.orgId
             const isLoading = switching === w.orgId
@@ -187,75 +131,23 @@ export function WorkspaceSwitcher() {
                 type="button"
                 onClick={() => !isCurrent && handleSwitch(w.orgId)}
                 disabled={isCurrent || w.status !== "active" || !!switching}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "10px 10px",
-                  borderRadius: "7px",
-                  border: "none",
-                  background: isCurrent ? "var(--bg-hover)" : "transparent",
-                  color: "var(--ink)",
-                  cursor: isCurrent ? "default" : "pointer",
-                  fontSize: "13px",
-                  textAlign: "left",
-                  opacity: w.status === "active" ? 1 : 0.5,
-                  transition: "background 120ms",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isCurrent && w.status === "active") {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)"
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isCurrent) {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = "transparent"
-                  }
-                }}
+                className={isCurrent ? "cr-workspace-option is-current" : "cr-workspace-option"}
               >
-                <span
-                  style={{
-                    width: "24px",
-                    height: "24px",
-                    borderRadius: "6px",
-                    background:
-                      w.role === "partner_manager" ? "var(--cobalt-soft)" : "var(--bg-elev)",
-                    color: w.role === "partner_manager" ? "var(--cobalt-400)" : "var(--ink-dim)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
+                <span className={w.role === "partner_manager" ? "cr-workspace-icon is-cabinet" : "cr-workspace-icon"}>
                   {w.role === "partner_manager" ? <Briefcase size={13} /> : <Building2 size={13} />}
                 </span>
-                <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px", overflow: "hidden" }}>
-                  <span
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "var(--ink)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
+                <span className="cr-workspace-copy">
+                  <span className="cr-workspace-name">
                     {w.orgName}
                   </span>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "var(--ink-dim)",
-                    }}
-                  >
+                  <span className="cr-workspace-role">
                     {ROLE_LABELS[w.role]}
                   </span>
                 </span>
                 {isLoading ? (
-                  <Loader2 size={14} color="var(--ink-dim)" style={{ animation: "spin 1s linear infinite" }} />
+                  <Loader2 size={14} className="cr-spin" />
                 ) : isCurrent ? (
-                  <Check size={14} color="var(--cobalt-400)" />
+                  <Check size={14} className="cr-workspace-check" />
                 ) : null}
               </button>
             )

@@ -9,6 +9,7 @@ const VALID_PURPOSES: AISystemPurpose[] = [
   "fraud-detection",
   "marketing-personalization",
   "support-chatbot",
+  "decision-support",
   "document-assistant",
   "image-manipulation-intimate",
   "other",

@@ -229,40 +229,18 @@ export default function AIIncidentsPage() {
   }
 
   return (
-    <div
-      style={{
-        padding: "32px",
-        maxWidth: "1200px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display-v3)",
-            fontSize: "22px",
-            fontWeight: 600,
-            color: "var(--ink)",
-            margin: 0,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Incidente AI (Art. 73)
-        </h1>
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--ink-muted)",
-            marginTop: "6px",
-          }}
-        >
+    <div className="cr-page cr-page--full cr-stack">
+      <div className="cr-hero">
+        <div className="cr-hero__copy">
+          <span className="cr-eyebrow">Conformitate</span>
+          <h1 className="cr-title">Incidente AI · Art. 73</h1>
+          <p className="cr-subtitle">
           Raportare incidente serioase per sistem AI high-risk · 6 categorii Art.
           73(2) · termen 2/10/15 zile Art. 73(3) · investigație root cause Art.
           73(4) · escaladare anomalii PMM · distinct de GDPR Art. 33 · inclus în
           Audit Pack
-        </p>
+          </p>
+        </div>
       </div>
 
       <StatsBar summary={summary} />
@@ -270,19 +248,8 @@ export default function AIIncidentsPage() {
       <AuthorityCooperationPanel />
 
       {error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            padding: "12px 16px",
-            background: "var(--red-soft)",
-            borderRadius: "8px",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171",
-            fontSize: "13px",
-          }}
-        >
-          <AlertOctagon size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+        <div className="cr-alert cr-alert--danger">
+          <AlertOctagon size={16} />
           {error}
         </div>
       )}
@@ -296,31 +263,29 @@ export default function AIIncidentsPage() {
         />
       )}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <div className="cr-registry-toolbar">
+        <div className="cr-registry-toolbar__stack">
           <StatusFilterTabs
             value={statusFilter}
             onChange={setStatusFilter}
             records={records}
           />
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <div className="cr-registry-toolbar__actions">
             <CategoryFilter value={categoryFilter} onChange={setCategoryFilter} />
             <SeverityFilter value={severityFilter} onChange={setSeverityFilter} />
           </div>
         </div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <button onClick={() => setShowEscalateModal(true)} style={btnGhost}>
+        <div className="cr-registry-toolbar__actions">
+          <button
+            onClick={() => setShowEscalateModal(true)}
+            className="cr-btn cr-btn--secondary cr-btn--sm"
+          >
             <ArrowUpRight size={14} /> Incident din PMM
           </button>
-          <button onClick={() => setShowWizard(true)} style={btnPrimary}>
+          <button
+            onClick={() => setShowWizard(true)}
+            className="cr-btn cr-btn--primary cr-btn--sm"
+          >
             <Plus size={14} /> Nou incident
           </button>
         </div>
@@ -384,7 +349,7 @@ export default function AIIncidentsPage() {
       )}
 
       {loading ? (
-        <div style={{ fontSize: "13px", color: "var(--ink-dim)", padding: "24px 0" }}>
+        <div className="cr-empty">
           Se încarcă registrul de incidente AI...
         </div>
       ) : filtered.length === 0 ? (
@@ -393,7 +358,7 @@ export default function AIIncidentsPage() {
           onCreate={() => setShowWizard(true)}
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div className="cr-registry-list">
           {filtered.map((record) => (
             <IncidentRow
               key={record.id}
@@ -439,41 +404,13 @@ function StatsBar({ summary }: { summary: AIIncidentSummary | null }) {
     { label: "Închise", value: summary?.closed ?? 0, color: "#94a3b8" },
   ]
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-        gap: "10px",
-      }}
-    >
+    <div className="cr-stat-strip cr-stat-strip--auto">
       {items.map((item) => (
-        <div
-          key={item.label}
-          style={{
-            padding: "12px 14px",
-            background: "var(--surface-1)",
-            border: "1px solid var(--border-soft)",
-            borderRadius: "10px",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "11px",
-              color: "var(--ink-dim)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-            }}
-          >
+        <div key={item.label} className="cr-stat">
+          <div className="cr-stat__label">
             {item.label}
           </div>
-          <div
-            style={{
-              fontSize: "22px",
-              fontWeight: 600,
-              color: item.color,
-              marginTop: 4,
-            }}
-          >
+          <div className="cr-stat__value" style={{ color: item.color }}>
             {item.value}
           </div>
         </div>
@@ -499,24 +436,14 @@ function UrgencyBanner({
 }) {
   const now = Date.now()
   return (
-    <div
-      style={{
-        padding: "14px 16px",
-        background: "var(--amber-soft)",
-        border: "1px solid rgba(251,191,36,0.25)",
-        borderRadius: "10px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-      }}
-    >
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        <ShieldAlert size={18} style={{ color: "#fbbf24" }} />
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#fbbf24" }}>
+    <div className="cr-urgency-rail">
+      <div className="cr-urgency-rail__header">
+        <ShieldAlert size={18} />
+        <div>
           Cele mai urgente incidente AI (Art. 73(3) countdown)
         </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div className="cr-urgency-rail__list">
         {incidents.map((inc) => {
           const sysName =
             aiSystems.find((s) => s.id === inc.linkedAISystemId)?.name ??
@@ -543,75 +470,36 @@ function UrgencyBanner({
             countdownLabel = `${days}z rămase`
           }
           return (
-            <div
-              key={inc.id}
-              style={{
-                display: "flex",
-                gap: 10,
-                alignItems: "center",
-                padding: "8px 10px",
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-soft)",
-                borderRadius: 8,
-                flexWrap: "wrap",
-              }}
-            >
-              <Clock size={14} style={{ color: countdownColor, flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>
+            <div key={inc.id} className="cr-urgency-item">
+              <Clock size={14} className="cr-urgency-item__icon" style={{ color: countdownColor }} />
+              <div className="cr-urgency-item__main">
+                <div className="cr-urgency-item__title">
                   {inc.title}
                 </div>
-                <div style={{ fontSize: 11, color: "var(--ink-dim)" }}>
+                <div className="cr-urgency-item__meta">
                   {sysName} · {CATEGORY_SHORT_LABEL[inc.category]} · termen{" "}
                   {inc.reportingDeadlineDays} zile
                 </div>
               </div>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: countdownColor,
-                  background: "rgba(0,0,0,0.18)",
-                  padding: "4px 8px",
-                  borderRadius: 6,
-                }}
-              >
-                {countdownLabel}
-              </span>
-              {!submitted && (
+              <div className="cr-urgency-item__actions">
+                <span className="cr-badge" style={{ color: countdownColor }}>
+                  {countdownLabel}
+                </span>
+                {!submitted && (
+                  <button
+                    onClick={() => onNotify(inc.id)}
+                    className="cr-btn cr-btn--danger cr-btn--sm"
+                  >
+                    <Bell size={12} /> Notifică
+                  </button>
+                )}
                 <button
-                  onClick={() => onNotify(inc.id)}
-                  style={{
-                    padding: "6px 10px",
-                    background: "transparent",
-                    color: "#dc2626",
-                    border: "1px solid rgba(220,38,38,0.4)",
-                    borderRadius: 6,
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
+                  onClick={() => onOpen(inc.id)}
+                  className="cr-btn cr-btn--secondary cr-btn--sm"
                 >
-                  <Bell size={12} /> Notifică
+                  Deschide →
                 </button>
-              )}
-              <button
-                onClick={() => onOpen(inc.id)}
-                style={{
-                  padding: "6px 10px",
-                  background: "transparent",
-                  color: "var(--ink-muted)",
-                  border: "1px solid var(--border-soft)",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  cursor: "pointer",
-                }}
-              >
-                Deschide →
-              </button>
+              </div>
             </div>
           )
         })}
@@ -648,23 +536,14 @@ function StatusFilterTabs({
     })),
   ]
   return (
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+    <div className="cr-segment-bar">
       {tabs.map((t) => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
-          style={{
-            padding: "6px 10px",
-            background:
-              value === t.id ? "var(--ink)" : "var(--surface-2)",
-            color: value === t.id ? "var(--bg)" : "var(--ink-muted)",
-            border: "1px solid var(--border-soft)",
-            borderRadius: 6,
-            fontSize: 12,
-            cursor: "pointer",
-          }}
+          className={`cr-tab${value === t.id ? " is-active" : ""}`}
         >
-          {t.label} ({counts[t.id] ?? 0})
+          {t.label} <span className="cr-tab__count">{counts[t.id] ?? 0}</span>
         </button>
       ))}
     </div>
@@ -684,7 +563,7 @@ function CategoryFilter({
       onChange={(e) =>
         onChange(e.target.value as "all" | AIIncidentCategory)
       }
-      style={{ ...inputStyle, width: "auto" }}
+      className="cr-select"
     >
       <option value="all">Toate categoriile</option>
       {AI_INCIDENT_CATEGORY_OPTIONS.map((c) => (
@@ -709,7 +588,7 @@ function SeverityFilter({
       onChange={(e) =>
         onChange(e.target.value as "all" | AIIncidentSeverity)
       }
-      style={{ ...inputStyle, width: "auto" }}
+      className="cr-select"
     >
       <option value="all">Toate severitățile</option>
       {AI_INCIDENT_SEVERITY_OPTIONS.map((s) => (
@@ -733,38 +612,19 @@ function EmptyState({
   onCreate: () => void
 }) {
   return (
-    <div
-      style={{
-        padding: "40px 24px",
-        textAlign: "center",
-        background: "var(--surface-1)",
-        border: "1px dashed var(--border-soft)",
-        borderRadius: 12,
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        alignItems: "center",
-      }}
-    >
-      <Bell size={32} style={{ color: "var(--ink-dim)" }} />
-      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>
+    <div className="cr-empty">
+      <Bell size={32} className="cr-empty__icon" />
+      <div className="cr-empty__title">
         {hasAny ? "Niciun incident corespunde filtrelor" : "Niciun incident AI înregistrat"}
       </div>
-      <div
-        style={{
-          fontSize: 12,
-          color: "var(--ink-muted)",
-          maxWidth: 480,
-          lineHeight: 1.5,
-        }}
-      >
+      <div className="cr-empty__copy">
         Art. 73 cere ca provider-ii sistemelor AI high-risk (și deployer-ii prin
         Art. 26(5)) să raporteze incidentele serioase autorității de
         supraveghere a pieței într-un termen de 2/10/15 zile, în funcție de
         categorie.
       </div>
       {!hasAny && (
-        <button onClick={onCreate} style={btnPrimary}>
+        <button onClick={onCreate} className="cr-btn cr-btn--primary">
           <Plus size={14} /> Înregistrează primul incident
         </button>
       )}
@@ -825,102 +685,50 @@ function IncidentRow({
   const sevColor = SEVERITY_COLORS[record.severity]
 
   return (
-    <div
-      style={{
-        background: "var(--surface-1)",
-        border: "1px solid var(--border-soft)",
-        borderRadius: 10,
-        overflow: "hidden",
-      }}
-    >
+    <div className="cr-registry-card">
       <button
         onClick={onToggle}
-        style={{
-          display: "flex",
-          width: "100%",
-          padding: "12px 14px",
-          background: "transparent",
-          border: "none",
-          color: "inherit",
-          cursor: "pointer",
-          textAlign: "left",
-          gap: 12,
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}
+        className="cr-registry-toggle"
       >
-        <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
-            {record.title}
+        <div className="cr-registry-main">
+          <div className="cr-registry-heading">
+            <span className="cr-registry-title">{record.title}</span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--ink-dim)", marginTop: 2 }}>
+          <div className="cr-registry-meta">
             {sysName} · {CATEGORY_SHORT_LABEL[record.category]} · termen{" "}
             {record.reportingDeadlineDays} zile
           </div>
         </div>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 500,
-            padding: "3px 8px",
-            borderRadius: 6,
-            background: sevColor.bg,
-            color: sevColor.fg,
-          }}
-        >
-          {AI_INCIDENT_SEVERITY_LABELS[record.severity]}
-        </span>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: deadlineColor,
-            padding: "3px 8px",
-            borderRadius: 6,
-            background: "rgba(0,0,0,0.18)",
-          }}
-        >
-          {deadlineLabel}
-        </span>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 500,
-            padding: "3px 8px",
-            borderRadius: 6,
-            background: statusColor.bg,
-            color: statusColor.fg,
-          }}
-        >
-          {AI_INCIDENT_STATUS_LABELS[record.status]}
-        </span>
+        <div className="cr-registry-side">
+          <span className="cr-badge" style={{ background: sevColor.bg, color: sevColor.fg }}>
+            {AI_INCIDENT_SEVERITY_LABELS[record.severity]}
+          </span>
+          <span className="cr-badge" style={{ color: deadlineColor }}>
+            {deadlineLabel}
+          </span>
+          <span className="cr-badge" style={{ background: statusColor.bg, color: statusColor.fg }}>
+            {AI_INCIDENT_STATUS_LABELS[record.status]}
+          </span>
+        </div>
         {expanded ? (
-          <ChevronUp size={16} style={{ color: "var(--ink-dim)" }} />
+          <ChevronUp size={16} className="cr-registry-chevron" />
         ) : (
-          <ChevronDown size={16} style={{ color: "var(--ink-dim)" }} />
+          <ChevronDown size={16} className="cr-registry-chevron" />
         )}
       </button>
 
       {expanded && (
-        <div
-          style={{
-            padding: "14px 16px 16px",
-            borderTop: "1px solid var(--border-soft)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 18,
-          }}
-        >
+        <div className="cr-registry-detail">
           {/* Sections */}
           <Section title="A. Identificare incident">
-            <div style={subLabel}>Descriere</div>
-            <div style={paragraph}>{record.description}</div>
-            <div style={{ ...subLabel, marginTop: 8 }}>Sistem AI</div>
-            <div style={paragraph}>{sysName}</div>
+            <div className="cr-section__label">Descriere</div>
+            <div className="cr-detail-copy">{record.description}</div>
+            <div className="cr-section__label">Sistem AI</div>
+            <div className="cr-detail-copy">{sysName}</div>
           </Section>
 
           <Section title="B. Severitate + categorie Art. 73(2)">
-            <div style={paragraph}>
+            <div className="cr-detail-kv">
               <strong>Categorie:</strong>{" "}
               {AI_INCIDENT_CATEGORY_LABELS[record.category]}
               <br />
@@ -933,7 +741,7 @@ function IncidentRow({
           </Section>
 
           <Section title="C. Cronologie (Art. 73(3))">
-            <div style={paragraph}>
+            <div className="cr-detail-kv">
               <strong>Detectat (clock start):</strong> {record.detectedAtISO}
               <br />
               {record.occurredAtISO && (
@@ -948,21 +756,16 @@ function IncidentRow({
           </Section>
 
           <Section title="D. Părți afectate">
-            <div style={paragraph}>
+            <div className="cr-detail-kv">
               <strong>Număr aproximativ:</strong>{" "}
               {typeof record.affectedSubjectsCount === "number"
                 ? record.affectedSubjectsCount
                 : "necunoscut"}
             </div>
             {record.affectedSubjectsCategories.length > 0 ? (
-              <ul style={{ marginTop: 6, paddingLeft: 18 }}>
+              <ul className="cr-source-list">
                 {record.affectedSubjectsCategories.map((c) => (
-                  <li
-                    key={c}
-                    style={{ fontSize: 12, color: "var(--ink)", marginBottom: 2 }}
-                  >
-                    {c}
-                  </li>
+                  <li key={c}>{c}</li>
                 ))}
               </ul>
             ) : (
@@ -975,32 +778,34 @@ function IncidentRow({
             {record.notifications.length === 0 ? (
               <div style={emptyText}>_Nicio notificare transmisă._</div>
             ) : (
-              <table style={tableStyle}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Data</th>
-                    <th style={thStyle}>Autoritate</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Ref</th>
-                    <th style={thStyle}>Contact</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {record.notifications.map((n) => (
-                    <tr key={n.id}>
-                      <td style={tdStyle}>{n.submittedAtISO ?? "—"}</td>
-                      <td style={tdStyle}>{n.authorityName}</td>
-                      <td style={tdStyle}>{n.status}</td>
-                      <td style={tdStyle}>{n.referenceNumber ?? "—"}</td>
-                      <td style={tdStyle}>{n.contactPersonEmail ?? "—"}</td>
+              <div className="cr-table-shell">
+                <table className="cr-table">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Autoritate</th>
+                      <th>Status</th>
+                      <th>Ref</th>
+                      <th>Contact</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {record.notifications.map((n) => (
+                      <tr key={n.id}>
+                        <td>{n.submittedAtISO ?? "—"}</td>
+                        <td>{n.authorityName}</td>
+                        <td>{n.status}</td>
+                        <td>{n.referenceNumber ?? "—"}</td>
+                        <td>{n.contactPersonEmail ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
             <button
               onClick={onNotify}
-              style={{ ...btnGhost, marginTop: 10 }}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
               type="button"
             >
               <Bell size={12} /> Trimite notificare autoritate
@@ -1011,62 +816,47 @@ function IncidentRow({
           <Section title="Investigație cauză rădăcină (Art. 73(4))">
             {record.rootCause ? (
               <div>
-                <div style={paragraph}>
+                <div className="cr-detail-kv">
                   <strong>Identificată la:</strong>{" "}
                   {record.rootCause.identifiedAtISO} de{" "}
                   {record.rootCause.identifiedByEmail}
                 </div>
-                <div style={{ ...subLabel, marginTop: 8 }}>Descriere</div>
-                <div style={paragraph}>
+                <div className="cr-section__label">Descriere</div>
+                <div className="cr-detail-copy">
                   {record.rootCause.rootCauseDescription}
                 </div>
                 {record.rootCause.contributingFactors.length > 0 && (
                   <>
-                    <div style={{ ...subLabel, marginTop: 8 }}>
+                    <div className="cr-section__label">
                       Factori contribuitori
                     </div>
-                    <ul style={{ marginTop: 4, paddingLeft: 18 }}>
+                    <ul className="cr-source-list">
                       {record.rootCause.contributingFactors.map((f, i) => (
-                        <li
-                          key={i}
-                          style={{ fontSize: 12, color: "var(--ink)" }}
-                        >
-                          {f}
-                        </li>
+                        <li key={i}>{f}</li>
                       ))}
                     </ul>
                   </>
                 )}
                 {record.rootCause.remediationActions.length > 0 && (
                   <>
-                    <div style={{ ...subLabel, marginTop: 8 }}>
+                    <div className="cr-section__label">
                       Acțiuni corective aplicate
                     </div>
-                    <ul style={{ marginTop: 4, paddingLeft: 18 }}>
+                    <ul className="cr-source-list">
                       {record.rootCause.remediationActions.map((a, i) => (
-                        <li
-                          key={i}
-                          style={{ fontSize: 12, color: "var(--ink)" }}
-                        >
-                          {a}
-                        </li>
+                        <li key={i}>{a}</li>
                       ))}
                     </ul>
                   </>
                 )}
                 {record.rootCause.preventionActions.length > 0 && (
                   <>
-                    <div style={{ ...subLabel, marginTop: 8 }}>
+                    <div className="cr-section__label">
                       Acțiuni preventive
                     </div>
-                    <ul style={{ marginTop: 4, paddingLeft: 18 }}>
+                    <ul className="cr-source-list">
                       {record.rootCause.preventionActions.map((a, i) => (
-                        <li
-                          key={i}
-                          style={{ fontSize: 12, color: "var(--ink)" }}
-                        >
-                          {a}
-                        </li>
+                        <li key={i}>{a}</li>
                       ))}
                     </ul>
                   </>
@@ -1079,7 +869,7 @@ function IncidentRow({
             )}
             <button
               onClick={onRootCause}
-              style={{ ...btnGhost, marginTop: 10 }}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
               type="button"
             >
               <FileText size={12} /> Înregistrează root cause
@@ -1088,7 +878,7 @@ function IncidentRow({
 
           {/* Linkages */}
           <Section title="Linkages bidirectional">
-            <div style={paragraph}>
+            <div className="cr-detail-kv">
               <Link2 size={12} style={{ verticalAlign: "middle" }} />{" "}
               <strong>Breach (Sprint 008D / GDPR Art. 33):</strong>{" "}
               {record.linkedBreachId ?? "—"}
@@ -1110,7 +900,7 @@ function IncidentRow({
           {/* Closure notes */}
           {record.closureNotes && (
             <Section title="Note închidere">
-              <div style={paragraph}>{record.closureNotes}</div>
+              <div className="cr-detail-copy">{record.closureNotes}</div>
               {record.closedAtISO && (
                 <div style={{ fontSize: 11, color: "var(--ink-dim)", marginTop: 4 }}>
                   Închis la: {record.closedAtISO}
@@ -1120,45 +910,33 @@ function IncidentRow({
           )}
 
           {/* Actions */}
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              flexWrap: "wrap",
-              borderTop: "1px solid var(--border-soft)",
-              paddingTop: 12,
-            }}
-          >
-            <button onClick={() => onExport("md")} style={btnGhost}>
+          <div className="cr-actions">
+            <button onClick={() => onExport("md")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Download size={12} /> Export MD
             </button>
-            <button onClick={() => onExport("pdf")} style={btnGhost}>
+            <button onClick={() => onExport("pdf")} className="cr-btn cr-btn--secondary cr-btn--sm">
               <Download size={12} /> Export PDF
             </button>
             <button
               onClick={() => onExport("md", "authority-notif")}
-              style={btnGhost}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
             >
               <FileText size={12} /> Notificare Art. 73(5) MD
             </button>
             <button
               onClick={() => onExport("pdf", "authority-notif")}
-              style={btnGhost}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
             >
               <FileText size={12} /> Notificare Art. 73(5) PDF
             </button>
             {record.status !== "closed" && record.status !== "not_reportable" && (
-              <button onClick={onClose} style={btnGhost}>
+              <button onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
                 <CheckCircle2 size={12} /> Închide incident
               </button>
             )}
             <button
               onClick={onDelete}
-              style={{
-                ...btnGhost,
-                color: "#f87171",
-                borderColor: "rgba(248,113,113,0.4)",
-              }}
+              className="cr-btn cr-btn--danger cr-btn--sm"
             >
               <X size={12} /> Șterge
             </button>
@@ -1177,17 +955,8 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div>
-      <div
-        style={{
-          fontSize: 11,
-          color: "var(--ink-dim)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          marginBottom: 6,
-          fontWeight: 600,
-        }}
-      >
+    <div className="cr-section">
+      <div className="cr-section__title">
         {title}
       </div>
       {children}
@@ -1323,7 +1092,7 @@ function IncidentWizard({
             <AlertTriangle size={16} /> Nou incident AI · Pasul {step + 1} din{" "}
             {totalSteps}
           </div>
-          <button onClick={onClose} style={iconBtn} type="button">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" type="button">
             <X size={16} />
           </button>
         </div>
@@ -1352,7 +1121,7 @@ function IncidentWizard({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder='ex: „Diagnostic AI eronat — caz pacient X"'
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             <div>
@@ -1360,7 +1129,7 @@ function IncidentWizard({
               <select
                 value={linkedAISystemId}
                 onChange={(e) => setLinkedAISystemId(e.target.value)}
-                style={inputStyle}
+                className="cr-input"
               >
                 <option value="">— alege sistem AI —</option>
                 {aiSystems.map((s) => (
@@ -1373,6 +1142,7 @@ function IncidentWizard({
             <div>
               <label style={labelStyle}>Descriere narativă</label>
               <textarea
+            className="cr-input cr-textarea"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
@@ -1445,7 +1215,7 @@ function IncidentWizard({
                 onChange={(e) =>
                   setSeverity(e.target.value as AIIncidentSeverity)
                 }
-                style={inputStyle}
+                className="cr-input"
               >
                 {AI_INCIDENT_SEVERITY_OPTIONS.map((s) => (
                   <option key={s} value={s}>
@@ -1467,7 +1237,7 @@ function IncidentWizard({
                 type="datetime-local"
                 value={detectedAtISO}
                 onChange={(e) => setDetectedAtISO(e.target.value)}
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             <div>
@@ -1478,7 +1248,7 @@ function IncidentWizard({
                 type="datetime-local"
                 value={occurredAtISO}
                 onChange={(e) => setOccurredAtISO(e.target.value)}
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             {previewDeadline && (
@@ -1507,6 +1277,7 @@ function IncidentWizard({
                 Categorii persoane afectate (1 per linie)
               </label>
               <textarea
+            className="cr-input cr-textarea"
                 value={affectedSubjectsCategoriesText}
                 onChange={(e) =>
                   setAffectedSubjectsCategoriesText(e.target.value)
@@ -1523,7 +1294,7 @@ function IncidentWizard({
                 value={affectedSubjectsCount}
                 onChange={(e) => setAffectedSubjectsCount(e.target.value)}
                 placeholder="ex: 120"
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             <div>
@@ -1559,7 +1330,7 @@ function IncidentWizard({
                 value={assignedToEmail}
                 onChange={(e) => setAssignedToEmail(e.target.value)}
                 placeholder="ex: dpo@acme.ro"
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             <div>
@@ -1570,7 +1341,7 @@ function IncidentWizard({
                 value={linkedBreachId}
                 onChange={(e) => setLinkedBreachId(e.target.value)}
                 placeholder="ID breach (dacă incidentul atinge și date personale)"
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             <div>
@@ -1581,12 +1352,13 @@ function IncidentWizard({
                 value={linkedPmmAnomalyId}
                 onChange={(e) => setLinkedPmmAnomalyId(e.target.value)}
                 placeholder="ID anomalie PMM (pentru escalări manuale)"
-                style={inputStyle}
+                className="cr-input"
               />
             </div>
             <div>
               <label style={labelStyle}>Note suplimentare</label>
               <textarea
+            className="cr-input cr-textarea"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
@@ -1608,7 +1380,7 @@ function IncidentWizard({
             <button
               type="button"
               onClick={() => setStep(step - 1)}
-              style={btnGhost}
+              className="cr-btn cr-btn--secondary cr-btn--sm"
             >
               Înapoi
             </button>
@@ -1620,7 +1392,8 @@ function IncidentWizard({
               type="button"
               onClick={() => setStep(step + 1)}
               disabled={!canNext}
-              style={{ ...btnPrimary, opacity: canNext ? 1 : 0.5 }}
+              className="cr-btn cr-btn--primary cr-btn--sm"
+              style={{ opacity: canNext ? 1 : 0.5 }}
             >
               Pasul {step + 2}
             </button>
@@ -1629,7 +1402,7 @@ function IncidentWizard({
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              style={btnPrimary}
+              className="cr-btn cr-btn--primary cr-btn--sm"
             >
               {submitting ? (
                 <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
@@ -1715,7 +1488,7 @@ function EscalateFromPmmModal({
           >
             <ArrowUpRight size={16} /> Escaladare anomalie PMM → Incident Art. 73
           </div>
-          <button onClick={onClose} style={iconBtn} type="button">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" type="button">
             <X size={16} />
           </button>
         </div>
@@ -1750,7 +1523,7 @@ function EscalateFromPmmModal({
               setPlanId(e.target.value)
               setAnomalyId("")
             }}
-            style={inputStyle}
+            className="cr-input"
           >
             <option value="">— alege plan PMM —</option>
             {pmmPlans.map((p) => {
@@ -1778,7 +1551,7 @@ function EscalateFromPmmModal({
               <select
                 value={anomalyId}
                 onChange={(e) => setAnomalyId(e.target.value)}
-                style={inputStyle}
+                className="cr-input"
               >
                 <option value="">— alege anomalie —</option>
                 {eligibleAnomalies.map((a) => (
@@ -1800,17 +1573,15 @@ function EscalateFromPmmModal({
             borderTop: "1px solid var(--border-soft)",
           }}
         >
-          <button type="button" onClick={onClose} style={btnGhost}>
+          <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!planId || !anomalyId || submitting}
-            style={{
-              ...btnPrimary,
-              opacity: !planId || !anomalyId || submitting ? 0.5 : 1,
-            }}
+            className="cr-btn cr-btn--primary cr-btn--sm"
+            style={{ opacity: !planId || !anomalyId || submitting ? 0.5 : 1 }}
           >
             {submitting ? (
               <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
@@ -1898,7 +1669,7 @@ function NotifyAuthorityModal({
           >
             <Bell size={16} /> Trimite notificare autoritate (Art. 73(1))
           </div>
-          <button onClick={onClose} style={iconBtn} type="button">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" type="button">
             <X size={16} />
           </button>
         </div>
@@ -1929,7 +1700,7 @@ function NotifyAuthorityModal({
             value={authorityName}
             onChange={(e) => setAuthorityName(e.target.value)}
             placeholder="ex: Market Surveillance Authority — RO (ADR / ANCOM)"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
         <div>
@@ -1938,7 +1709,7 @@ function NotifyAuthorityModal({
             value={referenceNumber}
             onChange={(e) => setReferenceNumber(e.target.value)}
             placeholder="ex: MSA-RO-2026-0014"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
         <div>
@@ -1947,7 +1718,7 @@ function NotifyAuthorityModal({
             value={contactPersonEmail}
             onChange={(e) => setContactPersonEmail(e.target.value)}
             placeholder="ex: incidente.ai@autoritate.ro"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
         <div>
@@ -1956,12 +1727,13 @@ function NotifyAuthorityModal({
             type="datetime-local"
             value={submittedAtISO}
             onChange={(e) => setSubmittedAtISO(e.target.value)}
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
         <div>
           <label style={labelStyle}>Note</label>
           <textarea
+            className="cr-input cr-textarea"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
@@ -1978,17 +1750,15 @@ function NotifyAuthorityModal({
             borderTop: "1px solid var(--border-soft)",
           }}
         >
-          <button type="button" onClick={onClose} style={btnGhost}>
+          <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!authorityName.trim() || submitting}
-            style={{
-              ...btnPrimary,
-              opacity: !authorityName.trim() || submitting ? 0.5 : 1,
-            }}
+            className="cr-btn cr-btn--primary cr-btn--sm"
+            style={{ opacity: !authorityName.trim() || submitting ? 0.5 : 1 }}
           >
             {submitting ? (
               <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
@@ -2075,7 +1845,7 @@ function RootCauseModal({
           >
             <FileText size={16} /> Investigație cauză rădăcină (Art. 73(4))
           </div>
-          <button onClick={onClose} style={iconBtn} type="button">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" type="button">
             <X size={16} />
           </button>
         </div>
@@ -2105,6 +1875,7 @@ function RootCauseModal({
             Descriere cauză rădăcină (min 10 caractere)
           </label>
           <textarea
+            className="cr-input cr-textarea"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
@@ -2115,6 +1886,7 @@ function RootCauseModal({
         <div>
           <label style={labelStyle}>Factori contribuitori (1 per linie)</label>
           <textarea
+            className="cr-input cr-textarea"
             value={factors}
             onChange={(e) => setFactors(e.target.value)}
             rows={3}
@@ -2125,6 +1897,7 @@ function RootCauseModal({
         <div>
           <label style={labelStyle}>Dovezi colectate (1 per linie)</label>
           <textarea
+            className="cr-input cr-textarea"
             value={evidence}
             onChange={(e) => setEvidence(e.target.value)}
             rows={3}
@@ -2135,6 +1908,7 @@ function RootCauseModal({
         <div>
           <label style={labelStyle}>Acțiuni corective aplicate</label>
           <textarea
+            className="cr-input cr-textarea"
             value={remediation}
             onChange={(e) => setRemediation(e.target.value)}
             rows={3}
@@ -2145,6 +1919,7 @@ function RootCauseModal({
         <div>
           <label style={labelStyle}>Acțiuni preventive (prevenire repetare)</label>
           <textarea
+            className="cr-input cr-textarea"
             value={prevention}
             onChange={(e) => setPrevention(e.target.value)}
             rows={3}
@@ -2158,7 +1933,7 @@ function RootCauseModal({
             value={identifiedByEmail}
             onChange={(e) => setIdentifiedByEmail(e.target.value)}
             placeholder="ex: ml-lead@acme.ro"
-            style={inputStyle}
+            className="cr-input"
           />
         </div>
 
@@ -2171,17 +1946,15 @@ function RootCauseModal({
             borderTop: "1px solid var(--border-soft)",
           }}
         >
-          <button type="button" onClick={onClose} style={btnGhost}>
+          <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={description.trim().length < 10 || submitting}
-            style={{
-              ...btnPrimary,
-              opacity: description.trim().length < 10 || submitting ? 0.5 : 1,
-            }}
+            className="cr-btn cr-btn--primary cr-btn--sm"
+            style={{ opacity: description.trim().length < 10 || submitting ? 0.5 : 1 }}
           >
             {submitting ? (
               <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
@@ -2249,7 +2022,7 @@ function CloseIncidentModal({
           >
             <CheckCircle2 size={16} /> Închide incident
           </div>
-          <button onClick={onClose} style={iconBtn} type="button">
+          <button onClick={onClose} className="cr-btn cr-btn--icon cr-btn--sm" type="button">
             <X size={16} />
           </button>
         </div>
@@ -2275,6 +2048,7 @@ function CloseIncidentModal({
         </p>
 
         <textarea
+            className="cr-input cr-textarea"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={8}
@@ -2291,17 +2065,15 @@ function CloseIncidentModal({
             borderTop: "1px solid var(--border-soft)",
           }}
         >
-          <button type="button" onClick={onClose} style={btnGhost}>
+          <button type="button" onClick={onClose} className="cr-btn cr-btn--secondary cr-btn--sm">
             Anulează
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={notes.trim().length < 10 || submitting}
-            style={{
-              ...btnPrimary,
-              opacity: notes.trim().length < 10 || submitting ? 0.5 : 1,
-            }}
+            className="cr-btn cr-btn--primary cr-btn--sm"
+            style={{ opacity: notes.trim().length < 10 || submitting ? 0.5 : 1 }}
           >
             {submitting ? (
               <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
@@ -2319,41 +2091,6 @@ function CloseIncidentModal({
 // ────────────────────────────────────────────────────────────────────────────
 //   Style helpers
 // ────────────────────────────────────────────────────────────────────────────
-
-const btnPrimary: CSSProperties = {
-  padding: "8px 14px",
-  background: "var(--ink)",
-  color: "var(--bg)",
-  border: "none",
-  borderRadius: 6,
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-}
-
-const btnGhost: CSSProperties = {
-  padding: "8px 14px",
-  background: "transparent",
-  color: "var(--ink-muted)",
-  border: "1px solid var(--border-soft)",
-  borderRadius: 6,
-  fontSize: 12,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-}
-
-const iconBtn: CSSProperties = {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--ink-dim)",
-  padding: 4,
-}
 
 const inputStyle: CSSProperties = {
   padding: "8px 10px",
@@ -2589,19 +2326,7 @@ function AuthorityCooperationPanel() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
-          padding: "10px 14px",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          color: "var(--ink)",
-          fontSize: 13,
-          fontWeight: 500,
-        }}
+        className="cr-accordion-trigger"
       >
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Link2 size={14} />

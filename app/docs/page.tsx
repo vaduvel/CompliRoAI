@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "API public — AI Act Compliance",
-  description: "API gratuit pentru clasificarea sistemelor AI conform Regulamentului UE 2024/1689 (AI Act). Pentru dezvoltatori români.",
+  title: "API public — CompliRoAI",
+  description: "API gratuit CompliRoAI pentru clasificarea sistemelor AI conform Regulamentului UE 2024/1689 (AI Act). Pentru dezvoltatori români.",
 }
 
 const PURPOSES = [
@@ -13,6 +13,7 @@ const PURPOSES = [
   { value: "fraud-detection", label: "Detecție fraudă financiară", risc: "high_risk" },
   { value: "marketing-personalization", label: "Personalizare marketing, recomandări", risc: "limited_risk" },
   { value: "support-chatbot", label: "Chatbot suport clienți", risc: "limited_risk" },
+  { value: "decision-support", label: "Suport decizional / recomandări", risc: "limited_risk" },
   { value: "document-assistant", label: "Asistent generare documente", risc: "minimal_risk" },
   { value: "image-manipulation-intimate", label: "Generare/manipulare conținut intim (nudifier, deepfake sexual)", risc: "prohibited" },
   { value: "other", label: "Alt scop — necesită evaluare manuală", risc: "limited_risk" },
@@ -91,7 +92,7 @@ export default function ApiDocsPage() {
   const baseUrl = "https://eu-ai-act-beige.vercel.app"
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--ink)" }}>
+    <div className="cr-docs-page" style={{ minHeight: "100dvh", background: "var(--bg)", color: "var(--ink)", fontFamily: "var(--font-body-v3)" }}>
       {/* Top nav */}
       <header style={{
         position: "sticky",
@@ -112,7 +113,7 @@ export default function ApiDocsPage() {
             color: "var(--ink)",
             letterSpacing: "-0.02em",
           }}>
-            AI Act Compliance
+            CompliRoAI
           </span>
           <span style={{
             fontSize: "11px",
@@ -381,7 +382,7 @@ for obligatie in data["obligatii"]:
           GitHub Actions (compliance gate pe PR)
         </h3>
         <CodeBlock>{`# .github/workflows/ai-act-check.yml
-name: AI Act Compliance Gate
+name: CompliRoAI Compliance Gate
 on: [pull_request]
 
 jobs:
@@ -434,7 +435,7 @@ jobs:
           <Link href="/" style={{ color: "var(--ink-dim)", textDecoration: "none" }}>Acasă</Link>
           <Link href="/terms" style={{ color: "var(--ink-dim)", textDecoration: "none" }}>Termeni</Link>
           <Link href="/privacy" style={{ color: "var(--ink-dim)", textDecoration: "none" }}>Confidențialitate</Link>
-          <span style={{ marginLeft: "auto" }}>© 2026 AI Act Compliance</span>
+          <span style={{ marginLeft: "auto" }}>© 2026 CompliRoAI</span>
         </div>
       </main>
     </div>
