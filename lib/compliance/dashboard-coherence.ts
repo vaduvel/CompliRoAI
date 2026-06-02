@@ -79,7 +79,7 @@ export function buildDashboardExecutionState(
     exportBlockers,
     auditPackCta: auditPackCtaFor(snapshot.exportReadinessStatus),
     provenanceLabel:
-      "State canonic din aplicație: importuri, findings, dovezi, review gates și readiness. Mistral compune ghidajul, dar nu decide singur statusul de export.",
+      "Calculat din findings, dovezi și review-uri. AI-ul te ghidează, dar dosarul rămâne blocat până când dovezile și aprobările cerute sunt închise.",
   }
 }
 
@@ -216,13 +216,58 @@ function evidenceRequiredForFinding(finding: {
   requiredEvidenceKinds?: string[]
   closeCondition?: string
 }) {
-  const rawEvidence = typeof finding.evidenceRequired === "string" ? finding.evidenceRequired.split(/[;,]/) : []
-  const evidenceKinds = Array.isArray(finding.requiredEvidenceKinds) ? finding.requiredEvidenceKinds : []
-  const closeCondition = typeof finding.closeCondition === "string" && finding.closeCondition.trim().length > 0 ? [finding.closeCondition] : []
+  const rawEvidence = typeof finding.evidenceRequired === "string" ? splitEvidenceText(finding.evidenceRequired) : []
+  const closeCondition = typeof finding.closeCondition === "string" ? splitEvidenceText(finding.closeCondition) : []
+  const evidenceKinds = rawEvidence.length > 0 || closeCondition.length > 0
+    ? []
+    : Array.isArray(finding.requiredEvidenceKinds)
+      ? finding.requiredEvidenceKinds
+      : []
+  const seen = new Set<string>()
   return [...rawEvidence, ...evidenceKinds, ...closeCondition]
-    .map((item) => displayProductText(String(item).trim()))
+    .map((item) => displayEvidenceRequirement(String(item).trim()))
     .filter(Boolean)
-    .filter((item, index, all) => all.indexOf(item) === index)
+    .filter((item) => {
+      const key = normalizeEvidenceRequirement(item)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
+
+function splitEvidenceText(value: string) {
+  return value
+    .split(/[;,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function displayEvidenceRequirement(value: string) {
+  const cleanValue = value.replace(/\.+$/g, "").replace(/data-flow/gi, "data flow")
+  const labels: Record<string, string> = {
+    ai_inventory: "Inventar AI actualizat",
+    vendor_review: "Review vendor",
+    dpia_decision: "Decizie RoPA/DPIA",
+    owner_attestation: "Confirmare responsabil",
+    ai_use_case_intake: "Intake use case AI",
+    vendor_dpa: "DPA vendor",
+    vendor_contract: "Contract vendor",
+    human_oversight_sop: "Procedură human oversight",
+    ai_literacy_training_roster: "Dovadă AI literacy",
+    transparency_notice_text: "Text notice Art. 50",
+    transparency_screenshot: "Screenshot notice Art. 50",
+  }
+  const normalizedKey = cleanValue.toLowerCase().replace(/\s+/g, "_")
+  return displayProductText(labels[normalizedKey] ?? cleanValue.replace(/_/g, " "))
+}
+
+function normalizeEvidenceRequirement(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
 }
 
 function ownerRoleForFinding(finding: { owner?: string; category?: string; title?: string }) {
@@ -276,7 +321,7 @@ function auditPackCtaFor(status: ExportReadinessStatus): DashboardExecutionState
 
 function exportBlockerStatusLabel(status: ExportBlockerStatus) {
   if (status === "evidence_missing") return "Dovezi lipsă"
-  if (status === "review_pending") return "Review pending"
+  if (status === "review_pending") return "Review deschis"
   if (status === "critical_open") return "Risc critic deschis"
   return "Finding deschis"
 }

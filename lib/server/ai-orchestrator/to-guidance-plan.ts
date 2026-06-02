@@ -98,9 +98,6 @@ export function orchestratorResultToGuidancePlan(input: {
   }))
   const criticalFindingsCount = (input.state.findings ?? []).filter((finding) => finding.severity === "critical").length
   const summary = `${actions.length} acțiuni prioritizate (${criticalFindingsCount} critice), ${omittedActions.length} în planul complet.`
-  const orchestrationDiagnostics = input.result.validation.ok
-    ? input.result.validation.warnings
-    : input.result.validation.errors.slice(0, 4).map((error) => `mistral_rejected:${error}`)
 
   return {
     id: `guidance-${fingerprintProposal(proposal, input.result.source)}`,
@@ -114,9 +111,8 @@ export function orchestratorResultToGuidancePlan(input: {
     summary,
     guardrails: [
       "AI-ul nu execută acțiuni și nu aprobă nimic automat.",
-      "EU AI Act și GDPR rămân sursa de adevăr juridic; planul orchestrează munca, nu dă verdict final.",
-      "Mistral este folosit doar când ceri regenerare și trece prin validatorul de surse/overclaim.",
-      ...orchestrationDiagnostics,
+      "EU AI Act și GDPR rămân sursa de adevăr juridic; planul coordonează munca, nu dă verdict final.",
+      "AI-ul poate propune pași și texte de lucru, dar omul atașează dovezile, verifică și aprobă.",
     ],
     actions,
     omittedActions,
@@ -252,7 +248,7 @@ function toExportBlockerAction(blocker: OrchestratorExportBlocker): GuidanceActi
     rank: 0,
     source: "obligation",
     sourceIds: [blocker.code, blocker.exportType, blocker.blockedUntil],
-    title: `Deblochează exportul ${blocker.exportType}`,
+    title: `Deblochează exportul ${exportTypeLabel(blocker.exportType)}`,
     why: blocker.reason,
     suggestedAction: `Elimină blocker-ul și recalculă readiness-ul exportului.`,
     suggestedOwner: "Cabinet",
@@ -276,7 +272,7 @@ function toQuestionAction(code: string, question: string, ownerRole: Orchestrato
     source: "role",
     sourceIds: [code],
     title: question,
-    why: "Lipsesc fapte canonice; fără ele, clasificarea și exportul rămân parțiale.",
+    why: "Lipsesc date clare; fără ele, clasificarea și exportul rămân parțiale.",
     suggestedAction: "Trimite întrebarea prin intake sau clarifică manual cu clientul.",
     suggestedOwner: toGuidanceOwnerRole(ownerRole),
     targetHref: "/dashboard/client-intake",
@@ -299,7 +295,7 @@ function toNextAction(action: { code: string; title: string; priority: "P0" | "P
     source: "obligation",
     sourceIds: [action.code],
     title: action.title,
-    why: "Acțiune orchestratã din starea actuală a aplicației.",
+    why: "Acțiune propusă din starea curentă a dosarului.",
     suggestedAction: action.title,
     suggestedOwner: toGuidanceOwnerRole(action.ownerRole),
     targetHref: action.targetHref,
@@ -449,6 +445,14 @@ function targetHrefForExport(exportType: string): string {
   if (exportType.includes("builder")) return "/dashboard/sisteme/eu-db-wizard"
   if (exportType.includes("questionnaire")) return "/dashboard/rapoarte"
   return "/dashboard/audit-pack"
+}
+
+function exportTypeLabel(exportType: string): string {
+  const normalized = exportType.toLowerCase()
+  if (normalized.includes("audit_pack")) return "Audit Pack"
+  if (normalized.includes("builder")) return "AI Builder Handover Pack"
+  if (normalized.includes("questionnaire")) return "pachetul de răspuns"
+  return exportType.replace(/_/g, " ")
 }
 
 function reviewReason(status: string): string {

@@ -92,7 +92,7 @@ function nextActionsFor(
             href: "/dashboard/client-intake",
             iconName: "UserPlus",
             title: "Trimite intake clientului",
-            subtitle: "Cere fapte canonice despre AI, vendor, date personale și dovezi disponibile.",
+            subtitle: "Cere date clare despre AI, vendor, date personale și dovezi disponibile.",
           },
       {
         href: "/dashboard/audit-pack",
@@ -230,8 +230,8 @@ function DashboardCoherencePanel({ executionState }: { executionState: Dashboard
     <section className="cr-card cr-stack cr-dashboard-coherence" aria-labelledby="dashboard-coherence-heading">
       <div className="cr-section-heading">
         <div>
-          <p className="cr-eyebrow">Dashboard Coherence</p>
-          <h2 id="dashboard-coherence-heading">Starea reală a dosarului</h2>
+          <p className="cr-eyebrow">Dosar client</p>
+          <h2 id="dashboard-coherence-heading">Starea dosarului</h2>
           <p className="cr-muted">{executionState.provenanceLabel}</p>
         </div>
         <Link className={"cr-button cr-button--" + executionState.auditPackCta.tone} href={executionState.auditPackCta.href}>
@@ -257,7 +257,7 @@ function DashboardCoherencePanel({ executionState }: { executionState: Dashboard
           <strong className="cr-stat__value">{snapshot.evidenceMissingCount}</strong>
         </div>
         <div className="cr-stat cr-stat--info">
-          <span className="cr-stat__label">Review pending</span>
+          <span className="cr-stat__label">Review-uri</span>
           <strong className="cr-stat__value">{snapshot.reviewPendingCount}</strong>
         </div>
         <div className={cn("cr-stat", snapshot.exportReadinessStatus === "blocked" ? "cr-stat--critical" : "cr-stat--info")}>
@@ -268,7 +268,7 @@ function DashboardCoherencePanel({ executionState }: { executionState: Dashboard
 
       <div className="cr-grid cr-grid--2">
         <div className="cr-card cr-card--subtle">
-          <p className="cr-eyebrow">Export readiness</p>
+          <p className="cr-eyebrow">Stare export</p>
           <h3>{exportReadinessLabel(snapshot.exportReadinessStatus)}</h3>
           <p>
             Audit Pack-ul poate fi exportat doar când blocker-ele sunt închise, dovezile cerute sunt atașate și review gate-urile sunt trecute de oameni responsabili.
@@ -293,7 +293,7 @@ function DashboardCoherencePanel({ executionState }: { executionState: Dashboard
               ))}
             </div>
           ) : (
-            <p>Nu există blocker canonic deschis pentru export. Următorul pas este review-ul uman înainte de livrare.</p>
+            <p>Nu există blocker deschis pentru export. Următorul pas este review-ul uman înainte de livrare.</p>
           )}
         </div>
       </div>
@@ -573,7 +573,7 @@ function dashboardCountersFor(
       { label: "De rezolvat", value: pending.findings, href: "/dashboard/resolve", accent: "amber" },
       { label: "Sisteme AI", value: snapshot.aiSystems, href: "/dashboard/sisteme", accent: "cobalt" },
       { label: "Dovezi lipsă", value: snapshot.evidenceMissingCount, href: "/dashboard/resolve", accent: "amber" },
-      { label: "Review pending", value: snapshot.reviewPendingCount, href: "/dashboard/approvals", accent: "cobalt" },
+      { label: "Review-uri", value: snapshot.reviewPendingCount, href: "/dashboard/approvals", accent: "cobalt" },
     ]
   }
 
@@ -586,7 +586,7 @@ function dashboardCountersFor(
         { label: "Sisteme AI", value: snapshot.aiSystems, href: "/dashboard/sisteme", accent: "cobalt" },
         { label: "Dovezi lipsă", value: snapshot.evidenceMissingCount, href: "/dashboard/resolve", accent: "amber" },
         {
-          label: "Export readiness",
+          label: "Stare export",
           value: exportReadinessLabel(snapshot.exportReadinessStatus),
           href: "/dashboard/audit-pack",
           accent: snapshot.exportReadinessStatus === "blocked" ? "red" : "cobalt",
@@ -755,4 +755,3 @@ function exportReadinessFor(input: {
   if (input.hasOperationalData) return "approved"
   return "draft_only"
 }
-

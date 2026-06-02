@@ -299,7 +299,7 @@ export default function AuditPackPage() {
   })
 
   return (
-    <div className="cr-page cr-stack">
+    <div className="cr-page cr-stack cr-audit-pack-page">
       {/* Header */}
       <div className="cr-hero">
         <div className="cr-hero__copy">
@@ -417,14 +417,14 @@ export default function AuditPackPage() {
         >
           <div>
             <div style={{ fontSize: "12px", color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Export readiness
+              Stare export
             </div>
             <div style={{ fontSize: "18px", fontWeight: 700, color: "var(--ink)", marginTop: "4px" }}>
-              {readinessLoading ? "Se verifică dosarul…" : readiness?.exportReadinessLabel ?? "Readiness indisponibil"}
+              {readinessLoading ? "Se verifică dosarul…" : readiness?.exportReadinessLabel ?? "Stare indisponibilă"}
             </div>
             <p style={{ margin: "8px 0 0", fontSize: "13px", color: "var(--ink-muted)", maxWidth: "760px" }}>
-              Audit Pack-ul folosește aceeași stare canonică din dashboard: importuri, AI use cases, findings,
-              dovezi lipsă și review gates. Mistral poate explica planul, dar export readiness este calculat determinist.
+              Audit Pack-ul se bazează pe datele, findings-urile, dovezile și review-urile din dosarul curent.
+              AI-ul poate explica pașii, dar nu aprobă exportul final.
             </p>
           </div>
           {readiness && (
@@ -439,7 +439,7 @@ export default function AuditPackPage() {
               <MiniReadinessStat label="AI candidate" value={readiness.snapshot.aiUseCasesCandidateCount} />
               <MiniReadinessStat label="AI confirmate" value={readiness.snapshot.aiUseCasesConfirmedCount} />
               <MiniReadinessStat label="Dovezi lipsă" value={readiness.snapshot.evidenceMissingCount} />
-              <MiniReadinessStat label="Review pending" value={readiness.snapshot.reviewPendingCount} />
+              <MiniReadinessStat label="Review-uri" value={readiness.snapshot.reviewPendingCount} />
               <MiniReadinessStat label="Blocker-e" value={readiness.snapshot.exportBlockersCount} />
               <MiniReadinessStat label="Sisteme AI" value={readiness.snapshot.aiSystems} />
             </div>
@@ -488,8 +488,8 @@ export default function AuditPackPage() {
           !readinessLoading && (
             <div style={{ marginTop: "14px", fontSize: "13px", color: "var(--ink-muted)" }}>
               {readiness?.snapshot.exportReadinessStatus === "approved"
-                ? "Nu există blocker canonic deschis pentru export. Dosarul este gata pentru Audit Pack final."
-                : "Nu există blocker canonic deschis pentru export. Dacă există review pending, acesta trebuie să apară ca finding sau cerere de aprobare."}
+                ? "Nu există blocker deschis pentru export. Dosarul este gata pentru Audit Pack final."
+                : "Nu există blocker deschis pentru export. Dacă există review-uri care blochează livrarea, ele trebuie să apară ca finding sau cerere de aprobare."}
             </div>
           )
         )}
@@ -575,7 +575,7 @@ export default function AuditPackPage() {
         <button
           onClick={handleGenerate}
           disabled={generating || readinessLoading}
-          className="cr-btn cr-btn--primary"
+          className="cr-btn cr-btn--primary cr-audit-pack-generate"
         >
           {generating ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
           {generationLabel}
@@ -619,7 +619,7 @@ export default function AuditPackPage() {
           </a>
           .
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="cr-audit-pack-verify-form" style={{ display: "flex", gap: "8px" }}>
           <input
             type="text"
             value={verifyHash}
@@ -704,10 +704,11 @@ export default function AuditPackPage() {
         )}
 
         {registry.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="cr-audit-pack-registry-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {registry.map((pack) => (
               <div
                 key={pack.id}
+                className="cr-audit-pack-registry-card"
                 style={{
                   border: "1px solid var(--border-soft)",
                   borderRadius: "8px",
@@ -719,7 +720,7 @@ export default function AuditPackPage() {
                   flexWrap: "wrap",
                 }}
               >
-                <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="cr-audit-pack-registry-main" style={{ minWidth: 0, flex: 1 }}>
                   <div
                     style={{
                       fontSize: "13px",
@@ -763,6 +764,7 @@ export default function AuditPackPage() {
                     )}
                   </div>
                   <div
+                    className="cr-audit-pack-hash"
                     style={{
                       fontSize: "11px",
                       color: "var(--ink-dim)",
@@ -773,6 +775,7 @@ export default function AuditPackPage() {
                     {pack.hashRoot}
                   </div>
                   <div
+                    className="cr-audit-pack-registry-meta"
                     style={{
                       fontSize: "11px",
                       color: "var(--ink-muted)",
@@ -784,7 +787,7 @@ export default function AuditPackPage() {
                     {pack.exportReadinessStatus && <> · {auditPackKindDescription(pack)}</>}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div className="cr-audit-pack-registry-actions" style={{ display: "flex", gap: "6px" }}>
                   <button
                     onClick={() => copyToClipboard(pack.hashRoot)}
                     title="Copiază și pune hash root în verificator"
@@ -917,11 +920,11 @@ function auditPackKindLabel(pack: PackEntry) {
 
 function auditPackKindDescription(pack: PackEntry) {
   const kind = auditPackKindFor(pack)
-  if (kind === "final") return "Audit Pack final: fără blocker-e canonice la momentul exportului."
+  if (kind === "final") return "Audit Pack final: fără blocker-e deschise la momentul exportului."
   if (kind === "review") return "Pack pentru review: gata de verificare, dar nu marcat final."
   if (kind === "blocked_draft") {
     const blockers = pack.exportBlockersCount ?? 0
-    return `Draft blocat: ${blockers} blocker-e canonice deschise la momentul exportului.`
+    return `Draft blocat: ${blockers} blocker-e deschise la momentul exportului.`
   }
   if (kind === "draft") return "Draft: dosarul nu avea încă suficiente date pentru livrare finală."
   return "Pack generat înainte de etichetarea readiness/final."

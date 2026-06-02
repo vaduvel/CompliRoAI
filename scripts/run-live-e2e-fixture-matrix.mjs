@@ -556,22 +556,63 @@ async function verifyTenantIsolation(input) {
 async function verifyRepeatedImportIdempotency(cabinetCookie, cookie, row, clientOrgId) {
   const before = await apiFetch("/api/ai-use-cases", { cookie })
   const beforeFindings = await apiFetch("/api/findings", { cookie })
-  await importUseCaseRow(cabinetCookie, { ...row, test_case_id: "E2E-X-002-A" }, clientOrgId)
-  await importUseCaseRow(cabinetCookie, { ...row, test_case_id: "E2E-X-002-B" }, clientOrgId)
+  const beforeTargetCount = countMatchingUseCases(before.useCases ?? [], row)
+  const beforeFindingCount = beforeFindings.findings?.length ?? 0
+  const firstImport = await importUseCaseRow(cabinetCookie, { ...row, test_case_id: "E2E-X-002-A" }, clientOrgId)
+  const afterFirst = await apiFetch("/api/ai-use-cases", { cookie })
+  const afterFirstFindings = await apiFetch("/api/findings", { cookie })
+  const secondImport = await importUseCaseRow(cabinetCookie, { ...row, test_case_id: "E2E-X-002-B" }, clientOrgId)
   const after = await apiFetch("/api/ai-use-cases", { cookie })
   const afterFindings = await apiFetch("/api/findings", { cookie })
-  const targetCount = (after.useCases ?? []).filter((item) =>
-    normalizeText(item.useCaseName) === normalizeText(row.use_case)
-  ).length
-  const idempotencyVerified = targetCount === 1
+  const afterFirstTargetCount = countMatchingUseCases(afterFirst.useCases ?? [], row)
+  const afterTargetCount = countMatchingUseCases(after.useCases ?? [], row)
+  const afterFirstFindingCount = afterFirstFindings.findings?.length ?? 0
+  const afterFindingCount = afterFindings.findings?.length ?? 0
+  const secondMessages = importMessages(secondImport)
+  const secondGeneratedFindings = generatedFindingCount(secondImport)
+  const firstUseCaseDelta = afterFirstTargetCount - beforeTargetCount
+  const secondUseCaseDelta = afterTargetCount - afterFirstTargetCount
+  const secondFindingDelta = afterFindingCount - afterFirstFindingCount
+  const idempotencyVerified =
+    firstUseCaseDelta <= 1 &&
+    secondUseCaseDelta === 0 &&
+    secondFindingDelta === 0 &&
+    (secondGeneratedFindings === 0 || secondMessages.some((message) => /existent|idempotent|actualizat/i.test(message)))
   return {
     idempotencyVerified,
-    targetCount,
+    targetCount: afterTargetCount,
+    beforeTargetCount,
+    afterFirstTargetCount,
+    firstUseCaseDelta,
+    secondUseCaseDelta,
+    secondFindingDelta,
+    firstGeneratedFindings: generatedFindingCount(firstImport),
+    secondGeneratedFindings,
+    secondMessages,
     beforeUseCases: before.useCases?.length ?? 0,
     afterUseCases: after.useCases?.length ?? 0,
-    beforeFindings: beforeFindings.findings?.length ?? 0,
-    afterFindings: afterFindings.findings?.length ?? 0,
+    beforeFindings: beforeFindingCount,
+    afterFindings: afterFindingCount,
   }
+}
+
+function countMatchingUseCases(useCases, row) {
+  return useCases.filter((item) =>
+    normalizeText(item.useCaseName) === normalizeText(row.use_case)
+  ).length
+}
+
+function importMessages(result) {
+  return (result?.results ?? [])
+    .map((item) => String(item?.message ?? ""))
+    .filter(Boolean)
+}
+
+function generatedFindingCount(result) {
+  return (result?.results ?? []).reduce(
+    (total, item) => total + (Array.isArray(item?.generatedFindings) ? item.generatedFindings.length : 0),
+    0,
+  )
 }
 
 async function verifyExportOverclaimGuardrail(cookie, expectedRows) {
@@ -765,6 +806,9 @@ function signalSatisfied(code, ctx) {
   }
   if (/(gdpr|dpia|ropa|personal|data_flow|special_category|retention|recording_notice)/.test(normalizedCode)) {
     return anyUseCase((item) => item.gdprReviewNeeded || item.dpiNeedsReview) || hasText("gdpr", "dpia", "ropa", "date personale")
+  }
+  if (/(data_region|region|transfer|scc)/.test(normalizedCode)) {
+    return hasText("regiunea", "mecanismul de transfer", "gdpr art. 44", "gdpr art. 44-49", "scc", "data region")
   }
   if (/(vendor|dpa|subprocessor|training_opt|ifu|model_chain|contract_confidentiality)/.test(normalizedCode)) {
     return anyUseCase((item) => item.vendorReviewNeeded) || hasText("vendor", "furnizor", "dpa", "model")
@@ -1174,6 +1218,16 @@ function summarizeSetupPayload(payload) {
     failed: payload.failed,
     total: payload.total,
     duplicate: payload.duplicate,
+    idempotencyVerified: payload.idempotencyVerified,
+    targetCount: payload.targetCount,
+    beforeTargetCount: payload.beforeTargetCount,
+    afterFirstTargetCount: payload.afterFirstTargetCount,
+    firstUseCaseDelta: payload.firstUseCaseDelta,
+    secondUseCaseDelta: payload.secondUseCaseDelta,
+    secondFindingDelta: payload.secondFindingDelta,
+    firstGeneratedFindings: payload.firstGeneratedFindings,
+    secondGeneratedFindings: payload.secondGeneratedFindings,
+    secondMessages: payload.secondMessages,
     generatedFindings: Array.isArray(payload.generatedFindings)
       ? payload.generatedFindings.map((item) => item.title ?? item.id ?? item)
       : undefined,

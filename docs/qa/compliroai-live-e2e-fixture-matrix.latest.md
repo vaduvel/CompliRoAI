@@ -1,9 +1,9 @@
 # CompliRoAI Live E2E Fixture Matrix
 
-- Started: 2026-06-01T20:15:42.089Z
-- Finished: 2026-06-01T20:46:08.007Z
+- Started: 2026-06-02T08:15:53.757Z
+- Finished: 2026-06-02T09:08:02.122Z
 - Base URL: http://localhost:3001
-- Mistral: mistral-large-latest
+- Mistral: default
 - Summary: 42 pass, 0 warning, 0 fail, 0 blocked, 42 total
 
 | Test | Status | Setup | Matched | Missing / Notes |

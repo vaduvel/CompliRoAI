@@ -66,8 +66,8 @@ export function GuidancePlanPanel({ initialRecord, initialPlan, coherence }: Gui
   const canonicalExportBlockers = coherence?.exportBlockers ?? []
   const exportBlockerCount = coherence ? canonicalExportBlockers.length : planExportBlockerActions.length
   const planMeta = coherence
-    ? `${plan.summary} · ${coherence.aiUseCasesCandidateCount} AI candidate · ${coherence.aiUseCasesConfirmedCount} confirmate · ${coherence.aiSystemsCount} sisteme AI · ${coherence.evidenceMissingCount} dovezi lipsă · ${coherence.reviewPendingCount} review pending · export ${coherence.exportReadinessLabel} · sursă: state canonic + engine determinist${plan.modelLabel === "mistral-assisted" ? " + Mistral" : ""} · prompt ${plan.promptVersion}`
-    : `${plan.summary} · ${plan.coverage.totalCandidates} acțiuni candidate evaluate · ${plan.stats.aiSystemsCount} sisteme AI confirmate · sursă: engine determinist${plan.modelLabel === "mistral-assisted" ? " + Mistral" : ""} · prompt ${plan.promptVersion}`
+    ? `${plan.summary} · ${coherence.aiUseCasesCandidateCount} AI candidate · ${coherence.aiUseCasesConfirmedCount} confirmate · ${coherence.aiSystemsCount} sisteme AI · ${coherence.evidenceMissingCount} dovezi lipsă · ${coherence.reviewPendingCount} review-uri deschise · export ${coherence.exportReadinessLabel} · calculat din dosarul curent${plan.modelLabel === "mistral-assisted" ? " · asistat de Mistral" : ""}`
+    : `${plan.summary} · ${plan.coverage.totalCandidates} acțiuni candidate evaluate · ${plan.stats.aiSystemsCount} sisteme AI confirmate · calculat din dosarul curent${plan.modelLabel === "mistral-assisted" ? " · asistat de Mistral" : ""}`
 
   async function createPersistedPlan(reason = "manual_regenerate"): Promise<AIGuidancePlanRecord | null> {
     const response = await fetch("/api/ai-guidance", {
@@ -214,7 +214,7 @@ export function GuidancePlanPanel({ initialRecord, initialPlan, coherence }: Gui
       {exportBlockerCount > 0 ? (
         <div className="cr-alert cr-alert--warning">
           <strong>Audit Pack blocat sau incomplet.</strong>{" "}
-          {exportBlockerCount} blocker(e) canonic(e) blochează exportul. Deschide lista ca să vezi dovada, owner-ul și review-ul cerut.
+          {exportBlockerCount} blocker(e) blochează exportul. Deschide lista ca să vezi dovada, owner-ul și review-ul cerut.
         </div>
       ) : null}
 
@@ -239,25 +239,29 @@ export function GuidancePlanPanel({ initialRecord, initialPlan, coherence }: Gui
         >
           <div className="cr-drawer">
             <div className="cr-drawer__header">
-              <div>
-                <h2 className="cr-title" style={{ margin: 0, fontSize: "24px" }}>
-                  Plan de execuție AI · explicat
-                </h2>
-                <p className="cr-muted-copy">
-                  Generat {formatDate(plan.generatedAtISO)} · {plan.modelLabel} · {plan.coverage.totalCandidates} acțiuni candidate · Draft — necesită review uman · fingerprint {plan.fingerprint.slice(0, 8)}
-                </p>
+              <div className="cr-drawer__title-row">
+                <div className="cr-drawer__icon">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h2 className="cr-title" style={{ margin: 0, fontSize: "20px" }}>
+                    Plan de execuție AI · explicat
+                  </h2>
+                  <p className="cr-muted-copy">
+                    Generat {formatDate(plan.generatedAtISO)} · {plan.modelLabel} · {plan.coverage.totalCandidates} acțiuni candidate · Draft — necesită review uman · fingerprint {plan.fingerprint.slice(0, 8)}
+                  </p>
+                </div>
               </div>
-              <button type="button" aria-label="Închide planul" onClick={() => setDrawerOpen(false)} className="cr-btn cr-btn--sm">
+              <button type="button" aria-label="Închide planul" onClick={() => setDrawerOpen(false)} className="cr-icon-button cr-drawer__close">
                 <X size={18} />
               </button>
             </div>
 
             <div className="cr-drawer__content">
               <div className="cr-card cr-paragraph">
-                <strong style={{ color: "var(--ink)" }}>Cum funcționează:</strong> citește state-ul aplicației
-                (sisteme AI, findings, deadline-uri, evidence), consultă acoperirea AI Act/GDPR și ordonează
-                acțiunile după impact real. <strong style={{ color: "var(--ink)" }}>AI-ul nu execută</strong>:
-                omul aprobă, atașează dovada și marchează rezolvat.
+                <strong style={{ color: "var(--ink)" }}>Cum funcționează:</strong> urmărește findings, dovezi și
+                review-uri, apoi ordonează pașii care deblochează dosarul. <strong style={{ color: "var(--ink)" }}>AI-ul nu execută</strong>:
+                omul atașează dovada, verifică și aprobă.
               </div>
 
               {activeRecord?.diffFromPrevious ? (
@@ -304,9 +308,9 @@ export function GuidancePlanPanel({ initialRecord, initialPlan, coherence }: Gui
                     {plan.omittedActions.map((action, index) => (
                       <div key={`${action.id}-${index}`} className="cr-omitted-row">
                         <div>
-                          <strong>{action.title}</strong>
+                          <strong>{displayText(action.title)}</strong>
                           <div className="cr-muted-copy">
-                            {action.legalReferences.join(", ") || "fără referință explicită"}
+                            {action.legalReferences.map(displayLegalReference).join(", ") || "fără referință explicită"}
                           </div>
                           {explanation?.actionId === action.id ? (
                             <div className="cr-ai-plan__change">
@@ -324,9 +328,9 @@ export function GuidancePlanPanel({ initialRecord, initialPlan, coherence }: Gui
               </div>
 
               <div>
-                <SectionLabel>Surse și guardrails</SectionLabel>
+                <SectionLabel>Limite și responsabilități</SectionLabel>
                 <ul className="cr-source-list">
-                  {plan.guardrails.map((item, index) => (
+                  {visibleGuardrails(plan.guardrails).map((item, index) => (
                     <li key={`${item}-${index}`}>{item}</li>
                   ))}
                 </ul>
@@ -372,7 +376,7 @@ function CanonicalBlockerDetail({ blocker }: { blocker: GuidancePlanCoherenceBlo
         <strong>Dovezi / gate cerut</strong>
         <p>
           {blocker.requiredEvidence.length > 0
-            ? blocker.requiredEvidence.join("; ")
+            ? displayEvidenceList(blocker.requiredEvidence).join("; ")
             : "Review uman înainte de export."}
         </p>
       </div>
@@ -554,6 +558,9 @@ function displayText(value: string): string {
   return value
     .replace(/\bFixture AI use case\b/gi, "Caz AI candidat")
     .replace(/\bFixture\b/gi, "Caz AI candidat")
+    .replace(/\baudit_pack\b/gi, "Audit Pack")
+    .replace(/\borchestratã\b/gi, "propusă")
+    .replace(/\borchestrată\b/gi, "propusă")
 }
 
 function displayLegalReference(ref: string): string {
@@ -565,24 +572,72 @@ function displayLegalReference(ref: string): string {
     .replace(/ART\.\s*/gi, "Art. ")
     .replace(/ANNEX\s+/gi, "Annex ")
     .replace(/_/g, " ")
+    .replace(/AI Act\s+EU AI Act/gi, "AI Act")
+    .replace(/GDPR\s+GDPR/gi, "GDPR")
     .replace(/\s+/g, " ")
     .trim()
 }
 
 function displayEvidenceLabel(value: string): string {
-  return value
+  const cleanValue = value.replace(/\.+$/g, "").replace(/data-flow/gi, "data flow")
+  const normalized = cleanValue.toLowerCase().replace(/\s+/g, "_")
+  const labels: Record<string, string> = {
+    ai_inventory: "Inventar AI actualizat",
+    vendor_review: "Review vendor",
+    dpia_decision: "Decizie RoPA/DPIA",
+    owner_attestation: "Confirmare responsabil",
+    ai_use_case_intake: "Intake use case AI",
+    vendor_dpa: "DPA vendor",
+    vendor_contract: "Contract vendor",
+    human_oversight_sop: "Procedură human oversight",
+    ai_literacy_training_roster: "Dovadă AI literacy",
+    transparency_notice_text: "Text notice Art. 50",
+    transparency_screenshot: "Screenshot notice Art. 50",
+  }
+  return (labels[normalized] ?? cleanValue)
     .replace(/_/g, " ")
     .replace(/\bropa\b/gi, "RoPA")
     .replace(/\bdpa\b/gi, "DPA")
+}
+
+function displayEvidenceList(values: string[]): string[] {
+  const seen = new Set<string>()
+  return values
+    .map(displayEvidenceLabel)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => {
+      const key = item
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
+
+function visibleGuardrails(items: string[]): string[] {
+  return items.filter((item) => {
+    const normalized = item.toLowerCase()
+    if (normalized.startsWith("mistral:")) return false
+    if (normalized.startsWith("mistral_rejected:")) return false
+    if (normalized.includes("missing_api_key")) return false
+    if (normalized.includes("schema")) return false
+    if (normalized.includes("validator")) return false
+    return true
+  })
 }
 
 function sourceTypeLabels(refs: string[]): string[] {
   const labels = new Set<string>()
   const joined = refs.join(" ").toLowerCase()
   if (joined.includes("ai act") || joined.includes("eu_ai_act") || joined.includes("gdpr")) {
-    labels.add("primary law")
+    labels.add("Lege primară")
   }
-  if (joined.includes("internal")) labels.add("internal policy")
+  if (joined.includes("internal")) labels.add("Politică internă")
   return [...labels]
 }
 

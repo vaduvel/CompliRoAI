@@ -277,8 +277,10 @@ export default function ResolvePage() {
         setFindings((current) =>
           current.map((finding) => (finding.id === id ? data.finding! : finding)),
         )
-        if (data.finding.findingStatus === "resolved" && expandedId === id) {
-          setExpandedId(null)
+        const nextFilter = statusFilterAfterAction(action)
+        if (nextFilter) {
+          setStatusFilter(nextFilter)
+          setExpandedId(id)
         }
       }
       scheduleGuidanceAfterAction(`finding_${action}`)
@@ -452,6 +454,15 @@ export default function ResolvePage() {
   )
 }
 
+function statusFilterAfterAction(action: string): StatusFilter | null {
+  if (action === "confirm") return "confirmed"
+  if (action === "resolve") return "resolved"
+  if (action === "dismiss") return "dismissed"
+  if (action === "monitor") return "under_monitoring"
+  if (action === "reopen") return "open"
+  return null
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 //   Stats bar
 // ────────────────────────────────────────────────────────────────────────────
@@ -516,10 +527,10 @@ function ResolveReadinessPanel({
       <div className="cr-panel__body cr-detail-stack">
         <div className="cr-inline-between">
           <div>
-            <SectionLabel>Audit Pack readiness</SectionLabel>
+            <SectionLabel>Stare Audit Pack</SectionLabel>
             <p className="cr-paragraph">
               <strong>{readiness.label}</strong> · {readiness.blockersCount} blocker-e ·{" "}
-              {readiness.evidenceMissingCount} dovezi lipsă · {readiness.reviewPendingCount} review pending.
+              {readiness.evidenceMissingCount} dovezi lipsă · {readiness.reviewPendingCount} review-uri deschise.
             </p>
           </div>
           <StatusPill tone={statusTone}>{readiness.label}</StatusPill>
@@ -535,7 +546,7 @@ function ResolveReadinessPanel({
           </div>
         ) : (
           <div className="cr-inline-note">
-            Nu există blocker canonic în lista curentă. Dacă dosarul are date complete, următorul pas este review-ul uman.
+            Nu există blocker deschis în lista curentă. Dacă dosarul are date complete, următorul pas este review-ul uman.
           </div>
         )}
       </div>
@@ -802,6 +813,7 @@ function ExpandedDetail({
   pendingAction: string | null
 }) {
   const status = (finding.findingStatus ?? "open") as StatusKey
+  const closeRequirements = closeRequirementsForFinding(finding)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -894,22 +906,14 @@ function ExpandedDetail({
               </div>
             </div>
 
-            {(finding.closeCondition ||
-              (finding.requiredEvidenceKinds && finding.requiredEvidenceKinds.length > 0) ||
-              finding.evidenceRequired) && (
+            {closeRequirements.length > 0 && (
               <div className="cr-detail-stack">
                 <SectionLabel>Condiții de închidere</SectionLabel>
-                {finding.closeCondition ? <p className="cr-paragraph">{finding.closeCondition}</p> : null}
-                {finding.evidenceRequired ? <p className="cr-paragraph">{finding.evidenceRequired}</p> : null}
-                {finding.requiredEvidenceKinds && finding.requiredEvidenceKinds.length > 0 ? (
-                  <div className="cr-pill-group">
-                    {finding.requiredEvidenceKinds.map((kind) => (
-                      <StatusPill key={kind} tone="neutral">
-                        {kind}
-                      </StatusPill>
-                    ))}
-                  </div>
-                ) : null}
+                <ul className="cr-source-list">
+                  {closeRequirements.map((requirement) => (
+                    <li key={requirement}>{requirement}</li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
@@ -926,7 +930,7 @@ function ExpandedDetail({
             variant="primary"
           >
             {pendingAction === "confirm" ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
-            Confirma
+            Confirmă
           </ActionButton>
           <ActionButton
             onClick={() => onAction("dismiss")}
@@ -942,7 +946,7 @@ function ExpandedDetail({
             variant="primary"
           >
             {pendingAction === "resolve" ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
-            Marcheaza rezolvat
+            Marchează rezolvat
           </ActionButton>
           <ActionButton
             onClick={() => onAction("monitor")}
@@ -950,7 +954,7 @@ function ExpandedDetail({
             variant="default"
           >
             {pendingAction === "monitor" ? <Loader2 size={12} className="animate-spin" /> : <Eye size={12} />}
-            Pune in monitorizare
+            Pune în monitorizare
           </ActionButton>
           <ActionButton
             onClick={() => onAction("reopen")}
@@ -966,7 +970,7 @@ function ExpandedDetail({
             variant="default"
           >
             {sharing ? <Loader2 size={12} className="animate-spin" /> : <Link2 size={12} />}
-            {copied ? "Copiat" : shareUrl ? "Copiaza link" : "Genereaza share"}
+            {copied ? "Copiat" : shareUrl ? "Copiază link" : "Generează share"}
           </ActionButton>
           </div>
         </div>
@@ -1045,7 +1049,7 @@ function AuditPackImpactCard({
         <div className="cr-panel__body">
           <SectionLabel>Impact Audit Pack</SectionLabel>
           <div className="cr-inline-note">
-            Acest finding nu este blocker canonic de export în starea curentă, dar poate rămâne relevant pentru review sau monitorizare.
+            Acest finding nu blochează exportul în starea curentă, dar poate rămâne relevant pentru review sau monitorizare.
           </div>
         </div>
       </section>
@@ -1071,7 +1075,7 @@ function AuditPackImpactCard({
             <strong>Dovadă cerută</strong>
             <div className="cr-note-box__sub">
               {blocker.requiredEvidence.length > 0
-                ? blocker.requiredEvidence.join("; ")
+                ? displayEvidenceList(blocker.requiredEvidence).join("; ")
                 : "Dovadă de execuție + notă de review uman."}
             </div>
           </div>
@@ -1084,7 +1088,7 @@ function AuditPackImpactCard({
         </div>
 
         <div className="cr-inline-note">
-          Când atașezi dovada și marchezi finding-ul rezolvat, Dashboard Coherence și Audit Pack readiness se recalculează din state-ul canonic.
+          Când atașezi dovada și marchezi finding-ul rezolvat, starea dosarului și Audit Pack-ul se recalculează automat.
         </div>
       </div>
     </section>
@@ -1103,15 +1107,20 @@ function InlineGuidanceCard({
     ...(finding.legalMappings?.map((mapping) => `${mapping.regulation} ${mapping.article}`) ?? []),
   ].filter((ref): ref is string => Boolean(ref))
   const owner = finding.ownerSuggestion ?? suggestedOwnerFor(finding)
+  const isClosed =
+    finding.findingStatus === "resolved" ||
+    finding.findingStatus === "dismissed" ||
+    finding.reviewState === "closed" ||
+    finding.reviewState === "monitoring"
   const firstEvidence =
     auditPackBlocker?.requiredEvidence?.[0] ??
-    finding.requiredEvidenceKinds?.[0] ??
-    finding.evidenceRequired ??
-    finding.closeCondition ??
+    closeRequirementsForFinding(finding)[0] ??
     "dovadă de decizie și execuție"
   const nextStep =
-    auditPackBlocker
-      ? "Rezolvă blocker-ul canonic înainte de exportul final al Audit Pack-ului."
+    isClosed
+      ? "Finding-ul este rezolvat și rămâne în audit trail ca dovadă de execuție."
+      : auditPackBlocker
+      ? "Rezolvă acest blocker înainte de exportul final al Audit Pack-ului."
       : finding.severity === "critical"
       ? "Închide blocajul critic înainte de următorul raport sau audit pack."
       : "Finalizează dovada lipsă și lasă audit trail-ul să lege acțiunea de finding."
@@ -1132,8 +1141,8 @@ function InlineGuidanceCard({
             ) : null}
             </div>
             <p className="cr-paragraph">
-              {nextStep} Owner recomandat: <strong>{owner}</strong>. Prima dovadă cerută:{" "}
-              <strong>{firstEvidence}</strong>.
+              {nextStep} Owner recomandat: <strong>{owner}</strong>. {isClosed ? "Dovadă păstrată" : "Prima dovadă cerută"}:{" "}
+              <strong>{displayEvidenceRequirement(firstEvidence)}</strong>.
             </p>
             <div className="cr-guidance-card__meta">
             {legalRefs.slice(0, 3).map((ref) => (
@@ -1161,6 +1170,65 @@ function suggestedOwnerFor(finding: ScanFinding): string {
     return "Compliance"
   }
   return "Compliance"
+}
+
+function closeRequirementsForFinding(finding: ScanFinding): string[] {
+  const closeCondition = typeof finding.closeCondition === "string" ? splitEvidenceText(finding.closeCondition) : []
+  const evidenceRequired = typeof finding.evidenceRequired === "string" ? splitEvidenceText(finding.evidenceRequired) : []
+  const evidenceKinds = closeCondition.length > 0 || evidenceRequired.length > 0
+    ? []
+    : Array.isArray(finding.requiredEvidenceKinds)
+      ? finding.requiredEvidenceKinds
+      : []
+  return displayEvidenceList([...closeCondition, ...evidenceRequired, ...evidenceKinds])
+}
+
+function splitEvidenceText(value: string): string[] {
+  return value
+    .split(/[;,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function displayEvidenceList(values: string[]): string[] {
+  const seen = new Set<string>()
+  return values
+    .map(displayEvidenceRequirement)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => {
+      const key = item
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
+
+function displayEvidenceRequirement(value: string): string {
+  const cleanValue = value.replace(/\.+$/g, "").replace(/data-flow/gi, "data flow")
+  const normalized = cleanValue.toLowerCase().replace(/\s+/g, "_")
+  const labels: Record<string, string> = {
+    ai_inventory: "Inventar AI actualizat",
+    vendor_review: "Review vendor",
+    dpia_decision: "Decizie RoPA/DPIA",
+    owner_attestation: "Confirmare responsabil",
+    ai_use_case_intake: "Intake use case AI",
+    vendor_dpa: "DPA vendor",
+    vendor_contract: "Contract vendor",
+    human_oversight_sop: "Procedură human oversight",
+    ai_literacy_training_roster: "Dovadă AI literacy",
+    transparency_notice_text: "Text notice Art. 50",
+    transparency_screenshot: "Screenshot notice Art. 50",
+  }
+  return (labels[normalized] ?? cleanValue)
+    .replace(/_/g, " ")
+    .replace(/\bropa\b/gi, "RoPA")
+    .replace(/\bdpa\b/gi, "DPA")
 }
 
 function MetaPill({ label, value }: { label: string; value: string }) {
@@ -1191,7 +1259,7 @@ function EvidenceSection({
   async function handleSubmit() {
     setErr(null)
     if (!note.trim()) {
-      setErr("Adauga o nota explicativa.")
+      setErr("Adaugă o notă explicativă.")
       return
     }
     setSubmitting(true)
@@ -1203,7 +1271,7 @@ function EvidenceSection({
       setNote("")
       setUrl("")
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Eroare necunoscuta")
+      setErr(e instanceof Error ? e.message : "Eroare necunoscută")
     } finally {
       setSubmitting(false)
     }
@@ -1246,11 +1314,11 @@ function EvidenceSection({
             <button onClick={handleSubmit} disabled={submitting} className="cr-btn cr-btn--secondary">
               {submitting ? (
                 <>
-                  <Loader2 size={12} className="animate-spin" /> Se ataseaza...
+                  <Loader2 size={12} className="animate-spin" /> Se atașează...
                 </>
               ) : (
                 <>
-                  <FileText size={12} /> Ataseaza dovada
+                  <FileText size={12} /> Atașează dovada
                 </>
               )}
             </button>

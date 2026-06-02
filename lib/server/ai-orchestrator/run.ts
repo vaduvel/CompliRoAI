@@ -541,6 +541,7 @@ function shouldRetryInvalidProposal(errors: string[]) {
     error.includes("whyRelevant is required") ||
     error.includes("missing evidenceRequests for requiredEvidence") ||
     error.includes("legalBasis") ||
+    error.includes("not grounded in proposal.legalContext") ||
     error.includes("must include article, annex, or note") ||
     error.includes("obsoleteCandidates[")
   )
@@ -980,15 +981,84 @@ function repairProposalAgainstDeterministicFallback(
     existingExportBlockerCodes.add(blocker.code)
   }
 
+  const legalContext = groundLegalContextForFindings(
+    repairLegalContextReferences(proposal.legalContext, fallback.legalContext) ?? [],
+    proposedFindings,
+    fallback.legalContext,
+  )
+
   return {
     ...proposal,
-    legalContext: repairLegalContextReferences(proposal.legalContext, fallback.legalContext),
+    legalContext,
     proposedFindings,
     evidenceRequests,
     reviewTasks,
     nextActions,
     exportBlockers,
   }
+}
+
+function groundLegalContextForFindings(
+  legalContext: OrchestratorLegalContextReference[],
+  proposedFindings: OrchestratorProposal["proposedFindings"],
+  fallbackLegalContext: OrchestratorLegalContextReference[] | undefined,
+): OrchestratorLegalContextReference[] {
+  const grounded = [...legalContext]
+
+  for (const finding of proposedFindings) {
+    for (const basis of finding.legalBasis) {
+      if (basis.instrument !== "EU_AI_ACT" && basis.instrument !== "GDPR") continue
+
+      const reference = nonEmptyString(basis.article) ?? nonEmptyString(basis.annex) ?? nonEmptyString(basis.note)
+      if (!reference) continue
+      if (hasGroundedLegalContext(grounded, basis.instrument, reference)) continue
+
+      grounded.push({
+        sourceId: sourceIdForLegalInstrument(basis.instrument, grounded, fallbackLegalContext),
+        instrument: basis.instrument,
+        reference,
+        whyRelevant: "Sursă juridică primară folosită pentru pașii de remediere propuși.",
+      })
+    }
+  }
+
+  return grounded
+}
+
+function hasGroundedLegalContext(
+  legalContext: OrchestratorLegalContextReference[],
+  instrument: OrchestratorLegalContextReference["instrument"],
+  reference: string,
+): boolean {
+  const normalizedBasisReference = normalizeLegalReference(reference)
+  return legalContext.some((entry) => {
+    if (entry.instrument !== instrument) return false
+    const normalizedContextReference = normalizeLegalReference(entry.reference)
+    return (
+      normalizedBasisReference.includes(normalizedContextReference) ||
+      normalizedContextReference.includes(normalizedBasisReference)
+    )
+  })
+}
+
+function sourceIdForLegalInstrument(
+  instrument: OrchestratorLegalContextReference["instrument"],
+  legalContext: OrchestratorLegalContextReference[],
+  fallbackLegalContext: OrchestratorLegalContextReference[] | undefined,
+): string {
+  const existing = legalContext.find((entry) => entry.instrument === instrument && nonEmptyString(entry.sourceId))
+    ?? fallbackLegalContext?.find((entry) => entry.instrument === instrument && nonEmptyString(entry.sourceId))
+  if (existing?.sourceId) return existing.sourceId
+  if (instrument === "GDPR") return "src_gdpr_2016_679"
+  return "src_eu_ai_act_2024_1689"
+}
+
+function normalizeLegalReference(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 function buildValidationContext(
