@@ -144,6 +144,29 @@ describe("GET /api/exports/audit-pack final gate", () => {
     expect(harness.writeState).not.toHaveBeenCalled()
   })
 
+  it("ignores client-supplied readiness claims and still blocks final POST exports", async () => {
+    setReadiness("blocked", 2)
+
+    const { POST } = await import("./route")
+    const res = await POST(
+      new Request("http://localhost/api/exports/audit-pack", {
+        method: "POST",
+        body: JSON.stringify({
+          final: true,
+          exportReadinessStatus: "approved",
+          packKind: "final",
+          exportBlockersCount: 0,
+        }),
+      }) as never,
+    )
+    const json = await res.json()
+
+    expect(res.status).toBe(409)
+    expect(json.exportReadinessStatus).toBe("blocked")
+    expect(json.exportBlockers).toHaveLength(2)
+    expect(harness.writeState).not.toHaveBeenCalled()
+  })
+
   it("allows final export when readiness is approved and records a final pack", async () => {
     setReadiness("approved", 0)
 

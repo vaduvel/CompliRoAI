@@ -479,6 +479,34 @@ describe("validateOrchestratorProposal", () => {
     }
   })
 
+  it("rejects model attempts to mark audit pack or export readiness as final", () => {
+    const result = validateOrchestratorProposal(baseProposal({
+      exportReadinessStatus: "approved",
+      packKind: "final",
+      canExportFinal: true,
+      finalExportApproved: true,
+      nextActions: [
+        {
+          code: "generate_final_audit_pack",
+          title: "Generează Audit Pack final",
+          priority: "P0",
+          targetHref: "/dashboard/audit-pack?final=true",
+          ownerRole: "dpo",
+        },
+      ],
+    }))
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.errors).toEqual(expect.arrayContaining([
+        "proposal.exportReadinessStatus cannot be approved by orchestrator",
+        "proposal.packKind cannot be final by orchestrator",
+        "proposal.canExportFinal is forbidden",
+        "proposal.finalExportApproved is forbidden",
+      ]))
+    }
+  })
+
   it("rejects partial evidence requests that cannot become executable work", () => {
     const result = validateOrchestratorProposal(baseProposal({
       evidenceRequests: [

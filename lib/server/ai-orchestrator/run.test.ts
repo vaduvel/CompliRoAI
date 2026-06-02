@@ -187,6 +187,65 @@ describe("runComplianceOrchestrator", () => {
     }
   })
 
+  it("falls back when Mistral tries to mark audit pack readiness as final", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                schemaVersion: "orchestrator.v1",
+                finalLegalVerdict: false,
+                legalContext: [],
+                proposedFindings: [],
+                evidenceRequests: [],
+                reviewTasks: [],
+                nextActions: [
+                  {
+                    code: "generate_final_audit_pack",
+                    title: "Generează Audit Pack final",
+                    priority: "P0",
+                    targetHref: "/dashboard/audit-pack?final=true",
+                    ownerRole: "dpo",
+                  },
+                ],
+                exportBlockers: [],
+                clientQuestions: [],
+                obsoleteCandidates: [],
+                exportReadinessStatus: "approved",
+                packKind: "final",
+                canExportFinal: true,
+              }),
+            },
+          },
+        ],
+      }),
+    })
+
+    const result = await runComplianceOrchestrator({
+      orgId: "org-1",
+      workspaceMode: "cabinet",
+      clientId: "client-a",
+      user: { id: "user-1", role: "cabinet_consultant" },
+      state: mergeWithDefault(null),
+      ragSourceIds: [],
+      mistral: { apiKey: "test-key", fetchImpl: fetchMock },
+    })
+
+    expect(result.status).toBe("fallback_deterministic")
+    expect(result.source).toBe("deterministic")
+    expect(result.auditEvent.type).toBe("orchestrator.plan_rejected")
+    expect(result.validation.ok).toBe(false)
+    if (!result.validation.ok) {
+      expect(result.validation.errors).toEqual(expect.arrayContaining([
+        "proposal.exportReadinessStatus cannot be approved by orchestrator",
+        "proposal.packKind cannot be final by orchestrator",
+        "proposal.canExportFinal is forbidden",
+      ]))
+    }
+  })
+
   it("falls back when Mistral targets entities outside the scoped tenant context", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

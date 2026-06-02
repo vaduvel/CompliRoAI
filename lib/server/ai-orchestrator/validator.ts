@@ -316,11 +316,29 @@ function validateForbiddenWorkflowMutations(payload: unknown, errors: string[]) 
     if (value.resolveFinding !== undefined) {
       errors.push(`${displayMutationPath(path)}.resolveFinding is forbidden`)
     }
+    if (value.canExportFinal !== undefined) {
+      errors.push(`${displayMutationPath(path)}.canExportFinal is forbidden`)
+    }
+    if (value.finalExportApproved !== undefined) {
+      errors.push(`${displayMutationPath(path)}.finalExportApproved is forbidden`)
+    }
 
     if (typeof value.findingStatus === "string") {
       const normalized = normalizeWorkflowValue(value.findingStatus)
       if (normalized === "resolved" || normalized === "dismissed" || normalized === "under_monitoring") {
         errors.push(`${displayMutationPath(path)}.findingStatus cannot be ${value.findingStatus} by orchestrator`)
+      }
+    }
+    if (typeof value.exportReadinessStatus === "string") {
+      const normalized = normalizeWorkflowValue(value.exportReadinessStatus)
+      if (normalized === "approved") {
+        errors.push(`${displayMutationPath(path)}.exportReadinessStatus cannot be approved by orchestrator`)
+      }
+    }
+    if (typeof value.packKind === "string") {
+      const normalized = normalizeWorkflowValue(value.packKind)
+      if (normalized === "final") {
+        errors.push(`${displayMutationPath(path)}.packKind cannot be final by orchestrator`)
       }
     }
 
