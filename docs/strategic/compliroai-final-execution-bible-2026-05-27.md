@@ -3010,12 +3010,15 @@ Reguli de validare:
 - `guardrails.noAutoApproval === true`;
 - fiecare `executionStep` are `ownerRole`, `requiredEvidence`, `requiresHumanApproval`;
 - fiecare `legalContext.sourceId` există în `RagContext`;
+- dacă `legalContext.instrument` este `EU_AI_ACT` sau `GDPR`, `sourceId` trebuie să fie sursă legală citabilă (`canBeCitedAsLaw=true`, nu `internal_context`);
+- monografiile, template-urile și playbook-urile interne pot apărea doar ca scenariu/context de lucru, nu ca autoritate legală;
 - fiecare `legalBasis` pentru `EU_AI_ACT`/`GDPR` este ancorat într-un `legalContext` valid;
 - fiecare `obligationSummary.source` este `deterministic_engine`;
 - planul respectă `orgId/clientId/aiProjectId` și nu poate linka entități din afara scope-ului curent;
 - niciun finding nu este creat fără legal basis și required evidence;
 - niciun `linkedFindingCode` / `obsoleteCandidate` nu poate ieși din setul de findings din scope;
 - blocker-ele deterministe de export nu pot fi șterse de model din propunerea finală;
+- orice câmp de tip `autoApprove`, `autoResolve`, `approveEvidence`, `resolveFinding`, `findingStatus=resolved` sau `approvalStatus=approved` venit de la Mistral este respins;
 - niciun export final nu este aprobat de AI.
 
 Plan invalid = respins, audit event `orchestrator_plan_rejected`, zero work items create.

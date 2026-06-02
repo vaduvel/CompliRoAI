@@ -6,6 +6,8 @@ import {
   type OrchestratorValidationResult,
 } from "./types"
 
+type LegalSourceValidationMetadata = NonNullable<OrchestratorValidationContext["legalSourcesById"]>[string]
+
 const ALLOWED_SEVERITIES = new Set(["info", "low", "medium", "high", "critical", "blocker"])
 const ALLOWED_OWNER_ROLES = new Set([
   "cabinet_consultant",
@@ -128,6 +130,7 @@ export function validateOrchestratorProposal(
     validateObsoleteCandidate(item, index, proposedFindingCodes, context, errors)
   )
   validateLegalContext(payload.legalContext, context, errors)
+  validateForbiddenWorkflowMutations(payload, errors)
   validateForbiddenLanguage(payload, errors)
   validateFindingEvidenceCoverage(proposedFindings, evidenceRequests, errors)
 
@@ -278,6 +281,13 @@ function validateLegalContext(
     if (allowed.size > 0 && typeof entry.sourceId === "string" && !allowed.has(entry.sourceId)) {
       errors.push(`${path}.sourceId was not retrieved in RagContext`)
     }
+    if (
+      typeof entry.sourceId === "string" &&
+      (entry.instrument === "EU_AI_ACT" || entry.instrument === "GDPR") &&
+      !isSourceCitableAsLaw(context.legalSourcesById?.[entry.sourceId])
+    ) {
+      errors.push(`${path}.sourceId cannot be used as legal authority for ${entry.instrument}`)
+    }
   })
 }
 
@@ -288,6 +298,85 @@ function validateForbiddenLanguage(payload: unknown, errors: string[]) {
       errors.push(`proposal contains forbidden overclaim phrase: ${phrase}`)
     }
   }
+}
+
+function validateForbiddenWorkflowMutations(payload: unknown, errors: string[]) {
+  walkProposal(payload, "proposal", (value, path) => {
+    if (!isRecord(value)) return
+
+    if (value.autoApprove !== undefined) {
+      errors.push(`${displayMutationPath(path)}.autoApprove is forbidden`)
+    }
+    if (value.autoResolve !== undefined) {
+      errors.push(`${displayMutationPath(path)}.autoResolve is forbidden`)
+    }
+    if (value.approveEvidence !== undefined) {
+      errors.push(`${displayMutationPath(path)}.approveEvidence is forbidden`)
+    }
+    if (value.resolveFinding !== undefined) {
+      errors.push(`${displayMutationPath(path)}.resolveFinding is forbidden`)
+    }
+
+    if (typeof value.findingStatus === "string") {
+      const normalized = normalizeWorkflowValue(value.findingStatus)
+      if (normalized === "resolved" || normalized === "dismissed" || normalized === "under_monitoring") {
+        errors.push(`${displayMutationPath(path)}.findingStatus cannot be ${value.findingStatus} by orchestrator`)
+      }
+    }
+
+    const approvalStatus =
+      typeof value.approvalStatus === "string"
+        ? value.approvalStatus
+        : typeof value.evidenceStatus === "string"
+          ? value.evidenceStatus
+          : typeof value.status === "string" && path.includes("evidenceRequests[")
+            ? value.status
+            : undefined
+    if (approvalStatus && normalizeWorkflowValue(approvalStatus) === "approved") {
+      const fieldName = typeof value.approvalStatus === "string"
+        ? "approvalStatus"
+        : typeof value.evidenceStatus === "string"
+          ? "evidenceStatus"
+          : "status"
+      errors.push(`${displayMutationPath(path)}.${fieldName} cannot be approved by orchestrator`)
+    }
+  })
+}
+
+function isSourceCitableAsLaw(source: LegalSourceValidationMetadata | undefined) {
+  if (!source) return true
+  if (source.canBeCitedAsLaw === false) return false
+  if (source.legalWeight === "internal_context") return false
+  if (source.sourceType === "internal_monography" || source.sourceType === "internal_template") return false
+  return true
+}
+
+function walkProposal(
+  value: unknown,
+  path: string,
+  visitor: (value: unknown, path: string) => void,
+) {
+  visitor(value, path)
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => walkProposal(item, `${path}[${index}]`, visitor))
+    return
+  }
+  if (!isRecord(value)) return
+
+  Object.entries(value).forEach(([key, child]) => {
+    walkProposal(child, path === "proposal" ? `proposal.${key}` : `${path}.${key}`, visitor)
+  })
+}
+
+function displayMutationPath(path: string) {
+  return path.replace(
+    /^proposal\.(proposedFindings|evidenceRequests|reviewTasks|nextActions|exportBlockers|clientQuestions|obsoleteCandidates)(?=\.|\[|$)/,
+    "$1",
+  )
+}
+
+function normalizeWorkflowValue(value: string) {
+  return value.trim().toLowerCase().replace(/[\s-]+/g, "_")
 }
 
 function validateFindingEvidenceCoverage(

@@ -115,6 +115,78 @@ describe("runComplianceOrchestrator", () => {
     expect(result.validation.ok).toBe(false)
   })
 
+  it("falls back when Mistral cites internal monographies as legal authority", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                schemaVersion: "orchestrator.v1",
+                finalLegalVerdict: false,
+                legalContext: [
+                  {
+                    sourceId: "src_internal_chatbot_art50_monography",
+                    instrument: "EU_AI_ACT",
+                    reference: "Art. 50(1)",
+                    whyRelevant: "Internal chatbot workflow template.",
+                  },
+                ],
+                proposedFindings: [
+                  {
+                    code: "art50_chatbot_notice",
+                    title: "Adaugă notice Art. 50 pentru chatbot",
+                    reason: "Chatbot public.",
+                    severity: "high",
+                    ownerRole: "dpo",
+                    legalBasis: [{ instrument: "EU_AI_ACT", article: "Art. 50(1)" }],
+                    requiredEvidence: ["transparency_notice_text"],
+                    finalLegalVerdict: false,
+                  },
+                ],
+                evidenceRequests: [
+                  {
+                    code: "collect_notice_text",
+                    linkedFindingCode: "art50_chatbot_notice",
+                    evidenceType: "transparency_notice_text",
+                    title: "Atașează textul notice-ului",
+                    ownerRole: "dpo",
+                  },
+                ],
+                reviewTasks: [],
+                nextActions: [],
+                exportBlockers: [],
+                clientQuestions: [],
+                obsoleteCandidates: [],
+              }),
+            },
+          },
+        ],
+      }),
+    })
+
+    const result = await runComplianceOrchestrator({
+      orgId: "org-1",
+      workspaceMode: "cabinet",
+      clientId: "client-a",
+      user: { id: "user-1", role: "cabinet_consultant" },
+      state: mergeWithDefault(null),
+      ragSourceIds: ["src_internal_chatbot_art50_monography"],
+      mistral: { apiKey: "test-key", fetchImpl: fetchMock },
+    })
+
+    expect(result.status).toBe("fallback_deterministic")
+    expect(result.source).toBe("deterministic")
+    expect(result.auditEvent.type).toBe("orchestrator.plan_rejected")
+    expect(result.validation.ok).toBe(false)
+    if (!result.validation.ok) {
+      expect(result.validation.errors).toContain(
+        "legalContext[0].sourceId cannot be used as legal authority for EU_AI_ACT"
+      )
+    }
+  })
+
   it("falls back when Mistral targets entities outside the scoped tenant context", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

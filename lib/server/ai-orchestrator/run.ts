@@ -1,4 +1,5 @@
 import type { ComplianceState } from "@/lib/compliance/types"
+import { LEGAL_SOURCE_REGISTRY } from "@/lib/compliance/orchestrator-knowledge-governance"
 import {
   buildAppStateSnapshot,
   fingerprintSnapshot,
@@ -1088,6 +1089,18 @@ function buildValidationContext(
 
   return {
     allowedRagSourceIds: input.ragSourceIds,
+    legalSourcesById: Object.fromEntries(
+      LEGAL_SOURCE_REGISTRY
+        .filter((source) => input.ragSourceIds.includes(source.id))
+        .map((source) => [
+          source.id,
+          {
+            canBeCitedAsLaw: source.canBeCitedAsLaw,
+            legalWeight: source.legalWeight,
+            sourceType: source.sourceType,
+          },
+        ]),
+    ),
     allowedLinkedEntityIdsByType,
     allowedFindingCodes: scopedFindingIds,
   }

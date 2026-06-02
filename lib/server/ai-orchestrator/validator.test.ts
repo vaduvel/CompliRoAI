@@ -232,6 +232,59 @@ describe("validateOrchestratorProposal", () => {
     }
   })
 
+  it("rejects internal context sources used as legal authority", () => {
+    const result = validateOrchestratorProposal(
+      baseProposal({
+        legalContext: [
+          {
+            sourceId: "src_internal_chatbot_art50_monography",
+            instrument: "EU_AI_ACT",
+            reference: "Art. 50(1)",
+            whyRelevant: "Internal workflow template.",
+          },
+        ],
+        proposedFindings: [
+          {
+            code: "art50_chatbot_notice",
+            title: "Adaugă notice Art. 50 pentru chatbot",
+            reason: "Chatbot public.",
+            severity: "high",
+            ownerRole: "dpo",
+            legalBasis: [{ instrument: "EU_AI_ACT", article: "Art. 50(1)" }],
+            requiredEvidence: ["transparency_notice_text"],
+            finalLegalVerdict: false,
+          },
+        ],
+        evidenceRequests: [
+          {
+            code: "collect_notice_text",
+            linkedFindingCode: "art50_chatbot_notice",
+            evidenceType: "transparency_notice_text",
+            title: "Atașează textul notice-ului",
+            ownerRole: "dpo",
+          },
+        ],
+      }),
+      {
+        allowedRagSourceIds: ["src_internal_chatbot_art50_monography"],
+        legalSourcesById: {
+          src_internal_chatbot_art50_monography: {
+            canBeCitedAsLaw: false,
+            legalWeight: "internal_context",
+            sourceType: "internal_monography",
+          },
+        },
+      },
+    )
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.errors).toContain(
+        "legalContext[0].sourceId cannot be used as legal authority for EU_AI_ACT"
+      )
+    }
+  })
+
   it("rejects legal basis that is not grounded in retrieved legal context", () => {
     const result = validateOrchestratorProposal(
       baseProposal({
@@ -364,6 +417,65 @@ describe("validateOrchestratorProposal", () => {
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.errors).toContain("proposal contains forbidden overclaim phrase: fully compliant")
+    }
+  })
+
+  it("rejects model attempts to auto-resolve or auto-approve workflow state", () => {
+    const result = validateOrchestratorProposal(baseProposal({
+      proposedFindings: [
+        {
+          code: "art50_chatbot_notice",
+          title: "Adaugă notice Art. 50 pentru chatbot",
+          reason: "Chatbot public.",
+          severity: "high",
+          ownerRole: "dpo",
+          legalBasis: [{ instrument: "EU_AI_ACT", article: "Art. 50(1)" }],
+          requiredEvidence: ["transparency_notice_text"],
+          finalLegalVerdict: false,
+          findingStatus: "resolved",
+        },
+      ],
+      evidenceRequests: [
+        {
+          code: "collect_notice_text",
+          linkedFindingCode: "art50_chatbot_notice",
+          evidenceType: "transparency_notice_text",
+          title: "Atașează textul notice-ului",
+          ownerRole: "dpo",
+          approvalStatus: "approved",
+        },
+      ],
+      reviewTasks: [
+        {
+          code: "auto_dpo_review",
+          title: "DPO review făcut de AI",
+          ownerRole: "dpo",
+          reviewStatus: "approved",
+          linkedFindingCode: "art50_chatbot_notice",
+        },
+      ],
+      nextActions: [
+        {
+          code: "resolve_now",
+          title: "Închide finding-ul",
+          priority: "P1",
+          targetHref: "/dashboard/resolve?finding=art50_chatbot_notice",
+          ownerRole: "dpo",
+          autoResolve: true,
+        },
+      ],
+      autoApprove: true,
+    }))
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.errors).toEqual(expect.arrayContaining([
+        "proposedFindings[0].findingStatus cannot be resolved by orchestrator",
+        "evidenceRequests[0].approvalStatus cannot be approved by orchestrator",
+        "reviewTasks[0].reviewStatus is invalid",
+        "nextActions[0].autoResolve is forbidden",
+        "proposal.autoApprove is forbidden",
+      ]))
     }
   })
 

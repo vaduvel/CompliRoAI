@@ -174,6 +174,11 @@ export type OrchestratorProposal = {
 
 export type OrchestratorValidationContext = {
   allowedRagSourceIds?: string[]
+  legalSourcesById?: Record<string, {
+    canBeCitedAsLaw?: boolean
+    legalWeight?: "primary" | "secondary_official" | "draft" | "internal_context" | string
+    sourceType?: string
+  }>
   allowedLinkedEntityIdsByType?: Partial<Record<OrchestratorLinkedEntityType, string[]>>
   allowedFindingCodes?: string[]
 }
